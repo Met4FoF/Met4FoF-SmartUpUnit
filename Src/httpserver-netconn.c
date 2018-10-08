@@ -34,6 +34,7 @@
 #include "cmsis_os.h"
 #include "../webpages/index.h"
 #include "temp.h"
+#include "main.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -95,15 +96,15 @@ void http_server_serve(struct netconn *conn)
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /xacc", 8) == 0) {
-    		  sprintf(buf, "%2.1f °C", getMCUTemperature());
+    		  sprintf(buf, "%3.4f m/s^2", getGVal(0));
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /yacc", 8) == 0) {
-    		  sprintf(buf, "%2.1f °C", getMCUTemperature());
+    		  sprintf(buf, "%3.4f m/s^2", getGVal(1));
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /zacc", 8) == 0) {
-    		  sprintf(buf, "%2.1f °C", getMCUTemperature());
+    		  sprintf(buf, "%3.4f m/s^2", getGVal(2));
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
       }

@@ -26,12 +26,12 @@
  *  Library may be used freely and without limit with attribution.
  *
  */
+#include <stdint.h>
 #include "bma280.h"
-
 #include "stm32f7xx_hal.h"
 #include "spi.h"
 #include "gpio.h"
-#include <stdint.h>
+#include "main.h"
 
 BMA280::BMA280(GPIO_TypeDef* SPICSTypeDefExt,
 		uint16_t SPICSPinExt,
@@ -237,3 +237,4 @@ void BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 	//I2CBus.read(I2CADR_R(address), rx, count);
 	//memcpy(dest, &rx, count);
 }
+

@@ -58,21 +58,41 @@
 #include "usb_otg.h"
 #include "gpio.h"
 #include "httpserver-netconn.h"
+#include "bma280.h"
 
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 osThreadId defaultTaskHandle;
+int16_t rawReadings[3]={0,0,0};
+float g[3]={0,0,0};
+uint32_t timeStamp=0;
+uint32_t captureCount=0;
+bool DataRdy=false;
+
+BMA280 Acc(GPIOG,SPI3_CS_Pin ,&hspi3);
+float conversionfactor=Acc.getAresG(AFS_2G);
+
 /* USER CODE END PV */
+#ifdef __cplusplus
+
+extern "C" {
+
+#endif
+
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void StartDefaultTask(void const * argument);
+#ifdef __cplusplus
+
+}
+
+#endif
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
@@ -92,6 +112,10 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+ /* Enable I-Cache-------------------------------------------------------------*/
+	SCB_EnableICache();
+
+	  /* MCU Configuration----------------------------------------------------------*/
 
   /* MCU Configuration----------------------------------------------------------*/
 
@@ -116,6 +140,13 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI3_Init();
   MX_TIM2_Init();
+  Acc.initBMA280(AFS_2G,BW_1000Hz,normal_Mode,sleep_0_5ms);
+  Acc.readBMA280AccelData(rawReadings);
+  if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK)
+  {
+    /* Starting Error */
+	  _Error_Handler(__FILE__,__LINE__);
+  }
   /* USER CODE BEGIN 2 */
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
@@ -274,6 +305,25 @@ void _Error_Handler(char *file, int line)
   {
   }
   /* USER CODE END Error_Handler_Debug */
+}
+
+void HAL_TIM_IC_CaptureCallback (TIM_HandleTypeDef * htim)
+{
+	if(htim->Instance==TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
+	{
+		timeStamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
+		  Acc.readBMA280AccelData(rawReadings);
+	      for (int i=0;i<=2;i++)
+	          {
+	              g[i]=(float)rawReadings[i]*conversionfactor*9.81168;
+	          }
+		DataRdy=true;
+		captureCount++;
+	}
+}
+
+float getGVal(int index){
+return g[index];
 }
 
 #ifdef  USE_FULL_ASSERT

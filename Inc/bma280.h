@@ -155,3 +155,5 @@ class BMA280
   SPI_HandleTypeDef* bmaspi;
   float _aRes;
 };
+
+#endif /*__ BMA280_H */

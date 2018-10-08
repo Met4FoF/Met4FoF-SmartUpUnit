@@ -51,6 +51,13 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
+
+#ifdef __cplusplus
+
+ extern "C" {
+
+#endif
+
 /* Includes ------------------------------------------------------------------*/
 
 /* USER CODE BEGIN Includes */
@@ -115,7 +122,8 @@
 #define LD3_GPIO_Port GPIOB
 #define User_Blue_Button_Pin GPIO_PIN_13
 #define User_Blue_Button_GPIO_Port GPIOC
-
+#define SPI3_CS_Pin GPIO_PIN_3
+#define SPI3_CS_GPIO_Port GPIOG
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
@@ -124,12 +132,8 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
-
 /* USER CODE END Private defines */
-
-#ifdef __cplusplus
- extern "C" {
-#endif
+float getGVal(int index);
 void _Error_Handler(char *, int);
 void StartDefaultTask(void const * argument);
 #define Error_Handler() _Error_Handler(__FILE__, __LINE__)
