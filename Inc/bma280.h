@@ -25,11 +25,12 @@
 #include "stm32f7xx_hal.h"
 
 #include <stdint.h>
+#include <cstring>
 /* Register Map BMA280
 // http://www.mouser.com/ds/2/783/BST-BMA280-DS000-11_published-786496.pdf
 */
 
-#define SPI_TIMEOUT 1e6
+#define SPI_TIMEOUT 1
 #define BMA280_BGW_CHIPID      0x00
 #define BMA280_ACCD_X_LSB      0x02
 #define BMA280_ACCD_X_MSB      0x03

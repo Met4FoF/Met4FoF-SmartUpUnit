@@ -27,6 +27,7 @@
  *
  */
 #include <stdint.h>
+#include <cstring>
 #include "bma280.h"
 #include "stm32f7xx_hal.h"
 #include "spi.h"
@@ -204,30 +205,32 @@ int BMA280::readBMA280GyroTempData() {
 
 void BMA280::writeByte(uint8_t subAddress, uint8_t data) {
 	uint8_t buffer[2] = { BMA280_SPI_WRITE | subAddress, data };
-	//GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,
-	//		SPI_HandleTypeDef *hspi
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(bmaspi, buffer, 2, SPI_TIMEOUT);
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_SET);
 }
 
 uint8_t BMA280::readByte(uint8_t subAddress) {
-	uint8_t tx[1] = {(BMA280_SPI_READ | subAddress)};
-	uint8_t rx[1] = {0};
+	uint8_t tx[2] = {(BMA280_SPI_READ | subAddress),0};
+	uint8_t rx[2] = {0,0};
 
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(bmaspi, tx, 1, SPI_TIMEOUT);
-	HAL_SPI_Receive(bmaspi, rx, 1, SPI_TIMEOUT);
+	HAL_SPI_TransmitReceive(bmaspi,tx, rx, 2, SPI_TIMEOUT);
+	//HAL_SPI_Transmit(bmaspi, tx, 2, SPI_TIMEOUT);
+	//HAL_SPI_Receive(bmaspi, rx, 1, SPI_TIMEOUT);
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_SET);
 
-	return rx[0];
+	return rx[1];
 }
 
 void BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
-	uint8_t tx[1] = {BMA280_SPI_READ | subAddress};
+	uint8_t tx[count+1]={0};
+	uint8_t rx[count+1]={0};
+	tx[0] = {BMA280_SPI_READ | subAddress};
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(bmaspi, tx, 1, SPI_TIMEOUT);
-	HAL_SPI_Receive(bmaspi, dest, count, SPI_TIMEOUT);
+	HAL_SPI_TransmitReceive(bmaspi,tx, rx, count+1, SPI_TIMEOUT);
+	//HAL_SPI_Transmit(bmaspi, tx, 1, SPI_TIMEOUT);
+	//HAL_SPI_Receive(bmaspi, dest, count, SPI_TIMEOUT);
 	HAL_GPIO_WritePin(SPICSTypeDef, SPICSPin, GPIO_PIN_SET);
 
 	//Wire.transfer(address, &subAddress, 1, dest, count);
@@ -235,6 +238,6 @@ void BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 	//uint8_t rx[count];
 	//I2CBus.write(I2CADR_W(address),(const uint8_t *)subAddress, 1);
 	//I2CBus.read(I2CADR_R(address), rx, count);
-	//memcpy(dest, &rx, count);
+	memcpy(dest, &rx[1], count);
 }
 
