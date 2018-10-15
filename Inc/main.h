@@ -134,6 +134,7 @@
 /* USER CODE BEGIN Private defines */
 /* USER CODE END Private defines */
 float getGVal(int index);
+float getBMATemp();
 void _Error_Handler(char *, int);
 void StartDefaultTask(void const * argument);
 #define Error_Handler() _Error_Handler(__FILE__, __LINE__)

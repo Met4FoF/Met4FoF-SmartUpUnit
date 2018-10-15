@@ -73,9 +73,9 @@ float g[3]={0,0,0};
 uint32_t timeStamp=0;
 uint32_t captureCount=0;
 bool DataRdy=false;
+float BMATemp=0;
 
-BMA280 Acc(GPIOG,SPI3_CS_Pin ,&hspi3);
-float conversionfactor=Acc.getAresG(AFS_2G);
+BMA280 Acc(GPIOG,SPI3_CS_Pin,&hspi3);
 
 /* USER CODE END PV */
 #ifdef __cplusplus
@@ -88,6 +88,8 @@ extern "C" {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void StartDefaultTask(void const * argument);
+float getGVal(int index);
+float getBMATemp();
 #ifdef __cplusplus
 
 }
@@ -141,7 +143,8 @@ int main(void)
   MX_SPI3_Init();
   MX_TIM2_Init();
   Acc.initBMA280(AFS_2G,BW_1000Hz,normal_Mode,sleep_0_5ms);
-  Acc.readBMA280AccelData(rawReadings);
+  Acc.readBMA280AccelDataRaw(rawReadings);
+  Acc.selfTestBMA280();
   if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK)
   {
     /* Starting Error */
@@ -312,11 +315,8 @@ void HAL_TIM_IC_CaptureCallback (TIM_HandleTypeDef * htim)
 	if(htim->Instance==TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
 	{
 		timeStamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
-		  Acc.readBMA280AccelData(rawReadings);
-	      for (int i=0;i<=2;i++)
-	          {
-	              g[i]=(float)rawReadings[i]*conversionfactor*9.81168;
-	          }
+		  Acc.readBMA280AccelData(g);
+		  BMATemp=Acc.getTemperature();
 		DataRdy=true;
 		captureCount++;
 	}
@@ -324,6 +324,9 @@ void HAL_TIM_IC_CaptureCallback (TIM_HandleTypeDef * htim)
 
 float getGVal(int index){
 return g[index];
+}
+float getBMATemp(){
+return BMATemp;
 }
 
 #ifdef  USE_FULL_ASSERT

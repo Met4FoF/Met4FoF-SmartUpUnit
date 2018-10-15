@@ -120,6 +120,8 @@
 #define sleep_100ms   0x0D
 #define sleep_500ms   0x0E
 #define sleep_1000ms  0x0F
+
+#define g_to_ms2 9.80665
 /**
  * BMA280 triple axis, digital interface, accelerometer.
  */
@@ -135,26 +137,30 @@ class BMA280
    * @param sck mbed pin to use for SCK line of SPI interface.
    * @param cs mbed pin to use for not chip select line of SPI interface.
    */
-  BMA280(GPIO_TypeDef* SPICSTypeDefExt, uint16_t SPICSPinExt,SPI_HandleTypeDef* bmaspiExt);
-  float getAresG(uint8_t Ascale);
+  BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi);
   uint8_t getChipID();
   uint8_t getTapType();
   uint8_t getTapStatus();
-  void initBMA280(uint8_t Ascale, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
+  float getTemperature();
+  void initBMA280(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
   void fastCompensationBMA280();
   void resetBMA280();
   void selfTestBMA280();
   void activateDataRDYINT();
-  void readBMA280AccelData(int16_t * destination);
+  void readBMA280AccelDataRaw(int16_t * destination);
   int readBMA280GyroTempData();
   void writeByte(uint8_t subAddress, uint8_t data);
   uint8_t readByte(uint8_t subAddress);
   void readBytes(uint8_t subAddress, uint8_t count, uint8_t* dest);
+  float _conversionfactor;
+  float getConversionfactor();
+  void readBMA280AccelData(float * destination);
   private:
-  GPIO_TypeDef* SPICSTypeDef;
-  uint16_t SPICSPin;
-  SPI_HandleTypeDef* bmaspi;
-  float _aRes;
+  GPIO_TypeDef* _SPICSTypeDef;
+  uint16_t _SPICSPin;
+  SPI_HandleTypeDef* _bmaspi;
+  uint8_t _aRes;
+
 };
 
 #endif /*__ BMA280_H */

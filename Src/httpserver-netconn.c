@@ -92,7 +92,7 @@ void http_server_serve(struct netconn *conn)
     			  netconn_write(conn, (const unsigned char*)"OFF", 3, NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /adc", 8) == 0) {
-    		  sprintf(buf, "%2.1f °C", getMCUTemperature());
+    		  sprintf(buf, "%2.1f °C", getBMATemp());
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /xacc", 8) == 0) {
