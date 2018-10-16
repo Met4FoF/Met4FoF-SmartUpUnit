@@ -975,7 +975,7 @@
  * LWIP_IGMP==1: Turn on IGMP module.
  */
 #if !defined LWIP_IGMP || defined __DOXYGEN__
-#define LWIP_IGMP                       0
+#define LWIP_IGMP                       1
 #endif
 #if !LWIP_IPV4
 #undef LWIP_IGMP

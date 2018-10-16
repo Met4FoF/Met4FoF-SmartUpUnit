@@ -59,6 +59,7 @@
 #include "gpio.h"
 #include "httpserver-netconn.h"
 #include "bma280.h"
+#include "rtp.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -142,9 +143,9 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI3_Init();
   MX_TIM2_Init();
+  rtp_init();
   Acc.initBMA280(AFS_2G,BW_1000Hz,normal_Mode,sleep_0_5ms);
   Acc.readBMA280AccelDataRaw(rawReadings);
-  Acc.selfTestBMA280();
   if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK)
   {
     /* Starting Error */
