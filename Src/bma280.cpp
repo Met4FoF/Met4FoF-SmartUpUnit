@@ -81,10 +81,10 @@ float BMA280::getConversionfactor() {
 	}
 }
 
-void BMA280::initBMA280(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur) {
+void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur) {
 	_aRes=aRes;
 	_conversionfactor=getConversionfactor();
-	writeByte(BMA280_PMU_RANGE, aRes);         // set full-scale range
+	writeByte(BMA280_PMU_RANGE, _aRes);         // set full-scale range
 	writeByte(BMA280_PMU_BW, BW);     // set bandwidth (and thereby sample rate)
 	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
 
@@ -96,7 +96,7 @@ void BMA280::initBMA280(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sl
 	writeByte(BMA280_INT_OUT_CTRL, 0x04 | 0x01); // interrupts push-pull, active HIGH (bits 0:3)
 }
 
-void BMA280::fastCompensationBMA280() {
+void BMA280::fastCompensation() {
 	printf("hold flat and motionless for bias calibration");
 
 	//delay(5000);
@@ -126,11 +126,11 @@ void BMA280::fastCompensationBMA280() {
 	printf("z-axis offset = %f mg", (float) (offsetZ) * FCres / 256.0f);
 }
 
-void BMA280::resetBMA280() {
+void BMA280::reset() {
 	writeByte(BMA280_BGW_SOFTRESET, 0xB6); // software reset the BMA280
 }
 
-void BMA280::selfTestBMA280() {
+void BMA280::selfTest() {
 	uint8_t  rawData[2];  // x/y/z accel register data stored here
 
 	writeByte(BMA280_PMU_RANGE, AFS_4G); // set full-scale range to 4G
@@ -178,46 +178,30 @@ void BMA280::selfTestBMA280() {
 
 	writeByte(BMA280_PMU_SELF_TEST, 0x00); // disable self test
 	/* end of self test*/
+	writeByte(BMA280_PMU_RANGE, _aRes); // set fullscale resolution
 }
 
-void BMA280::readBMA280AccelDataRaw(int16_t * destination) {
-	uint8_t  rawData[6];  // x/y/z accel register data stored here
-	readBytes( BMA280_ACCD_X_LSB, 6, &rawData[0]); // Read the 6 raw data registers into data array
-	int16_t DebugArray[3]={0};
-	//destination[0] = ((signed uint8_t) rawData[1]) <<6)|(signed uint8_t) (rawData[0] >> 2); // Turn the MSB and LSB into a signed 14-bit value
-	//destination[1] = ((signed uint8_t) rawData[3]) * 64
-	//		+ (signed uint8_t) (rawData[2] >> 2);
-	//destination[2] = ((signed uint8_t) rawData[5]) * 64
-	//		+ (signed uint8_t) (rawData[4] >> 2);
-	destination[0] = ((int16_t)rawData[1] << 8) | (rawData[0]);
-	destination[1] = ((int16_t)rawData[3] << 8) | (rawData[2]);
-	destination[2] = ((int16_t)rawData[5] << 8) | (rawData[4]);
-}
-float BMA280::getTemperature(){
-	float temp=0;
-	int8_t raw=readByte(BMA280_ACCD_TEMP);
-	temp=23+raw*0.5;
-	return temp;
-}
-
-void BMA280::readBMA280AccelData(float * destination){
+AccelData BMA280::GetData(){
+	AccelData returnVal;
+	uint8_t  rawData[7];  // x/y/z accel register data stored here
 	int16_t rawArray[3]={0,0,0};
-	readBMA280AccelDataRaw(rawArray);
+	readBytes( BMA280_ACCD_X_LSB, 7, &rawData[0]); // Read the 6 raw data registers into data array
+	rawArray[0] = ((int16_t)rawData[1] << 8) | (rawData[0]);
+	rawArray[1] = ((int16_t)rawData[3] << 8) | (rawData[2]);
+	rawArray[2] = ((int16_t)rawData[5] << 8) | (rawData[4]);
 	int16_t x=(rawArray[0]&0xFFFC);
 	int16_t y=(rawArray[1]&0xFFFC);
 	int16_t z=(rawArray[2]&0xFFFC);
-	destination[0]=float(x)/4*_conversionfactor*g_to_ms2;
-	destination[1]=float(y)/4*_conversionfactor*g_to_ms2;
-	destination[2]=float(z)/4*_conversionfactor*g_to_ms2;
+	returnVal.x=(float)x/4.0*_conversionfactor*g_to_ms2;
+	returnVal.y=(float)y/4.0*_conversionfactor*g_to_ms2;
+	returnVal.z=(float)z/4.0*_conversionfactor*g_to_ms2;
+	returnVal.temperature=23.0+0.5*int8_t(rawData[6]);
+	return returnVal;
 }
+
 void BMA280::activateDataRDYINT() {
 	writeByte(BMA280_INT_EN_1, 0x10);
 	writeByte(BMA280_INT_MAP_1, 0x80);
-}
-
-int BMA280::readBMA280GyroTempData() {
-	uint8_t temp = readByte( BMA280_ACCD_TEMP);  // Read the raw data register
-	return (((int) temp << 8) | 0x00) >> 8; // Turn into signed 8-bit temperature value
 }
 
 // SPI read/write functions for the BMA280
@@ -235,8 +219,6 @@ uint8_t BMA280::readByte(uint8_t subAddress) {
 
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(_bmaspi,tx, rx, 2, SPI_TIMEOUT);
-	//HAL_SPI_Transmit(bmaspi, tx, 2, SPI_TIMEOUT);
-	//HAL_SPI_Receive(bmaspi, rx, 1, SPI_TIMEOUT);
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
 
 	return rx[1];
@@ -248,15 +230,7 @@ void BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 	tx[0] = {BMA280_SPI_READ | subAddress};
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(_bmaspi,tx, rx, count+1, SPI_TIMEOUT);
-	//HAL_SPI_Transmit(bmaspi, tx, 1, SPI_TIMEOUT);
-	//HAL_SPI_Receive(bmaspi, dest, count, SPI_TIMEOUT);
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
-
-	//Wire.transfer(address, &subAddress, 1, dest, count);
-	//Read acceleration on all 3 axis
-	//uint8_t rx[count];
-	//I2CBus.write(I2CADR_W(address),(const uint8_t *)subAddress, 1);
-	//I2CBus.read(I2CADR_R(address), rx, count);
 	memcpy(dest, &rx[1], count);
 }
 

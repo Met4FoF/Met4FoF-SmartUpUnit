@@ -68,16 +68,16 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
 osThreadId defaultTaskHandle;
-int16_t rawReadings[3]={0,0,0};
-float g[3]={0,0,0};
+osThreadId RTPTaskHandle;
+
 uint32_t timeStamp=0;
 uint32_t captureCount=0;
-bool DataRdy=false;
-float BMATemp=0;
 
 BMA280 Acc(GPIOG,SPI3_CS_Pin,&hspi3);
 
+AccelData ACCData;
 /* USER CODE END PV */
 #ifdef __cplusplus
 
@@ -88,6 +88,7 @@ extern "C" {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void StartRTPTask(void const * argument);
 void StartDefaultTask(void const * argument);
 float getGVal(int index);
 float getBMATemp();
@@ -143,9 +144,7 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI3_Init();
   MX_TIM2_Init();
-  rtp_init();
-  Acc.initBMA280(AFS_2G,BW_1000Hz,normal_Mode,sleep_0_5ms);
-  Acc.readBMA280AccelDataRaw(rawReadings);
+  Acc.init(AFS_2G,BW_1000Hz,normal_Mode,sleep_0_5ms);
   if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK)
   {
     /* Starting Error */
@@ -156,11 +155,12 @@ int main(void)
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  //osThreadDef(RTPTask, StartRTPTask, osPriorityNormal, 0, 128);
+  //RTPTaskHandle = osThreadCreate(osThread(RTPTask), NULL);
   /* USER CODE END 2 */
 
   /* Start scheduler */
   osKernelStart();
-  
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
@@ -272,6 +272,17 @@ void StartDefaultTask(void const * argument)
     osThreadTerminate(NULL);
   }
 }
+
+/* StartDefaultTask function */
+void StartRTPTask(void const * argument)
+{
+  rtp_init();
+
+  /* Infinite loop */
+  for(;;)  {
+    osThreadTerminate(NULL);
+  }
+}
 /* USER CODE END 4 */
 
 /**
@@ -316,18 +327,22 @@ void HAL_TIM_IC_CaptureCallback (TIM_HandleTypeDef * htim)
 	if(htim->Instance==TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
 	{
 		timeStamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
-		  Acc.readBMA280AccelData(g);
-		  BMATemp=Acc.getTemperature();
-		DataRdy=true;
+		ACCData=Acc.GetData();
 		captureCount++;
 	}
 }
 
 float getGVal(int index){
-return g[index];
+	switch(index) {
+		case 0: return ACCData.x;
+		case 1: return ACCData.y;
+		case 2: return ACCData.z;
+		default: return -1e9;
+	}
+
 }
 float getBMATemp(){
-return BMATemp;
+return ACCData.temperature;
 }
 
 #ifdef  USE_FULL_ASSERT

@@ -125,6 +125,14 @@
 /**
  * BMA280 triple axis, digital interface, accelerometer.
  */
+
+struct AccelData {
+  float x;
+  float y;
+  float z;
+  float temperature;
+};
+
 class BMA280
 {
   private:
@@ -138,24 +146,21 @@ class BMA280
    * @param cs mbed pin to use for not chip select line of SPI interface.
    */
   BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi);
+  void init(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
+  void reset();
   uint8_t getChipID();
   uint8_t getTapType();
   uint8_t getTapStatus();
-  float getTemperature();
-  void initBMA280(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
-  void fastCompensationBMA280();
-  void resetBMA280();
-  void selfTestBMA280();
+  AccelData GetData();
+  void fastCompensation();
+  void selfTest();
   void activateDataRDYINT();
-  void readBMA280AccelDataRaw(int16_t * destination);
-  int readBMA280GyroTempData();
+  private:
+  float getConversionfactor();
   void writeByte(uint8_t subAddress, uint8_t data);
   uint8_t readByte(uint8_t subAddress);
   void readBytes(uint8_t subAddress, uint8_t count, uint8_t* dest);
   float _conversionfactor;
-  float getConversionfactor();
-  void readBMA280AccelData(float * destination);
-  private:
   GPIO_TypeDef* _SPICSTypeDef;
   uint16_t _SPICSPin;
   SPI_HandleTypeDef* _bmaspi;
