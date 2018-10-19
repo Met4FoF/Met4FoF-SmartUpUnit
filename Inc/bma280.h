@@ -26,6 +26,9 @@
 
 #include <stdint.h>
 #include <cstring>
+#include <math.h>
+#include <stdint.h>
+
 /* Register Map BMA280
 // http://www.mouser.com/ds/2/783/BST-BMA280-DS000-11_published-786496.pdf
 */
@@ -133,9 +136,15 @@ struct AccelData {
   float temperature;
 };
 
+struct AccelDataStamped {
+	uint32_t UnixSecs;
+	uint32_t RawTimerCount;
+	uint32_t CaptureCount;
+	AccelData Data;
+};
+
 class BMA280
 {
-  private:
   public:
   /**
    * Constructor.
@@ -152,6 +161,7 @@ class BMA280
   uint8_t getTapType();
   uint8_t getTapStatus();
   AccelData GetData();
+  AccelDataStamped GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount);
   void fastCompensation();
   void selfTest();
   void activateDataRDYINT();

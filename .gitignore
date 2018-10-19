@@ -29,3 +29,7 @@
 
 # Debugfolder
 Debug/
+
+\.settings/language\.settings\.xml
+
+NUCLEO-F767ZI\.xml

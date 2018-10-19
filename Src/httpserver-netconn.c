@@ -143,6 +143,7 @@ static void http_server_netconn_thread()
 
       while(1)
       {
+    	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
         /* accept any icoming connection */
         accept_err = netconn_accept(conn, &newconn);
         if(accept_err == ERR_OK)

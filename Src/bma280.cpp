@@ -28,6 +28,7 @@
  */
 #include <stdint.h>
 #include <cstring>
+#include <math.h>
 #include "bma280.h"
 #include "stm32f7xx_hal.h"
 #include "spi.h"
@@ -56,7 +57,7 @@ uint8_t BMA280::getTapStatus() {
 }
 
 float BMA280::getConversionfactor() {
-	float conversionfactor=0;
+	float conversionfactor=*(float*) nanf;
 	switch (_aRes) {
 	// Possible accelerometer scales (and their register bit settings) are:
 	// 2 Gs , 4 Gs , 8 Gs , and 16 Gs .
@@ -77,7 +78,7 @@ float BMA280::getConversionfactor() {
 		return conversionfactor;
 		break;
 	default:
-		return 0;
+		return conversionfactor;
 	}
 }
 
@@ -196,6 +197,15 @@ AccelData BMA280::GetData(){
 	returnVal.y=(float)y/4.0*_conversionfactor*g_to_ms2;
 	returnVal.z=(float)z/4.0*_conversionfactor*g_to_ms2;
 	returnVal.temperature=23.0+0.5*int8_t(rawData[6]);
+	return returnVal;
+}
+
+AccelDataStamped BMA280::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount){
+	AccelDataStamped returnVal{0,0,0,0};
+	returnVal.Data=BMA280::GetData();
+	returnVal.UnixSecs=UnixSecs;
+	returnVal.RawTimerCount=RawTimerCount;
+	returnVal.CaptureCount=CaptureCount;
 	return returnVal;
 }
 
