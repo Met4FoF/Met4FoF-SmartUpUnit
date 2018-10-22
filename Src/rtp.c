@@ -203,6 +203,7 @@ rtp_send_thread(void *arg)
         /* send RTP packets */
         memset(rtp_send_packet, 0, sizeof(rtp_send_packet));
         while (1) {
+        	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
           rtp_send_packets( sock, &to);
           sys_msleep(RTP_SEND_DELAY);
         }
@@ -294,8 +295,7 @@ rtp_recv_thread(void *arg)
   }
 }
 
-void
-rtp_init(void)
+void rtp_init(void)
 {
   sys_thread_new("rtp_send_thread", rtp_send_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);
   sys_thread_new("rtp_recv_thread", rtp_recv_thread, NULL, DEFAULT_THREAD_STACKSIZE, DEFAULT_THREAD_PRIO);

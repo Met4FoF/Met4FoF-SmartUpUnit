@@ -39,6 +39,8 @@ BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,
 		uint16_t SPICSPin,
 		SPI_HandleTypeDef* bmaspi):_SPICSTypeDef(SPICSTypeDef),_SPICSPin(SPICSPin),_bmaspi(bmaspi) {
 ;
+_aRes=0;
+_conversionfactor=*(float*) nanf;
 }
 
 uint8_t BMA280::getChipID() {

@@ -71,8 +71,10 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
-osThreadId defaultTaskHandle;
+osThreadId WebServerTID;
 osThreadId blinkTID;
+osThreadId DataProcessingTID;
+
 
 
 BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
@@ -84,8 +86,8 @@ osPoolDef(AccPool, ACCBUFFESEIZE, AccelDataStamped);
 osPoolId  AccPool;
 
 //MessageQ for the time Stamped data
-osMessageQDef(ACCBuffer, ACCBUFFESEIZE, AccelDataStamped);
-osMessageQId ACCBuffer;
+osMessageQDef(ACCMsgBuffer, ACCBUFFESEIZE, uint32_t);
+osMessageQId ACCMsgBuffer;
 
 /* USER CODE END PV */
 #ifdef __cplusplus
@@ -96,8 +98,9 @@ extern "C" {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void StartDefaultTask(void const * argument);
-void blinkThread(void const * argument);
+void StartWebserverThread(void const * argument);
+void StartBlinkThread(void const * argument);
+void StartDataProcessingThread(void const * argument);
 float getGVal(int index);
 float getBMATemp();
 #ifdef __cplusplus
@@ -157,17 +160,20 @@ int main(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 	/* USER CODE BEGIN 2 */
-	/* Create the thread(s) */
-	/* definition and creation of defaultTask */
-	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-	defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
-	osThreadDef(blink, blinkThread, osPriorityLow, 0, 16);
-	blinkTID = osThreadCreate(osThread(blink), NULL);
-
 	//create the defined Buffer and Pool for ACC data
 	AccPool = osPoolCreate(osPool(AccPool));
-	ACCBuffer = osMessageCreate(osMessageQ(ACCBuffer),NULL);
+	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer),NULL);
+	/* Create the thread(s) */
+	/* definition and creation of defaultTask */
+	osThreadDef(WebserverTherad,StartWebserverThread , osPriorityNormal, 0, 128);
+	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
+
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
+	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
+
+	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityHigh, 0, 256);
+	DataProcessingTID  = osThreadCreate(osThread(DataProcessingThread), NULL);
+
 	/* USER CODE END 2 */
 
 	/* Start scheduler */
@@ -268,7 +274,7 @@ void SystemClock_Config(void) {
 /* USER CODE BEGIN 4 */
 
 /* StartDefaultTask function */
-void StartDefaultTask(void const * argument) {
+void StartWebserverThread(void const * argument) {
 	/* init code for LWIP */
 	MX_LWIP_Init();
 
@@ -279,10 +285,23 @@ void StartDefaultTask(void const * argument) {
 	}
 }
 
-void blinkThread(void const * argument) {
+void StartBlinkThread(void const * argument) {
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		osDelay(100);
+	}
+	osThreadTerminate(NULL);
+}
+
+void StartDataProcessingThread(void const * argument) {
+	osEvent evt;
+	AccelDataStamped *rptr;
+	while (1) {
+		 evt = osMessageGet(ACCMsgBuffer, 1);
+		 if(evt.status == osEventMessage)
+			 rptr = (AccelDataStamped*)evt.value.p;
+		 	 ACCData=*rptr;
+		    osPoolFree(AccPool, rptr);
 	}
 	osThreadTerminate(NULL);
 }
@@ -324,16 +343,20 @@ void _Error_Handler(char *file, int line) {
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t captureCount = 0;
+	static uint32_t MissedCount =0 ;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		AccelDataStamped *mptr;
+		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
 		if(mptr != NULL)
 		{
 		*mptr = Acc.GetStampedData(0x00000000,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),captureCount);
+		//put dater pointer into MSGQ
+		osStatus result=osMessagePut(ACCMsgBuffer, uint32_t(&mptr), osWaitForever);
 		}
 		else
 		{
-			ACCData=Acc.GetStampedData(0x00000000,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),captureCount);
+			MissedCount++;
 		}
 		captureCount++;
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
