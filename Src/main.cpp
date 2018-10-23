@@ -294,14 +294,17 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
+	static uint32_t porcessedCount=0;
 	osEvent evt;
 	AccelDataStamped *rptr;
 	while (1) {
-		 evt = osMessageGet(ACCMsgBuffer, 1);
-		 if(evt.status == osEventMessage)
+		 evt = osMessageGet(ACCMsgBuffer, osWaitForever);
+		 if(evt.status == osEventMessage){
 			 rptr = (AccelDataStamped*)evt.value.p;
 		 	 ACCData=*rptr;
 		    osPoolFree(AccPool, rptr);
+		    porcessedCount++;
+		 }
 	}
 	osThreadTerminate(NULL);
 }
@@ -345,6 +348,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount =0 ;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		AccelDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
@@ -352,13 +356,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		{
 		*mptr = Acc.GetStampedData(0x00000000,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),captureCount);
 		//put dater pointer into MSGQ
-		osStatus result=osMessagePut(ACCMsgBuffer, uint32_t(&mptr), osWaitForever);
+		osStatus result=osMessagePut(ACCMsgBuffer, (uint32_t)mptr, osWaitForever);
 		}
 		else
 		{
 			MissedCount++;
 		}
 		captureCount++;
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	}
 }
