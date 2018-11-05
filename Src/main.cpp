@@ -321,33 +321,24 @@ void StartDataProcessingThread(void const * argument) {
 void StartDataStreamingThread(void const * argument) {
 	struct netconn *conn;
 	    struct netbuf *buf;
-	    ip_addr_t *ipaddr;
-	    char *data;
+	    ip_addr_t targetipaddr;
 	    char text[] = "A static text";
-	    int i;
 	    uint8_t IP_ADDRESS[4];
 	    IP_ADDRESS[0] = 192;
 	    IP_ADDRESS[1] = 168;
 	    IP_ADDRESS[2] = 0;
 	    IP_ADDRESS[3] = 1;
-	    IP4_ADDR(*&ipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);
+	    IP4_ADDR(&targetipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);
 	    /* create a new connection */
 	    conn = netconn_new(NETCONN_UDP);
 
 
 	    /* connect the connection to the remote host */
-	    netconn_connect(conn,(const ip_addr_t *)ipaddr, 7000);
+	    netconn_connect(conn,&targetipaddr, 7000);
 
 	    /* create a new netbuf */
 	    buf = netbuf_new();
-	    data = (char *) netbuf_alloc(buf, 10);
-
-	    /* create some arbitrary data */
-	    for(i = 0; i < 10; i++){
-	        data[i] = i;
-	    }
-
-	while (1) {
+	    while (1) {
 	    netconn_send(conn, buf);
 
 	    /* reference the text into the netbuf */
