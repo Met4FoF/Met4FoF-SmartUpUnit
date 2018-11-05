@@ -58,10 +58,15 @@
 #include "gpio.h"
 #include "httpserver-netconn.h"
 #include "bma280.h"
-#include "rtp.h"
+
 #include "lwip/opt.h"
 #include "lwip/arch.h"
 #include "lwip/api.h"
+//test only
+#include "lwip/udp.h"
+#include "lwip.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -74,6 +79,8 @@
 osThreadId WebServerTID;
 osThreadId blinkTID;
 osThreadId DataProcessingTID;
+osThreadId DataStreamingTID;
+
 
 
 
@@ -101,6 +108,7 @@ void SystemClock_Config(void);
 void StartWebserverThread(void const * argument);
 void StartBlinkThread(void const * argument);
 void StartDataProcessingThread(void const * argument);
+void StartDataStreamingThread(void const * argument);
 float getGVal(int index);
 float getBMATemp();
 #ifdef __cplusplus
@@ -150,15 +158,11 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_USART3_UART_Init();
-	MX_USB_OTG_FS_PCD_Init();
+	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_TIM2_Init();
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
-		/* Starting Error */
-		_Error_Handler(__FILE__, __LINE__);
-	}
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC data
 	AccPool = osPoolCreate(osPool(AccPool));
@@ -174,8 +178,13 @@ int main(void) {
 	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityHigh, 0, 256);
 	DataProcessingTID  = osThreadCreate(osThread(DataProcessingThread), NULL);
 
+	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal, 0, 2048);
+	DataStreamingTID  = osThreadCreate(osThread(DataStreamingThread), NULL);
 	/* USER CODE END 2 */
-
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -308,6 +317,48 @@ void StartDataProcessingThread(void const * argument) {
 	}
 	osThreadTerminate(NULL);
 }
+
+void StartDataStreamingThread(void const * argument) {
+	struct netconn *conn;
+	    struct netbuf *buf;
+	    ip_addr_t *ipaddr;
+	    char *data;
+	    char text[] = "A static text";
+	    int i;
+	    uint8_t IP_ADDRESS[4];
+	    IP_ADDRESS[0] = 192;
+	    IP_ADDRESS[1] = 168;
+	    IP_ADDRESS[2] = 0;
+	    IP_ADDRESS[3] = 1;
+	    IP4_ADDR(*&ipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);
+	    /* create a new connection */
+	    conn = netconn_new(NETCONN_UDP);
+
+
+	    /* connect the connection to the remote host */
+	    netconn_connect(conn,(const ip_addr_t *)ipaddr, 7000);
+
+	    /* create a new netbuf */
+	    buf = netbuf_new();
+	    data = (char *) netbuf_alloc(buf, 10);
+
+	    /* create some arbitrary data */
+	    for(i = 0; i < 10; i++){
+	        data[i] = i;
+	    }
+
+	while (1) {
+	    netconn_send(conn, buf);
+
+	    /* reference the text into the netbuf */
+	    netbuf_ref(buf, text, sizeof(text));
+
+	    /* send the text */
+	    netconn_send(conn, buf);
+		 }
+	osThreadTerminate(NULL);
+}
+
 /* USER CODE END 4 */
 
 /**

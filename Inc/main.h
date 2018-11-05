@@ -125,7 +125,7 @@
 #define SPI3_CS_Pin GPIO_PIN_3
 #define SPI3_CS_GPIO_Port GPIOG
 
-#define ACCBUFFESEIZE 512
+#define ACCBUFFESEIZE 128
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
