@@ -81,16 +81,13 @@ osThreadId blinkTID;
 osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
 
-
-
-
 BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 
 AccelDataStamped ACCData;
 
 //MemPool For the data
 osPoolDef(AccPool, ACCBUFFESEIZE, AccelDataStamped);
-osPoolId  AccPool;
+osPoolId AccPool;
 
 //MessageQ for the time Stamped data
 osMessageQDef(ACCMsgBuffer, ACCBUFFESEIZE, uint32_t);
@@ -166,20 +163,23 @@ int main(void) {
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC data
 	AccPool = osPoolCreate(osPool(AccPool));
-	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer),NULL);
+	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
-	osThreadDef(WebserverTherad,StartWebserverThread , osPriorityNormal, 0, 128);
+	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
+			128);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
 	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
-	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityHigh, 0, 256);
-	DataProcessingTID  = osThreadCreate(osThread(DataProcessingThread), NULL);
+	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityHigh,
+			0, 256);
+	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
-	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal, 0, 2048);
-	DataStreamingTID  = osThreadCreate(osThread(DataStreamingThread), NULL);
+	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal,
+			0, 2048);
+	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 	/* USER CODE END 2 */
 	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
 		/* Starting Error */
@@ -303,50 +303,52 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-	static uint32_t porcessedCount=0;
+	static uint32_t porcessedCount = 0;
 	osEvent evt;
 	AccelDataStamped *rptr;
 	while (1) {
-		 evt = osMessageGet(ACCMsgBuffer, osWaitForever);
-		 if(evt.status == osEventMessage){
-			 rptr = (AccelDataStamped*)evt.value.p;
-		 	 ACCData=*rptr;
-		    osPoolFree(AccPool, rptr);
-		    porcessedCount++;
-		 }
+		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
+		if (evt.status == osEventMessage) {
+			rptr = (AccelDataStamped*) evt.value.p;
+			ACCData = *rptr;
+			osPoolFree(AccPool, rptr);
+			porcessedCount++;
+		}
 	}
 	osThreadTerminate(NULL);
 }
 
 void StartDataStreamingThread(void const * argument) {
+	static uint32_t lastSendData = 0;
 	struct netconn *conn;
-	    struct netbuf *buf;
-	    ip_addr_t targetipaddr;
-	    char text[] = "A static text";
-	    uint8_t IP_ADDRESS[4];
-	    IP_ADDRESS[0] = 192;
-	    IP_ADDRESS[1] = 168;
-	    IP_ADDRESS[2] = 0;
-	    IP_ADDRESS[3] = 1;
-	    IP4_ADDR(&targetipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2], IP_ADDRESS[3]);
-	    /* create a new connection */
-	    conn = netconn_new(NETCONN_UDP);
+	struct netbuf *buf;
+	ip_addr_t targetipaddr;
+	char text[sizeof(ACCData)] = "";
+	uint8_t IP_ADDRESS[4];
+	IP_ADDRESS[0] = 192;
+	IP_ADDRESS[1] = 168;
+	IP_ADDRESS[2] = 0;
+	IP_ADDRESS[3] = 1;
+	IP4_ADDR(&targetipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2],
+			IP_ADDRESS[3]);
+	/* create a new connection */
+	conn = netconn_new(NETCONN_UDP);
 
+	/* connect the connection to the remote host */
+	netconn_connect(conn, &targetipaddr, 7000);
 
-	    /* connect the connection to the remote host */
-	    netconn_connect(conn,&targetipaddr, 7000);
+	/* create a new netbuf */
+	buf = netbuf_new();
+	while (1) {
+		if (ACCData.CaptureCount > lastSendData) {
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &ACCData, sizeof(ACCData));
 
-	    /* create a new netbuf */
-	    buf = netbuf_new();
-	    while (1) {
-	    netconn_send(conn, buf);
-
-	    /* reference the text into the netbuf */
-	    netbuf_ref(buf, text, sizeof(text));
-
-	    /* send the text */
-	    netconn_send(conn, buf);
-		 }
+			/* send the text */
+			netconn_send(conn, buf);
+			lastSendData = ACCData.CaptureCount;
+		}
+	}
 	osThreadTerminate(NULL);
 }
 
@@ -388,20 +390,20 @@ void _Error_Handler(char *file, int line) {
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t captureCount = 0;
-	static uint32_t MissedCount =0 ;
+	static uint32_t MissedCount = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		AccelDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
-		if(mptr != NULL)
-		{
-		*mptr = Acc.GetStampedData(0x00000000,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),captureCount);
-		//put dater pointer into MSGQ
-		osStatus result=osMessagePut(ACCMsgBuffer, (uint32_t)mptr, osWaitForever);
-		}
-		else
-		{
+		if (mptr != NULL) {
+			*mptr = Acc.GetStampedData(0x00000000,
+					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					captureCount);
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
+					osWaitForever);
+		} else {
 			MissedCount++;
 		}
 		captureCount++;
@@ -428,7 +430,6 @@ float getGVal(int index) {
 float getBMATemp() {
 	return ACCData.Data.temperature;
 }
-
 
 #ifdef  USE_FULL_ASSERT
 /**
