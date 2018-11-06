@@ -59,7 +59,7 @@ uint8_t BMA280::getTapStatus() {
 }
 
 float BMA280::getConversionfactor() {
-	float conversionfactor=*(float*) nanf;
+	float conversionfactor=float NAN;
 	switch (_aRes) {
 	// Possible accelerometer scales (and their register bit settings) are:
 	// 2 Gs , 4 Gs , 8 Gs , and 16 Gs .
@@ -188,7 +188,7 @@ AccelData BMA280::GetData(){
 	AccelData returnVal;
 	uint8_t  rawData[7];  // x/y/z accel register data stored here
 	int16_t rawArray[3]={0,0,0};
-	readBytes( BMA280_ACCD_X_LSB, 7, &rawData[0]); // Read the 6 raw data registers into data array
+	if(readBytes( BMA280_ACCD_X_LSB, 7, &rawData[0])==true){ // Read the 6 raw data registers into data array
 	rawArray[0] = ((int16_t)rawData[1] << 8) | (rawData[0]);
 	rawArray[1] = ((int16_t)rawData[3] << 8) | (rawData[2]);
 	rawArray[2] = ((int16_t)rawData[5] << 8) | (rawData[4]);
@@ -199,6 +199,14 @@ AccelData BMA280::GetData(){
 	returnVal.y=(float)y/4.0*_conversionfactor*g_to_ms2;
 	returnVal.z=(float)z/4.0*_conversionfactor*g_to_ms2;
 	returnVal.temperature=23.0+0.5*int8_t(rawData[6]);
+	}
+	else
+	{
+		returnVal.x= float NAN ;
+		returnVal.y=float NAN ;
+		returnVal.z=float NAN ;
+		returnVal.temperature=float NAN ;
+	}
 	return returnVal;
 }
 
@@ -236,13 +244,18 @@ uint8_t BMA280::readByte(uint8_t subAddress) {
 	return rx[1];
 }
 
-void BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
+bool BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
+	bool retVal=false;
 	uint8_t tx[count+1]={0};
 	uint8_t rx[count+1]={0};
 	tx[0] = {BMA280_SPI_READ | subAddress};
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(_bmaspi,tx, rx, count+1, SPI_TIMEOUT);
+	if(HAL_SPI_TransmitReceive(_bmaspi,tx, rx, count+1, SPI_TIMEOUT)==HAL_OK)
+	{
+		retVal=true;
+	}
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
 	memcpy(dest, &rx[1], count);
+	return retVal;
 }
 

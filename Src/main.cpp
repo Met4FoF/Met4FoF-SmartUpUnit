@@ -303,23 +303,26 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-	static uint32_t porcessedCount = 0;
-	osEvent evt;
-	AccelDataStamped *rptr;
+//	static uint32_t porcessedCount = 0;
+//	osEvent evt;
+//	AccelDataStamped *rptr;
 	while (1) {
-		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
-		if (evt.status == osEventMessage) {
-			rptr = (AccelDataStamped*) evt.value.p;
-			ACCData = *rptr;
-			osPoolFree(AccPool, rptr);
-			porcessedCount++;
+//		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
+//		if (evt.status == osEventMessage) {
+//			rptr = (AccelDataStamped*) evt.value.p;
+//			ACCData = *rptr;
+//			osPoolFree(AccPool, rptr);
+//			porcessedCount++;
+			osDelay(100);
 		}
-	}
+
 	osThreadTerminate(NULL);
 }
 
 void StartDataStreamingThread(void const * argument) {
-	static uint32_t lastSendData = 0;
+	static uint32_t porcessedCount = 0;
+	osEvent evt;
+	AccelDataStamped *rptr;
 	struct netconn *conn;
 	struct netbuf *buf;
 	ip_addr_t targetipaddr;
@@ -340,13 +343,17 @@ void StartDataStreamingThread(void const * argument) {
 	/* create a new netbuf */
 	buf = netbuf_new();
 	while (1) {
-		if (ACCData.CaptureCount > lastSendData) {
+		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
+		if (evt.status == osEventMessage) {
+		rptr = (AccelDataStamped*) evt.value.p;
+		ACCData = *rptr;
+		porcessedCount++;
 			/* reference the data into the netbuf */
-			netbuf_ref(buf, &ACCData, sizeof(ACCData));
+			netbuf_ref(buf, &*rptr, sizeof(ACCData));
 
 			/* send the text */
 			netconn_send(conn, buf);
-			lastSendData = ACCData.CaptureCount;
+			osPoolFree(AccPool, rptr);
 		}
 	}
 	osThreadTerminate(NULL);
