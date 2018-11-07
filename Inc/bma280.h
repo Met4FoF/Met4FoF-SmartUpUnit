@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <cstring>
 #include <math.h>
-#include <stdint.h>
 
 /* Register Map BMA280
 // http://www.mouser.com/ds/2/783/BST-BMA280-DS000-11_published-786496.pdf
@@ -146,14 +145,6 @@ struct AccelDataStamped {
 class BMA280
 {
   public:
-  /**
-   * Constructor.
-   *
-   * @param mosi mbed pin to use for MOSI line of SPI interface.
-   * @param miso mbed pin to use for MISO line of SPI interface.
-   * @param sck mbed pin to use for SCK line of SPI interface.
-   * @param cs mbed pin to use for not chip select line of SPI interface.
-   */
   BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi);
   void init(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
   void reset();

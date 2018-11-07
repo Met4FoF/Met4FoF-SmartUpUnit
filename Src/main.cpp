@@ -57,7 +57,9 @@
 #include "usb_otg.h"
 #include "gpio.h"
 #include "httpserver-netconn.h"
-#include "bma280.h"
+#include "ADXL345.h"
+//#include "bma280.h"
+
 
 #include "lwip/opt.h"
 #include "lwip/arch.h"
@@ -81,7 +83,9 @@ osThreadId blinkTID;
 osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
 
-BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+
+//BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+ADXL345 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 
 AccelDataStamped ACCData;
 
@@ -159,7 +163,20 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_TIM2_Init();
-	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+
+    //Go into standby mode to configure the device.
+    Acc.setPowerControl(0x00);
+
+	//Acc.init(AFS_2G, BW_250Hz, normal_Mode, sleep_0_5ms);
+	Acc.setDataFormatControl(0x00);
+	Acc.setResolution(ADXL345_AFS_FULL_RANGE);
+	Acc.setDataRate(ADXL345_800HZ);
+    //Activate DataRdy Interrupt
+    Acc.setInterruptEnableControl(0x80);
+
+    Acc.setInterruptMappingControl(0x00);
+    //Measurement mode.
+    Acc.setPowerControl(0x08);
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC data
 	AccPool = osPoolCreate(osPool(AccPool));
@@ -313,7 +330,8 @@ void StartDataProcessingThread(void const * argument) {
 //			ACCData = *rptr;
 //			osPoolFree(AccPool, rptr);
 //			porcessedCount++;
-			osDelay(100);
+			AccelData test=Acc.GetData();
+			osDelay(10);
 		}
 
 	osThreadTerminate(NULL);
