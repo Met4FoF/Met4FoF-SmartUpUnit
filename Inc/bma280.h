@@ -32,7 +32,7 @@
 // http://www.mouser.com/ds/2/783/BST-BMA280-DS000-11_published-786496.pdf
 */
 
-#define SPI_TIMEOUT 1
+
 #define BMA280_BGW_CHIPID      0x00
 #define BMA280_ACCD_X_LSB      0x02
 #define BMA280_ACCD_X_MSB      0x03
@@ -124,9 +124,8 @@
 #define sleep_1000ms  0x0F
 
 #define g_to_ms2 9.80665
-/**
- * BMA280 triple axis, digital interface, accelerometer.
- */
+
+#define SPI_TIMEOUT 100U
 
 struct AccelData {
   float x;
@@ -141,6 +140,9 @@ struct AccelDataStamped {
 	uint32_t CaptureCount;
 	AccelData Data;
 };
+/**
+ * BMA280 triple axis, digital interface, accelerometer.
+ */
 
 class BMA280
 {
