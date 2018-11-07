@@ -331,7 +331,7 @@ void ADXL345::getOutput(int* readings) {
 
 	uint8_t buffer[6];
 
-	if(multiByteRead(ADXL345_DATAX0_REG, buffer, 6)==HAL_OK){
+	if(multiByteRead(ADXL345_DATAX0_REG, buffer, 6)==true){
 
 	readings[0] = (int) buffer[1] << 8 | (int) buffer[0];
 	readings[1] = (int) buffer[3] << 8 | (int) buffer[2];

@@ -18,7 +18,7 @@ UDP_PORT = 7000
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
 sock.bind((UDP_IP, UDP_PORT))
-BUFFERSIZE = 5000
+BUFFERSIZE = 10000
 Buffer = collections.deque(maxlen=BUFFERSIZE)
 DataSinceLastPlot=0;
 # INIT figue
