@@ -302,8 +302,9 @@ void ADXL345::setDataFormatControl(int settings) {
 
 bool ADXL345::setResolution(int settings){
 	bool retVal=false;
-	if(settings<=0x04){
-		retVal=oneByteWrite(ADXL345_DATA_FORMAT_REG, settings);
+	if(settings<=0x04||ADXL345_AFS_FULL_RANGE){
+		uint8_t oldState=oneByteRead(ADXL345_DATA_FORMAT_REG);
+		retVal=oneByteWrite(ADXL345_DATA_FORMAT_REG, ((oldState&0xF4)|settings));
 	}
 	if(retVal==true){
 	if(settings==ADXL345_AFS_2G)_ares=ADXL345_AFS_2G_CONVERSIONFACTOR;
@@ -327,15 +328,14 @@ void ADXL345::setDataRate(int rate) {
 
 }
 
-void ADXL345::getOutput(int* readings) {
+void ADXL345::getOutput(int16_t* readings) {
 
 	uint8_t buffer[6];
-
 	if(multiByteRead(ADXL345_DATAX0_REG, buffer, 6)==true){
-
-	readings[0] = (int) buffer[1] << 8 | (int) buffer[0];
-	readings[1] = (int) buffer[3] << 8 | (int) buffer[2];
-	readings[2] = (int) buffer[5] << 8 | (int) buffer[4];
+	readings[0] = (int16_t) (buffer[0] << 8 | (int8_t) buffer[1]);
+	readings[1] = (int16_t) (buffer[2] << 8 | (int8_t) buffer[3]);
+	readings[2] = (int16_t) (buffer[4] << 8 | (int8_t) buffer[5]);
+	//memcpy(&readings,&temp,sizeof(temp));
 	}
 	else
 	{
@@ -347,7 +347,7 @@ void ADXL345::getOutput(int* readings) {
 
 AccelData ADXL345::GetData(){
 	AccelData retVal;
-	int readings[3];
+	int16_t readings[3];
 	getOutput(readings);
 	retVal.x=readings[0]*_ares;
 	retVal.y=readings[1]*_ares;

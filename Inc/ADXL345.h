@@ -103,7 +103,7 @@
 #define ADXL345_AFS_4G  0x01
 #define ADXL345_AFS_8G  0x02
 #define ADXL345_AFS_16G 0x03
-#define ADXL345_AFS_FULL_RANGE 0x04
+#define ADXL345_AFS_FULL_RANGE 0x0B
 
 #define ADXL345_AFS_2G_CONVERSIONFACTOR  0.038320
 #define ADXL345_AFS_4G_CONVERSIONFACTOR  0.076640
@@ -521,7 +521,7 @@ public:
 	 * @param Pointer to a buffer to hold the accelerometer value for the
 	 *        x-axis, y-axis and z-axis [in that order].
 	 */
-	void getOutput(int* readings);
+	void getOutput(int16_t* readings);
 
 	/**
 	 * Get the FIFO control settings.

@@ -57,9 +57,8 @@
 #include "usb_otg.h"
 #include "gpio.h"
 #include "httpserver-netconn.h"
-#include "ADXL345.h"
-//#include "bma280.h"
-
+//#include "ADXL345.h"
+#include "bma280.h"
 
 #include "lwip/opt.h"
 #include "lwip/arch.h"
@@ -83,9 +82,8 @@ osThreadId blinkTID;
 osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
 
-
-//BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
-ADXL345 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+//ADXL345 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 
 AccelDataStamped ACCData;
 
@@ -96,6 +94,12 @@ osPoolId AccPool;
 //MessageQ for the time Stamped data
 osMessageQDef(ACCMsgBuffer, ACCBUFFESEIZE, uint32_t);
 osMessageQId ACCMsgBuffer;
+
+
+
+//MessageQ for the time Stamped data
+osMessageQDef(GPSTimeBuffer, GPSBUFFERSIZE, uint32_t);
+osMessageQId GPSTimeBuffer;
 
 /* USER CODE END PV */
 #ifdef __cplusplus
@@ -164,29 +168,26 @@ int main(void) {
 	MX_SPI3_Init();
 	MX_TIM2_Init();
 
-
-
-
-	//Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
 	// ADXL345
-    //Go into standby mode to configure the device.
-	Acc.setPowerControl(0x00);
-	Acc.setDataFormatControl(0x00);
-	Acc.setResolution(ADXL345_AFS_FULL_RANGE);
-	Acc.setDataRate(ADXL345_800HZ);
-    //Activate DataRdy Interrupt
-    Acc.setInterruptEnableControl(0x80);
+	//Go into standby mode to configure the device.
+	//Acc.setPowerControl(0x00);
+	//Acc.setResolution(ADXL345_AFS_FULL_RANGE);
+	//Acc.setDataRate(ADXL345_3200HZ);
+	//Activate DataRdy Interrupt
+	//Acc.setInterruptEnableControl(0x80);
 
-    Acc.setInterruptMappingControl(0x00);
-    //Measurement mode.
-    Acc.setPowerControl(0x08);
+	//Acc.setInterruptMappingControl(0x00);
+	//Measurement mode.
+	//Acc.setPowerControl(0x08);
 	// ADXL345
 	/* USER CODE BEGIN 2 */
-	//create the defined Buffer and Pool for ACC data
+	//create the defined Buffer and Pool for ACC and GPS data
 	AccPool = osPoolCreate(osPool(AccPool));
 	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
+
+	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
@@ -205,6 +206,10 @@ int main(void) {
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 	/* USER CODE END 2 */
 	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4) != HAL_OK) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
@@ -336,9 +341,9 @@ void StartDataProcessingThread(void const * argument) {
 //			ACCData = *rptr;
 //			osPoolFree(AccPool, rptr);
 //			porcessedCount++;
-			AccelData test=Acc.GetData();
-			osDelay(1000);
-		}
+		AccelData test = Acc.GetData();
+		osDelay(1000);
+	}
 
 	osThreadTerminate(NULL);
 }
@@ -346,11 +351,11 @@ void StartDataProcessingThread(void const * argument) {
 void StartDataStreamingThread(void const * argument) {
 	static uint32_t porcessedCount = 0;
 	osEvent evt;
+	osEvent evtGPS;
 	AccelDataStamped *rptr;
 	struct netconn *conn;
 	struct netbuf *buf;
 	ip_addr_t targetipaddr;
-	char text[sizeof(ACCData)] = "";
 	uint8_t IP_ADDRESS[4];
 	IP_ADDRESS[0] = 192;
 	IP_ADDRESS[1] = 168;
@@ -366,18 +371,40 @@ void StartDataStreamingThread(void const * argument) {
 
 	/* create a new netbuf */
 	buf = netbuf_new();
-	while (1) {
-		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
+	while (1){
+		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+		evt = osMessageGet(ACCMsgBuffer,200);
 		if (evt.status == osEventMessage) {
-		rptr = (AccelDataStamped*) evt.value.p;
-		ACCData = *rptr;
-		porcessedCount++;
+			rptr = (AccelDataStamped*) evt.value.p;
+			ACCData = *rptr;
+			porcessedCount++;
+			uint8_t MSGBuffer[sizeof(ACCData)+4]={0};
+			MSGBuffer[0]=0x41;
+			MSGBuffer[1]=0x43;
+			MSGBuffer[2]=0x43;
+			MSGBuffer[3]=0x33;
+			memcpy(&MSGBuffer[4],&*rptr, sizeof(ACCData));
 			/* reference the data into the netbuf */
-			netbuf_ref(buf, &*rptr, sizeof(ACCData));
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
 			/* send the text */
 			netconn_send(conn, buf);
 			osPoolFree(AccPool, rptr);
+		}
+		evtGPS = osMessageGet(GPSTimeBuffer,0);
+		if (evtGPS.status == osEventMessage) {
+			uint32_t rptrGPS =  evtGPS.value.v;
+			uint8_t MSGBuffer[8]={0};
+			MSGBuffer[0]=0x47;
+			MSGBuffer[1]=0x50;
+			MSGBuffer[2]=0x53;
+			MSGBuffer[3]=0x54;
+			memcpy(&MSGBuffer[4],&rptrGPS, sizeof(rptrGPS));
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+
+			/* send the text */
+			netconn_send(conn, buf);
 		}
 	}
 	osThreadTerminate(NULL);
@@ -420,6 +447,8 @@ void _Error_Handler(char *file, int line) {
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+	//GPS testing change this to an que based aproche in the future
+	static int32_t GPSMissedCpatureCount = 0;
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
@@ -433,7 +462,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					captureCount);
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
-					osWaitForever);
+			osWaitForever);
 		} else {
 			MissedCount++;
 		}
@@ -441,25 +470,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	}
-}
+	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+			osStatus result = osMessagePut(GPSTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4),osWaitForever);
+			if (result!=osOK){GPSMissedCpatureCount++;}
+		}
+	}
 
 float getGVal(int index) {
-	switch (index) {
-	case 0:
-		return ACCData.Data.x;
-	case 1:
-		return ACCData.Data.y;
-	case 2:
-		return ACCData.Data.z;
-	default:
-		int nan = 0x7F800001;
-		return *(float*) &nan;
-	}
+switch (index) {
+case 0:
+return ACCData.Data.x;
+case 1:
+return ACCData.Data.y;
+case 2:
+return ACCData.Data.z;
+default:
+int nan = 0x7F800001;
+return *(float*) &nan;
+}
 
 }
 
 float getBMATemp() {
-	return ACCData.Data.temperature;
+return ACCData.Data.temperature;
 }
 
 #ifdef  USE_FULL_ASSERT
@@ -472,10 +505,10 @@ float getBMATemp() {
  */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-	/* USER CODE BEGIN 6 */
-	/* User can add his own implementation to report the file name and line number,
-	 tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-	/* USER CODE END 6 */
+/* USER CODE BEGIN 6 */
+/* User can add his own implementation to report the file name and line number,
+ tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 

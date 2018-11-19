@@ -126,6 +126,7 @@
 #define SPI3_CS_GPIO_Port GPIOG
 
 #define ACCBUFFESEIZE 128
+#define GPSBUFFERSIZE 32
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
