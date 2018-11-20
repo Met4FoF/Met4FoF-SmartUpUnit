@@ -43,6 +43,7 @@ from struct import *
 import socket
 import csv
 
+LOGFILENAME ='GPSTimeDtata8.csv'
 UDP_IP = "192.168.0.1"
 UDP_PORT = 7000
 
@@ -52,6 +53,7 @@ sock.bind((UDP_IP, UDP_PORT))
 
 def imu_publisher():
     GPSTCount=0
+    RefCount=0
     pub_imu = rospy.Publisher("IMU", Imu, queue_size=1)
     rospy.init_node('imu_publisher', anonymous=True)
     while not rospy.is_shutdown():
@@ -68,11 +70,18 @@ def imu_publisher():
             pub_imu.publish(imu_msg)
         if(data.startswith("GPST")):
             unpackeddata=unpack('II',data)
-            print(GPSTCount,unpackeddata[1])
-            with open('GPSTimeDtata3.csv', mode='a') as GPSTimeDtataCSV:
+            print(GPSTCount,unpackeddata[1],"GPST")
+            with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
                 GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                GPSCSV_writer.writerow([GPSTCount,unpackeddata[1]])    
+                GPSCSV_writer.writerow(["GPST",GPSTCount,unpackeddata[1]])    
             GPSTCount=GPSTCount+1
+        if(data.startswith("REFT")):
+            unpackeddata=unpack('II',data)
+            print(GPSTCount,unpackeddata[1],"REFT")
+            with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
+                GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                GPSCSV_writer.writerow(["REFT",RefCount,unpackeddata[1]])    
+            RefCount=RefCount+1            
             
 
         

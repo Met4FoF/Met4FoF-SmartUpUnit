@@ -8,11 +8,8 @@ Created on Mon Nov 12 16:54:54 2018
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
-from matplotlib import colors
-from matplotlib.ticker import PercentFormatter
-
-GPSTime = np.genfromtxt('GPSTimeDtata2.csv',delimiter=';')
-GPSTime = GPSTime[200:1500,:]
+GPSTime = np.genfromtxt('GPSTimeDtata7.csv',delimiter=';')
+#GPSTime = GPSTime[1500:3600,:]
 DeltaTicks=np.zeros(GPSTime.shape[0]-1)
 Ticks=np.zeros(GPSTime.shape[0]-1)
 Secs=range(0, GPSTime.shape[0]-1)
@@ -22,8 +19,14 @@ for i in range(0, GPSTime.shape[0]-1):
 Ticks=np.cumsum(DeltaTicks)
 Sigma=np.std(DeltaTicks);
 Mu=np.mean(DeltaTicks);
+RelSigma=Sigma/Mu
+AKF=np.correlate(DeltaTicks,DeltaTicks, "same")
 print("Mu= ",Mu)
 print("Sigma=",Sigma)
+print("Sigma/Mu=",RelSigma)
+plt.title("µC Oscillator Frequency vs Time")
+plt.xlabel('GPS PPS Event Count')
+plt.ylabel('µC Clock Ticks since last GPS PPS Event')
 plt.plot(Secs,DeltaTicks)
 plt.show()
 

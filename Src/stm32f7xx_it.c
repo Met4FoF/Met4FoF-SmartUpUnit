@@ -46,6 +46,8 @@ extern TIM_HandleTypeDef htim2;
 
 extern TIM_HandleTypeDef htim14;
 
+extern DMA_HandleTypeDef hdma_usart2_rx;
+
 /******************************************************************************/
 /*            Cortex-M7 Processor Interruption and Exception Handlers         */ 
 /******************************************************************************/
@@ -102,6 +104,19 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void)
 /**
 * @brief This function handles Ethernet global interrupt.
 */
+
+void DMA1_Stream5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream5_IRQn 1 */
+}
+
+
 void ETH_IRQHandler(void)
 {
   /* USER CODE BEGIN ETH_IRQn 0 */

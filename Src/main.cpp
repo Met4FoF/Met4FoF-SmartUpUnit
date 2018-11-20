@@ -47,6 +47,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "stm32f7xx_hal.h"
 #include "cmsis_os.h"
 #include "adc.h"
@@ -97,10 +98,16 @@ osMessageQId ACCMsgBuffer;
 
 
 
-//MessageQ for the time Stamped data
+//MessageQ for the GPS PPS Timestamps
 osMessageQDef(GPSTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId GPSTimeBuffer;
 
+//MessageQ for the Refclock  PPS Timestamps
+osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
+osMessageQId RefClockTimeBuffer;
+
+//TODO REMOVE THIS GLOBAL BUFFER AN CLEANUP UART MANAGMENT
+uint8_t data[1000];
 /* USER CODE END PV */
 #ifdef __cplusplus
 
@@ -162,11 +169,19 @@ int main(void) {
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
+	MX_DMA_Init();
 	MX_USART3_UART_Init();
+	MX_USART2_UART_Init();
 	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_TIM2_Init();
+
+	//Receive three bytes from UART2 in DMA mode
+
+	HAL_UART_Receive_DMA(&huart2,&data[0], 1000);
+
+	HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
@@ -188,6 +203,9 @@ int main(void) {
 	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
 
 	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
+
+	RefClockTimeBuffer = osMessageCreate(osMessageQ(RefClockTimeBuffer), NULL);
+
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
@@ -206,6 +224,10 @@ int main(void) {
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 	/* USER CODE END 2 */
 	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3) != HAL_OK) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
@@ -253,8 +275,8 @@ void SystemClock_Config(void) {
 	RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-	RCC_OscInitStruct.PLL.PLLM = 4;
-	RCC_OscInitStruct.PLL.PLLN = 200;
+	RCC_OscInitStruct.PLL.PLLM = 8;
+	RCC_OscInitStruct.PLL.PLLN = 400;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
 	RCC_OscInitStruct.PLL.PLLQ = 8;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
@@ -282,7 +304,7 @@ void SystemClock_Config(void) {
 
 	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3
 			| RCC_PERIPHCLK_CLK48;
-	PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
+	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV8;
@@ -352,6 +374,7 @@ void StartDataStreamingThread(void const * argument) {
 	static uint32_t porcessedCount = 0;
 	osEvent evt;
 	osEvent evtGPS;
+	osEvent evtRefClock;
 	AccelDataStamped *rptr;
 	struct netconn *conn;
 	struct netbuf *buf;
@@ -406,6 +429,21 @@ void StartDataStreamingThread(void const * argument) {
 			/* send the text */
 			netconn_send(conn, buf);
 		}
+		evtRefClock = osMessageGet(RefClockTimeBuffer,0);
+		if (evtRefClock.status == osEventMessage) {
+			uint32_t rptrRefClock =  evtRefClock .value.v;
+			uint8_t MSGBuffer[8]={0};
+			MSGBuffer[0]=0x52;
+			MSGBuffer[1]=0x45;
+			MSGBuffer[2]=0x46;
+			MSGBuffer[3]=0x54;
+			memcpy(&MSGBuffer[4],&rptrRefClock , sizeof(rptrRefClock));
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+
+			/* send the text */
+			netconn_send(conn, buf);
+		}
 	}
 	osThreadTerminate(NULL);
 }
@@ -449,6 +487,7 @@ void _Error_Handler(char *file, int line) {
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	//GPS testing change this to an que based aproche in the future
 	static int32_t GPSMissedCpatureCount = 0;
+	static int32_t RefClockMissedCpatureCount = 0;
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
@@ -474,6 +513,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			osStatus result = osMessagePut(GPSTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4),osWaitForever);
 			if (result!=osOK){GPSMissedCpatureCount++;}
 		}
+	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+			osStatus result = osMessagePut(RefClockTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_3),osWaitForever);
+			if (result!=osOK){RefClockMissedCpatureCount++;}
+		}
 	}
 
 float getGVal(int index) {
@@ -493,6 +536,10 @@ return *(float*) &nan;
 
 float getBMATemp() {
 return ACCData.Data.temperature;
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+uint8_t temp = data[999];
 }
 
 #ifdef  USE_FULL_ASSERT
