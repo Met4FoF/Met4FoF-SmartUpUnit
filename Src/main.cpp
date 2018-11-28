@@ -47,6 +47,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+// Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
 #include "cmsis_os.h"
@@ -57,26 +58,17 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
-#include "httpserver-netconn.h"
-//#include "ADXL345.h"
-#include "bma280.h"
-
-#include "lwip/opt.h"
-#include "lwip/arch.h"
+//Networkinterface and Webserver
 #include "lwip/api.h"
 //test only
 #include "lwip/udp.h"
 #include "lwip.h"
-#include "lwip/init.h"
-#include "lwip/netif.h"
+#include "httpserver-netconn.h"
 
-/* USER CODE BEGIN Includes */
+// Sensors
+//#include "ADXL345.h"
+#include "bma280.h"
 
-/* USER CODE END Includes */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
 
 osThreadId WebServerTID;
 osThreadId blinkTID;
@@ -106,9 +98,6 @@ osMessageQId GPSTimeBuffer;
 osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId RefClockTimeBuffer;
 
-//TODO REMOVE THIS GLOBAL BUFFER AN CLEANUP UART MANAGMENT
-uint8_t data[1000];
-/* USER CODE END PV */
 #ifdef __cplusplus
 
 extern "C" {
@@ -121,6 +110,8 @@ void StartWebserverThread(void const * argument);
 void StartBlinkThread(void const * argument);
 void StartDataProcessingThread(void const * argument);
 void StartDataStreamingThread(void const * argument);
+void _Error_Handler(char * file, int line);
+//TODO remove this getter functions and implement it in the dataprocessing
 float getGVal(int index);
 float getBMATemp();
 #ifdef __cplusplus
@@ -128,14 +119,6 @@ float getBMATemp();
 }
 
 #endif
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
  * @brief  The application entry point.
@@ -177,12 +160,6 @@ int main(void) {
 	MX_SPI3_Init();
 	MX_TIM2_Init();
 
-	//Receive three bytes from UART2 in DMA mode
-
-	HAL_UART_Receive_DMA(&huart2,&data[0], 1000);
-
-	HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
-
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
 	// ADXL345
@@ -197,6 +174,8 @@ int main(void) {
 	//Measurement mode.
 	//Acc.setPowerControl(0x08);
 	// ADXL345
+
+
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC and GPS data
 	AccPool = osPoolCreate(osPool(AccPool));
@@ -223,6 +202,8 @@ int main(void) {
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 	/* USER CODE END 2 */
+
+	//Start timer and arm inputcapture
 	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
@@ -363,7 +344,7 @@ void StartDataProcessingThread(void const * argument) {
 //			ACCData = *rptr;
 //			osPoolFree(AccPool, rptr);
 //			porcessedCount++;
-		AccelData test = Acc.GetData();
+		//AccelData test = Acc.GetData();
 		osDelay(1000);
 	}
 
@@ -476,7 +457,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
  * @param  line: The line in file as a number.
  * @retval None
  */
-void _Error_Handler(char *file, int line) {
+void _Error_Handler(char * file, int line) {
 	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	while (1) {
@@ -538,9 +519,6 @@ float getBMATemp() {
 return ACCData.Data.temperature;
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-uint8_t temp = data[999];
-}
 
 #ifdef  USE_FULL_ASSERT
 /**

@@ -10,7 +10,8 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 dataStart = 10
-with open('GPSTimeDtata8.csv', newline='') as csvfile:
+dataStop = 23000
+with open('GPSTimeDtataLongterm.csv', newline='') as csvfile:
     GPSCOunt=0
     datareader = csv.reader(csvfile,delimiter=';')
     tempGPSTArray=[]
@@ -31,8 +32,8 @@ with open('GPSTimeDtata8.csv', newline='') as csvfile:
     fig, ax = plt.subplots()
     ax.set(xlabel='Time (s)', ylabel='ticks since last PPS (Ticks)',
        title='µC clockticks between per second syncsignal')
-    ax.plot(DeltaREFTx[dataStart:],DeltaREFT[dataStart:],label='PTB Ref. Clock PPS')
-    ax.plot(DeltaGPSTx[dataStart:],DeltaGPST[dataStart:],label='GPS PPS')
+    ax.plot(DeltaREFTx[dataStart:dataStop],DeltaREFT[dataStart:dataStop],label='PTB Ref. Clock PPS')
+    ax.plot(DeltaGPSTx[dataStart:dataStop],DeltaGPST[dataStart:dataStop],label='GPS PPS')
     ax.grid()
     ax.legend()
     plt.show()
