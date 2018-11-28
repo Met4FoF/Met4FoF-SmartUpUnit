@@ -65,6 +65,8 @@
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
+// GPS UART DMA Reciver
+#include "dma_circular.h"
 // Sensors
 //#include "ADXL345.h"
 #include "bma280.h"
@@ -97,6 +99,13 @@ osMessageQId GPSTimeBuffer;
 //MessageQ for the Refclock  PPS Timestamps
 osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId RefClockTimeBuffer;
+
+//TODO put this to an place where it belongs
+#define DMA_RX_BUFFER_SIZE          64
+uint8_t DMA_RX_Buffer[DMA_RX_BUFFER_SIZE];
+
+#define UART_BUFFER_SIZE            256
+uint8_t UART_Buffer[UART_BUFFER_SIZE];
 
 #ifdef __cplusplus
 
@@ -155,6 +164,7 @@ int main(void) {
 	MX_DMA_Init();
 	MX_USART3_UART_Init();
 	MX_USART2_UART_Init();
+	MX_DMA_Init();
 	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init();
@@ -216,6 +226,13 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+
+	// Arm UART DMA Interrupts
+    __HAL_UART_ENABLE_IT(&huart2,UART_IT_IDLE);   // enable idle line interrupt
+	__HAL_DMA_ENABLE_IT(&hdma_usart2_rx,DMA_IT_TC);  // enable DMA Tx cplt interrupt
+	HAL_UART_Receive_DMA(&huart2, DMA_RX_Buffer, DMA_RX_BUFFER_SIZE);
+
+	hdma_usart2_rx.Instance->CR &= ~DMA_SxCR_HTIE;  // disable uart half tx interrupt
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */

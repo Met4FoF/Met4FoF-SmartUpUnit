@@ -142,6 +142,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle) {
 		    }
 
 		    __HAL_LINKDMA(uartHandle,hdmarx,hdma_usart2_rx);
+			// Start UART DMA reciver for GPS
 
 		  /* USER CODE BEGIN USART2_MspInit 1 */
 

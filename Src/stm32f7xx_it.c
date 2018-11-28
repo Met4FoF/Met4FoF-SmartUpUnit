@@ -47,6 +47,11 @@ extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim14;
 
 extern DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart2;
+
+extern void USART_IrqHandler (UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma);
+
+extern void DMA_IrqHandler (DMA_HandleTypeDef *hdma);
 
 /******************************************************************************/
 /*            Cortex-M7 Processor Interruption and Exception Handlers         */ 
@@ -110,7 +115,9 @@ void DMA1_Stream5_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
 
   /* USER CODE END DMA1_Stream5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  //HAL_DMA_IRQHandler(&hdma_usart2_rx);
+	// use the IRQ Handlers defined in dma_circular.h to handle UART
+  DMA_IrqHandler (&hdma_usart2_rx);
   /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
 
   /* USER CODE END DMA1_Stream5_IRQn 1 */
@@ -127,6 +134,21 @@ void ETH_IRQHandler(void)
 
   /* USER CODE END ETH_IRQn 1 */
 }
+
+/**
+* @brief This function handles USART2 global interrupt.
+*/
+void USART2_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART2_IRQn 0 */
+
+  /* USER CODE END USART2_IRQn 0 */
+  //AL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
+	USART_IrqHandler (&huart2, &hdma_usart2_rx);
+  /* USER CODE END USART2_IRQn 1 */
+}
+
 
 /* USER CODE BEGIN 1 */
 
