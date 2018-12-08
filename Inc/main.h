@@ -84,8 +84,6 @@
 #define RMII_RXD1_GPIO_Port GPIOC
 #define RMII_TXD1_Pin GPIO_PIN_13
 #define RMII_TXD1_GPIO_Port GPIOB
-#define LD3_Pin GPIO_PIN_14
-#define LD3_GPIO_Port GPIOB
 #define STLK_RX_Pin GPIO_PIN_8
 #define STLK_RX_GPIO_Port GPIOD
 #define STLK_TX_Pin GPIO_PIN_9
@@ -114,6 +112,7 @@
 #define RMII_TXD0_GPIO_Port GPIOG
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+ // LED Pins
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
@@ -122,8 +121,19 @@
 #define LD3_GPIO_Port GPIOB
 #define User_Blue_Button_Pin GPIO_PIN_13
 #define User_Blue_Button_GPIO_Port GPIOC
+ // Sensor Chipselect
 #define SPI3_CS_Pin GPIO_PIN_3
 #define SPI3_CS_GPIO_Port GPIOG
+
+ //LCD Pins
+#define CS_Pin GPIO_PIN_0
+#define CS_GPIO_Port GPIOD
+
+#define DC_Pin GPIO_PIN_0
+#define DC_GPIO_Port GPIOG
+
+#define RST_Pin GPIO_PIN_1
+#define RST_GPIO_Port GPIOD
 
 #define ACCBUFFESEIZE 128
 #define GPSBUFFERSIZE 32

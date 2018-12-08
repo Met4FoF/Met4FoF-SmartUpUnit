@@ -47,7 +47,7 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-// Hardware drivers
+// STM32 Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
 #include "cmsis_os.h"
@@ -58,24 +58,30 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
+
 //Networkinterface and Webserver
 #include "lwip/api.h"
-//test only
 #include "lwip/udp.h"
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
 // GPS UART DMA Reciver
 #include "dma_circular.h"
+
 // Sensors
 //#include "ADXL345.h"
 #include "bma280.h"
 
+//LCD
+#include "ILI9341/ILI9341_STM32_Driver.h"
+#include "ILI9341/ILI9341_GFX.h"
 
 osThreadId WebServerTID;
 osThreadId blinkTID;
 osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
+osThreadId LCDTID;
+
 
 BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 //ADXL345 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
@@ -119,6 +125,7 @@ void StartWebserverThread(void const * argument);
 void StartBlinkThread(void const * argument);
 void StartDataProcessingThread(void const * argument);
 void StartDataStreamingThread(void const * argument);
+void StartLCDThread(void const * argument);
 void _Error_Handler(char * file, int line);
 //TODO remove this getter functions and implement it in the dataprocessing
 float getGVal(int index);
@@ -141,6 +148,8 @@ int main(void) {
 	/* Enable I-Cache-------------------------------------------------------------*/
 	SCB_EnableICache();
 
+	/* Enable D-Cache-------------------------------------------------------------*/
+	SCB_EnableDCache();
 	/* MCU Configuration----------------------------------------------------------*/
 
 	/* MCU Configuration----------------------------------------------------------*/
@@ -168,6 +177,7 @@ int main(void) {
 	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init();
+	MX_SPI5_Init();
 	MX_TIM2_Init();
 
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
@@ -211,6 +221,11 @@ int main(void) {
 	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal,
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
+
+	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
+			0, 256);
+
+	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 	/* USER CODE END 2 */
 
 	//Start timer and arm inputcapture
@@ -233,6 +248,8 @@ int main(void) {
 	HAL_UART_Receive_DMA(&huart2, DMA_RX_Buffer, DMA_RX_BUFFER_SIZE);
 
 	hdma_usart2_rx.Instance->CR &= ~DMA_SxCR_HTIE;  // disable uart half tx interrupt
+	//
+
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -351,20 +368,37 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-//	static uint32_t porcessedCount = 0;
-//	osEvent evt;
-//	AccelDataStamped *rptr;
 	while (1) {
-//		evt = osMessageGet(ACCMsgBuffer, osWaitForever);
-//		if (evt.status == osEventMessage) {
-//			rptr = (AccelDataStamped*) evt.value.p;
-//			ACCData = *rptr;
-//			osPoolFree(AccPool, rptr);
-//			porcessedCount++;
-		//AccelData test = Acc.GetData();
 		osDelay(1000);
 	}
 
+	osThreadTerminate(NULL);
+}
+
+void  StartLCDThread(void const * argument) {
+	ILI9341_Init();//initial driver setup to drive ili9341
+	ILI9341_Fill_Screen(BLUE);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+	char Temp_Buffer_text[40];
+	for(uint16_t i = 0; i <= 10; i++)
+	{
+	sprintf(Temp_Buffer_text, "Counting: %d", i);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 10, BLACK, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 30, BLUE, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 50, RED, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 70, GREEN, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 90, BLACK, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 110, BLUE, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 130, RED, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 150, GREEN, 2, WHITE);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 170, WHITE, 2, BLACK);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 190, BLUE, 2, BLACK);
+	ILI9341_Draw_Text(Temp_Buffer_text, 10, 210, RED, 2, BLACK);
+	}
+	//----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
+	while (1) {
+		osDelay(1000);
+	}
 	osThreadTerminate(NULL);
 }
 
