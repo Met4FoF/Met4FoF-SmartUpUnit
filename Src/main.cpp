@@ -113,6 +113,11 @@ uint8_t DMA_RX_Buffer[DMA_RX_BUFFER_SIZE];
 #define UART_BUFFER_SIZE            256
 uint8_t UART_Buffer[UART_BUFFER_SIZE];
 
+// Network interface Ip
+uint8_t ETH_IP_ADDRESS[4]={192,168,0,10};
+// Target IP for udp straming
+uint8_t UDP_TARGET_IP_ADDRESS[4]={192,168,0,1};
+
 #ifdef __cplusplus
 
 extern "C" {
@@ -380,21 +385,15 @@ void  StartLCDThread(void const * argument) {
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
 	char Temp_Buffer_text[40];
-	for(uint16_t i = 0; i <= 10; i++)
-	{
-	sprintf(Temp_Buffer_text, "Counting: %d", i);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 10, BLACK, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 30, BLUE, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 50, RED, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 70, GREEN, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 90, BLACK, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 110, BLUE, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 130, RED, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 150, GREEN, 2, WHITE);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 170, WHITE, 2, BLACK);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 190, BLUE, 2, BLACK);
-	ILI9341_Draw_Text(Temp_Buffer_text, 10, 210, RED, 2, BLACK);
-	}
+	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text,"Build.date:%s",__DATE__);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text,"Build.time:%s",__TIME__);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],ETH_IP_ADDRESS[1],ETH_IP_ADDRESS[2],ETH_IP_ADDRESS[3]);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],UDP_TARGET_IP_ADDRESS[1],UDP_TARGET_IP_ADDRESS[2],UDP_TARGET_IP_ADDRESS[3]);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	//----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
 	while (1) {
 		osDelay(1000);
@@ -410,14 +409,10 @@ void StartDataStreamingThread(void const * argument) {
 	AccelDataStamped *rptr;
 	struct netconn *conn;
 	struct netbuf *buf;
+	//UDP target ip Adress
 	ip_addr_t targetipaddr;
-	uint8_t IP_ADDRESS[4];
-	IP_ADDRESS[0] = 192;
-	IP_ADDRESS[1] = 168;
-	IP_ADDRESS[2] = 0;
-	IP_ADDRESS[3] = 1;
-	IP4_ADDR(&targetipaddr, IP_ADDRESS[0], IP_ADDRESS[1], IP_ADDRESS[2],
-			IP_ADDRESS[3]);
+	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+			UDP_TARGET_IP_ADDRESS[3]);
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 
