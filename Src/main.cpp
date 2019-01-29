@@ -65,8 +65,6 @@
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
-// GPS UART DMA Reciver
-#include "dma_circular.h"
 
 // Sensors
 //#include "ADXL345.h"
@@ -75,6 +73,10 @@
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
+
+//GPS Time Snyc
+#include "GPSTimesyn.h"
+#include "NMEAPraser.h"
 
 osThreadId WebServerTID;
 osThreadId blinkTID;
@@ -105,13 +107,6 @@ osMessageQId GPSTimeBuffer;
 //MessageQ for the Refclock  PPS Timestamps
 osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId RefClockTimeBuffer;
-
-//TODO put this to an place where it belongs
-#define DMA_RX_BUFFER_SIZE          64
-uint8_t DMA_RX_Buffer[DMA_RX_BUFFER_SIZE];
-
-#define UART_BUFFER_SIZE            256
-uint8_t UART_Buffer[UART_BUFFER_SIZE];
 
 // Network interface Ip
 uint8_t ETH_IP_ADDRESS[4]={192,168,0,10};
@@ -246,14 +241,7 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
-
-	// Arm UART DMA Interrupts
-    __HAL_UART_ENABLE_IT(&huart2,UART_IT_IDLE);   // enable idle line interrupt
-	__HAL_DMA_ENABLE_IT(&hdma_usart2_rx,DMA_IT_TC);  // enable DMA Tx cplt interrupt
-	HAL_UART_Receive_DMA(&huart2, DMA_RX_Buffer, DMA_RX_BUFFER_SIZE);
-
-	hdma_usart2_rx.Instance->CR &= ~DMA_SxCR_HTIE;  // disable uart half tx interrupt
-	//
+	initGPSTimesny();
 
 	/* Start scheduler */
 	osKernelStart();
@@ -322,7 +310,7 @@ void SystemClock_Config(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3
+	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART2
 			| RCC_PERIPHCLK_CLK48;
 	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
@@ -331,6 +319,7 @@ void SystemClock_Config(void) {
 	PeriphClkInitStruct.PLLSAIDivQ = 1;
 	PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
 	PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
+	PeriphClkInitStruct.Usart3ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
 	PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
 	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
 		_Error_Handler(__FILE__, __LINE__);
@@ -376,7 +365,6 @@ void StartDataProcessingThread(void const * argument) {
 	while (1) {
 		osDelay(1000);
 	}
-
 	osThreadTerminate(NULL);
 }
 
@@ -397,6 +385,12 @@ void  StartLCDThread(void const * argument) {
 	//----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
 	while (1) {
 		osDelay(1000);
+		timespec utc;
+		timespec gps_time;
+		lgw_gps_get(&utc,&gps_time, NULL, NULL);
+		tm* current_time = localtime(&(utc.tv_sec));
+		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S",current_time);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 	}
 	osThreadTerminate(NULL);
 }
@@ -536,14 +530,55 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	}
-	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-			osStatus result = osMessagePut(GPSTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4),osWaitForever);
-			if (result!=osOK){GPSMissedCpatureCount++;}
-		}
 	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 			osStatus result = osMessagePut(RefClockTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_3),osWaitForever);
 			if (result!=osOK){RefClockMissedCpatureCount++;}
 		}
+
+	else if (htim->Instance == TIM2
+				&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+			//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
+			static NMEASTamped *mptr_active=NULL;
+			static NMEASTamped *mptr_old=NULL;
+			static uint32_t GPScaptureCount = 0;
+			uint32_t timestamp=0;
+			timestamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
+
+			osStatus result = osMessagePut(GPSTimeBuffer,timestamp,osWaitForever);
+			if (result != osOK) {
+				GPSMissedCpatureCount++;
+			}
+
+
+			if (GPScaptureCount > 0) {
+					HAL_UART_DMAStop(&huart2);
+					HAL_DMA_Abort(&hdma_usart2_rx);
+					mptr_old = mptr_active;
+					osStatus result = osMessagePut(NMEABuffer,(uint32_t) mptr_old,osWaitForever);
+					mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+					if (mptr_active != NULL) {
+						mptr_active->RawTimerCount = timestamp;
+						mptr_active->CaptureCount = GPScaptureCount;
+						mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
+						HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
+					}
+					GPScaptureCount++;
+			}
+
+			else if (GPScaptureCount == 0) {
+				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+				uint32_t debugVar= (uint32_t)mptr_active;
+				if (mptr_active != NULL) {
+					(mptr_active->RawTimerCount) = timestamp;
+					(mptr_active->CaptureCount) = GPScaptureCount;
+					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
+					HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
+					GPScaptureCount++;
+				}
+			}
+
+
+			}
 	}
 
 float getGVal(int index) {
