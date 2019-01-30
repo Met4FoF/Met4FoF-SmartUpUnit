@@ -24,14 +24,16 @@
 #include <time.h>       /* struct timespec */
 
 #define NMEABUFFERSIZE 10
-
+#define NMEBUFFERLEN 248
+#define NMEAMINLEN 9
+#define MAXNEMASENTENCECOUNT NMEBUFFERLEN/NMEAMINLEN
 int initGPSTimesny();
 void StartNemaParserThread(void const * argument);
 
 typedef struct {
 	uint32_t RawTimerCount;
 	uint32_t CaptureCount;
-	uint8_t NMEAMessage[248]; //248 3 NMEA Sentences
+	uint8_t NMEAMessage[NMEBUFFERLEN]; //248 3 NMEA Sentences
 }NMEASTamped;
 
 //MemPool For the data
@@ -44,7 +46,7 @@ osMessageQId NMEABuffer;
 osThreadId NemaParserTID;
 
 
-osThreadDef(NemaParserThread, StartNemaParserThread, osPriorityNormal, 0,
+osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityAboveNormal , 0,
 		256);
 
 

@@ -511,6 +511,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static int32_t RefClockMissedCpatureCount = 0;
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
+	static uint32_t GPSEdges=0;
+	#define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		AccelDataStamped *mptr;
@@ -548,13 +550,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			if (result != osOK) {
 				GPSMissedCpatureCount++;
 			}
-
-
+			GPSEdges++;
+			if(GPSEdges%GPSDEVIDER==0){
 			if (GPScaptureCount > 0) {
 					HAL_UART_DMAStop(&huart2);
 					HAL_DMA_Abort(&hdma_usart2_rx);
 					mptr_old = mptr_active;
+					if(mptr_old!= NULL){
 					osStatus result = osMessagePut(NMEABuffer,(uint32_t) mptr_old,osWaitForever);
+					}
 					mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
 					if (mptr_active != NULL) {
 						mptr_active->RawTimerCount = timestamp;
@@ -579,6 +583,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 
 			}
+	}
 	}
 
 float getGVal(int index) {
