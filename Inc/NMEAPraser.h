@@ -13,12 +13,11 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 Maintainer: Michael Coracin
 */
 
-
-#ifndef _NMEAPRASER_H_
-#define _NMEAPRASER_H_
 #ifdef __cplusplus
  extern "C" {
 #endif
+#ifndef _NMEAPraser_H
+#define _NMEAPraser_H
 
 /* -------------------------------------------------------------------------- */
 /* --- DEPENDANCIES --------------------------------------------------------- */
@@ -26,9 +25,7 @@ Maintainer: Michael Coracin
 #define _GNU_SOURCE
 #include <stdint.h>     /* C99 types */
 #include <time.h>       /* time library */
-
 #include <unistd.h>     /* ssize_t */
-
 
 /* -------------------------------------------------------------------------- */
 /* --- PUBLIC TYPES --------------------------------------------------------- */
@@ -92,6 +89,9 @@ enum gps_msg {
 #define LGW_GPS_MIN_MSG_SIZE      (8)
 #define LGW_GPS_UBX_SYNC_CHAR     (0xB5)
 #define LGW_GPS_NMEA_SYNC_CHAR    (0x24)
+
+/* -------------------------------------------------------------------------- */
+/* --- PUBLIC FUNCTIONS PROTOTYPES ------------------------------------------ */
 
 /**
 @brief Parse messages coming from the GPS system (or other GNSS)
@@ -193,9 +193,8 @@ transform an absolute GPS time into a matching internal concentrator timestamp.
 */
 int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint32_t* count_us);
 
+#endif
 #ifdef __cplusplus
 }
 #endif
-#endif
-
 /* --- EOF ------------------------------------------------------------------ */

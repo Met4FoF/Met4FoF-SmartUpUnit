@@ -120,12 +120,14 @@ struct AccelData {
 	float temperature;
 };
 
-struct AccelDataStamped {
-	uint32_t UnixSecs;
-	uint32_t RawTimerCount;
-	uint32_t CaptureCount;
-	AccelData Data;
-};
+ struct AccelDataStamped {
+ 	uint32_t UnixSecs;
+ 	uint32_t NanoSecs;
+ 	uint32_t TimeUncer;
+ 	uint32_t RawTimerCount;
+ 	uint32_t CaptureCount;
+ 	AccelData Data;
+ };
 /**
  * ADXL345 triple axis, digital interface, accelerometer.
  */

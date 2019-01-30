@@ -29,6 +29,10 @@ int initGPSTimesny(){
 	if(NMEAPool!=NULL){
 		retval=0;
 	}
+	GPS_ref_mutex_id = osMutexCreate(osMutex(GPS_ref_mutex));
+	if(GPS_ref_mutex_id!=NULL){
+		retval=0;
+	}
 	NemaParserTID = osThreadCreate(osThread(NemaParserThread), NULL);
 	return retval;
 }
@@ -39,6 +43,7 @@ void StartNemaParserThread(void const * argument) {
 	uint32_t porcessedCount=0;
 	osEvent evt;
 	enum gps_msg latest_msg;
+	struct timespec utc, gps_time;
 	while (1) {
 		evt = osMessageGet(NMEABuffer, osWaitForever);
 		if (evt.status == osEventMessage) {
@@ -76,6 +81,10 @@ void StartNemaParserThread(void const * argument) {
 				latest_msg=lgw_parse_nmea(&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i]-DollarIndexs[i]);
 				}
 			}
+			lgw_gps_get(&utc,&gps_time, NULL, NULL);
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_gps_sync(&GPS_ref,rptr->RawTimerCount ,utc,gps_time);
+			osMutexRelease(GPS_ref_mutex_id);
 
 
 		    	//latest_msg=lgw_parse_nmea(&(rptr->NMEAMessage[Dollar]),NewLine-Dollar);

@@ -31,6 +31,8 @@ Maintainer: Michael Coracin
 
 #include <NMEAPraser.h>
 
+#include "stm32f7xx_hal.h"
+
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */
 
@@ -49,10 +51,11 @@ Maintainer: Michael Coracin
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE CONSTANTS ---------------------------------------------------- */
 
-#define TS_CPS              1E6 /* count-per-second of the timestamp counter */
+//TODO Replace with calculated Sysclock freq
+#define TS_CPS              100E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
+
 #define PLUS_10PPM          1.00001
 #define MINUS_10PPM         0.99999
-#define DEFAULT_BAUDRATE    9600
 
 #define UBX_MSG_NAVTIMEGPS_LEN  16
 

@@ -24,7 +24,7 @@
 #include <time.h>       /* struct timespec */
 
 #define NMEABUFFERSIZE 10
-#define NMEBUFFERLEN 248
+#define NMEBUFFERLEN 246
 #define NMEAMINLEN 9
 #define MAXNEMASENTENCECOUNT NMEBUFFERLEN/NMEAMINLEN
 int initGPSTimesny();
@@ -44,6 +44,10 @@ osMessageQDef(NMEABuffer, NMEABUFFERSIZE,  uint32_t);
 osMessageQId NMEABuffer;
 
 osThreadId NemaParserTID;
+
+osMutexDef (GPS_ref_mutex);    // Declare mutex
+osMutexId  (GPS_ref_mutex_id); // Mutex ID
+struct tref GPS_ref;
 
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityAboveNormal , 0,

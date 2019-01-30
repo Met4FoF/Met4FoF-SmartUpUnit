@@ -418,9 +418,15 @@ void StartDataStreamingThread(void const * argument) {
 	while (1){
 		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 		evt = osMessageGet(ACCMsgBuffer,200);
+		struct timespec utc;
 		if (evt.status == osEventMessage) {
 			rptr = (AccelDataStamped*) evt.value.p;
 			ACCData = *rptr;
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_cnt2utc(GPS_ref,rptr->RawTimerCount,&utc);
+			rptr->UnixSecs=(uint32_t)(utc.tv_sec);
+			rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
+			osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
 			uint8_t MSGBuffer[sizeof(ACCData)+4]={0};
 			MSGBuffer[0]=0x41;
@@ -512,7 +518,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
 	static uint32_t GPSEdges=0;
-	#define GPSDEVIDER 1
+#define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		AccelDataStamped *mptr;
