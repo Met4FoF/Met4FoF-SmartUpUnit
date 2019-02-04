@@ -54,6 +54,7 @@
 #include "adc.h"
 #include "lwip.h"
 #include "spi.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -70,6 +71,9 @@
 //#include "ADXL345.h"
 #include "bma280.h"
 
+// FOR MPU6050
+#include "I2Cdev.h"
+#include "MPU6050.h"
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
@@ -85,8 +89,10 @@ osThreadId DataStreamingTID;
 osThreadId LCDTID;
 
 
+I2Cdev I2CdevIface(&hi2c1);
+MPU6050 MPU6050Acc(I2CdevIface);
+
 BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
-//ADXL345 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 
 AccelDataStamped ACCData;
 
@@ -179,9 +185,10 @@ int main(void) {
 	MX_SPI3_Init();
 	MX_SPI5_Init();
 	MX_TIM2_Init();
-
+	MX_I2C1_Init();
+	MX_I2C2_Init();
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+	MPU6050Acc.initialize();
 	// ADXL345
 	//Go into standby mode to configure the device.
 	//Acc.setPowerControl(0x00);
@@ -214,7 +221,7 @@ int main(void) {
 	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
-	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityHigh,
+	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityNormal,
 			0, 256);
 	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
@@ -354,8 +361,13 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	int16_t readings[6]={};
+	osDelay(4000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		MPU6050Acc.getMotion6(&readings[0],&readings[1],&readings[2],&readings[3],&readings[4],&readings[5]);
+		osDelay(100);
+		MPU6050Acc.getMotion6(&readings[0],&readings[1],&readings[2],&readings[3],&readings[4],&readings[5]);
 		osDelay(100);
 	}
 	osThreadTerminate(NULL);
@@ -460,9 +472,9 @@ void StartDataStreamingThread(void const * argument) {
 		if (evtRefClock.status == osEventMessage) {
 			uint32_t rptrRefClock =  evtRefClock .value.v;
 			uint8_t MSGBuffer[8]={0};
-			MSGBuffer[0]=0x52;
-			MSGBuffer[1]=0x45;
-			MSGBuffer[2]=0x46;
+			MSGBuffer[0]=0x53;
+			MSGBuffer[1]=0x59;
+			MSGBuffer[2]=0x4E;
 			MSGBuffer[3]=0x54;
 			memcpy(&MSGBuffer[4],&rptrRefClock , sizeof(rptrRefClock));
 			/* reference the data into the netbuf */

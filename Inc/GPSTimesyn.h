@@ -50,7 +50,7 @@ osMutexId  (GPS_ref_mutex_id); // Mutex ID
 struct tref GPS_ref;
 
 
-osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityAboveNormal , 0,
+osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 		256);
 
 

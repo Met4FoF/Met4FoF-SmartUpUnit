@@ -43,7 +43,11 @@ from struct import *
 import socket
 import csv
 
-LOGFILENAME ='GPSTimeDtata8.csv'
+LOGFILENAME ='log_files/0k512HZTest'
+ACCLOGFILENAME = LOGFILENAME+'acc.csv'
+GPSLOGFILENAME = LOGFILENAME+'gpst.csv'
+SYNCLOGFILENAME = LOGFILENAME+'SYNC.csv'
+LOGGINENABLED = True
 UDP_IP = "192.168.0.1"
 UDP_PORT = 7000
 
@@ -51,37 +55,42 @@ sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
 sock.bind((UDP_IP, UDP_PORT))
 
+
 def imu_publisher():
     GPSTCount=0
     RefCount=0
     pub_imu = rospy.Publisher("IMU", Imu, queue_size=1)
     rospy.init_node('imu_publisher', anonymous=True)
-    while not rospy.is_shutdown():
-        data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-        if(data.startswith("ACC3")):
-            unpackeddata=unpack('IIIIffff',data)
-            imu_msg = Imu()
-            imu_msg.linear_acceleration.x=unpackeddata[4]
-            imu_msg.linear_acceleration.y=unpackeddata[5]
-            imu_msg.linear_acceleration.z=unpackeddata[6]
-            imu_msg.header.stamp = rospy.Time.now()
-            imu_msg.header.frame_id = "Imu"
-            imu_msg.header.seq=unpackeddata[3]
-            pub_imu.publish(imu_msg)
-        if(data.startswith("GPST")):
-            unpackeddata=unpack('II',data)
-            print(GPSTCount,unpackeddata[1],"GPST")
-            with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
-                GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                GPSCSV_writer.writerow(["GPST",GPSTCount,unpackeddata[1]])    
-            GPSTCount=GPSTCount+1
-        if(data.startswith("REFT")):
-            unpackeddata=unpack('II',data)
-            print(GPSTCount,unpackeddata[1],"REFT")
-            with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
-                GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                GPSCSV_writer.writerow(["REFT",RefCount,unpackeddata[1]])    
-            RefCount=RefCount+1            
+    if(LOGGINENABLED): 
+        with open(ACCLOGFILENAME, mode='a') as DtataCSV:
+            while not rospy.is_shutdown():
+                data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+                if(data.startswith("ACC3")):
+                    unpackeddata=unpack('IIIIIIffff',data)
+                    imu_msg = Imu()
+                    imu_msg.linear_acceleration.x=unpackeddata[6]
+                    imu_msg.linear_acceleration.y=unpackeddata[7]
+                    imu_msg.linear_acceleration.z=unpackeddata[8]
+                    imu_msg.header.stamp = rospy.Time(unpackeddata[1],unpackeddata[2])
+                    imu_msg.header.frame_id = "Imu"
+                    imu_msg.header.seq=unpackeddata[6]
+                    pub_imu.publish(imu_msg)
+                    DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    DtataCSVwriter.writerow(unpackeddata) 
+                if(data.startswith("GPST")):
+                    unpackeddata=unpack('II',data)
+                    print(GPSTCount,unpackeddata[1],"GPST")
+                    with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
+                        GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        GPSCSV_writer.writerow(["GPST",GPSTCount,unpackeddata[1]])    
+                    GPSTCount=GPSTCount+1
+                if(data.startswith("SYNT")):
+                    unpackeddata=unpack('II',data)
+                    print(GPSTCount,unpackeddata[1],"SYNT")
+                    with open(SYNCLOGFILENAME, mode='a') as SYNCTimeDtataCSV:
+                        SYNCCSV_writer = csv.writer(SYNCTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        SYNCCSV_writer.writerow(["SYNCT",RefCount,unpackeddata[1]])    
+                    RefCount=RefCount+1            
             
 
         
