@@ -76,7 +76,12 @@ def imu_publisher():
                     imu_msg.header.seq=unpackeddata[6]
                     pub_imu.publish(imu_msg)
                     DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    DtataCSVwriter.writerow(unpackeddata) 
+                    DtataCSVwriter.writerow(unpackeddata)
+                if(data.startswith("GYR3")):
+                    unpackeddata=unpack('IIIIIIffff',data)
+                    print(unpackeddata)
+                    #DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    #DtataCSVwriter.writerow(unpackeddata) 
                 if(data.startswith("GPST")):
                     unpackeddata=unpack('II',data)
                     print(GPSTCount,unpackeddata[1],"GPST")

@@ -47,9 +47,6 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-#define USE_L3GD20 1
-#define USE_BMA280 0
 // STM32 Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
@@ -69,7 +66,8 @@
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
-
+#define USE_L3GD20 1
+#define USE_BMA280 0
 // Sensors
 //#include "ADXL345.h"
 #include "bma280.h"
@@ -195,8 +193,8 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	MX_USART3_UART_Init();
 	MX_USART2_UART_Init();
+	MX_USART3_UART_Init();
 	MX_DMA_Init();
 	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
@@ -397,10 +395,8 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-	static GyroData tmp;
 	 while (1) {
 		osDelay(1000);
-		tmp=Gyro.GetData();
 	}
 	osThreadTerminate(NULL);
 }
@@ -493,12 +489,12 @@ if (evt.status == osEventMessage) {
 	rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
 	osMutexRelease(GPS_ref_mutex_id);
 	porcessedCount++;
-	uint8_t MSGBuffer[sizeof(GyroData)+4]={0};
+	uint8_t MSGBuffer[sizeof(GyroDataStamped)+4]={0};
 	MSGBuffer[0]=0x47;
 	MSGBuffer[1]=0x59;
 	MSGBuffer[2]=0x52;
 	MSGBuffer[3]=0x33;
-	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroData));
+	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroDataStamped));
 	/* reference the data into the netbuf */
 	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
