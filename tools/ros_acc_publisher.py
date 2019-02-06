@@ -43,7 +43,7 @@ from struct import *
 import socket
 import csv
 
-LOGFILENAME ='log_files/0k512HZTest'
+LOGFILENAME ='log_files/k050HZTekAFG3101ext10MHz'
 ACCLOGFILENAME = LOGFILENAME+'acc.csv'
 GPSLOGFILENAME = LOGFILENAME+'gpst.csv'
 SYNCLOGFILENAME = LOGFILENAME+'SYNC.csv'

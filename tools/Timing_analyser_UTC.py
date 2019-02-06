@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 sollFreq=512
 SollDeltaT=1/sollFreq
-raw_data = np.genfromtxt('log_files/0k512HZTestacc.csv', delimiter=';', unpack=True)
+raw_data = np.genfromtxt('log_files/k050HZTekAFG3101ext10MHzacc.csv', delimiter=';', unpack=True)
 deltaTick=raw_data[4,1:]-raw_data[4,:-1]
 TGPS=raw_data[1]-raw_data[1,0]+raw_data[2]*1e-9
 deltaGPS=TGPS[1:]-TGPS[:-1]

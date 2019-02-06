@@ -47,6 +47,9 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
+#define USE_L3GD20 1
+#define USE_BMA280 0
 // STM32 Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
@@ -70,10 +73,14 @@
 // Sensors
 //#include "ADXL345.h"
 #include "bma280.h"
-
 // FOR MPU6050
-#include "I2Cdev.h"
-#include "MPU6050.h"
+//#include "I2Cdev.h"
+//#include "MPU6050.h"
+
+//FOR L3GD20
+#if USE_L3GD20
+#include "L3GD20.h"
+#endif
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
@@ -89,21 +96,32 @@ osThreadId DataStreamingTID;
 osThreadId LCDTID;
 
 
-I2Cdev I2CdevIface(&hi2c1);
-MPU6050 MPU6050Acc(I2CdevIface);
+//I2Cdev I2CdevIface(&hi2c1);
+//MPU6050 MPU6050Acc(I2CdevIface);
+
+#if USE_L3GD20
+L3GD20 Gyro(GPIOG, SPI3_CS_Pin, &hspi3);
+osPoolDef(GyroPool, DATABUFFESEIZE, GyroDataStamped);
+osPoolId GyroPool;
+
+//MessageQ for the time Stamped data
+osMessageQDef(GyroMsgBuffer, DATABUFFESEIZE, uint32_t);
+osMessageQId GyroMsgBuffer;
+#endif
+
+//TODO update website
+AccelDataStamped ACCData;
+#if USE_BMA280
 
 BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
-
-AccelDataStamped ACCData;
-
 //MemPool For the data
-osPoolDef(AccPool, ACCBUFFESEIZE, AccelDataStamped);
+osPoolDef(AccPool, DATABUFFESEIZE, AccelDataStamped);
 osPoolId AccPool;
 
 //MessageQ for the time Stamped data
-osMessageQDef(ACCMsgBuffer, ACCBUFFESEIZE, uint32_t);
+osMessageQDef(ACCMsgBuffer, DATABUFFESEIZE, uint32_t);
 osMessageQId ACCMsgBuffer;
-
+#endif
 
 
 //MessageQ for the GPS PPS Timestamps
@@ -187,8 +205,13 @@ int main(void) {
 	MX_TIM2_Init();
 	MX_I2C1_Init();
 	MX_I2C2_Init();
+	#if USE_BMA280
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	MPU6050Acc.initialize();
+	#endif
+	#if USE_L3GD20
+	Gyro.init(GYRO_RANGE_2000DPS,GYRO_UPDATE_200_HZ);
+	#endif
+	//MPU6050Acc.initialize();
 	// ADXL345
 	//Go into standby mode to configure the device.
 	//Acc.setPowerControl(0x00);
@@ -205,9 +228,14 @@ int main(void) {
 
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC and GPS data
+	#if USE_BMA280
 	AccPool = osPoolCreate(osPool(AccPool));
 	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
-
+	#endif
+	#if USE_L3GD20
+	GyroPool = osPoolCreate(osPool(GyroPool));
+	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
+	#endif
 	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
 
 	RefClockTimeBuffer = osMessageCreate(osMessageQ(RefClockTimeBuffer), NULL);
@@ -361,21 +389,18 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
-	int16_t readings[6]={};
-	osDelay(4000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		MPU6050Acc.getMotion6(&readings[0],&readings[1],&readings[2],&readings[3],&readings[4],&readings[5]);
-		osDelay(100);
-		MPU6050Acc.getMotion6(&readings[0],&readings[1],&readings[2],&readings[3],&readings[4],&readings[5]);
 		osDelay(100);
 	}
 	osThreadTerminate(NULL);
 }
 
 void StartDataProcessingThread(void const * argument) {
-	while (1) {
+	static GyroData tmp;
+	 while (1) {
 		osDelay(1000);
+		tmp=Gyro.GetData();
 	}
 	osThreadTerminate(NULL);
 }
@@ -412,7 +437,6 @@ void StartDataStreamingThread(void const * argument) {
 	osEvent evt;
 	osEvent evtGPS;
 	osEvent evtRefClock;
-	AccelDataStamped *rptr;
 	struct netconn *conn;
 	struct netbuf *buf;
 	//UDP target ip Adress
@@ -428,6 +452,8 @@ void StartDataStreamingThread(void const * argument) {
 	/* create a new netbuf */
 	buf = netbuf_new();
 	while (1){
+		#if USE_BMA280
+		AccelDataStamped *rptr;
 		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 		evt = osMessageGet(ACCMsgBuffer,200);
 		struct timespec utc;
@@ -453,6 +479,34 @@ void StartDataStreamingThread(void const * argument) {
 			netconn_send(conn, buf);
 			osPoolFree(AccPool, rptr);
 		}
+		#endif
+#if USE_L3GD20
+//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+evt = osMessageGet(GyroMsgBuffer,200);
+struct timespec utc;
+if (evt.status == osEventMessage) {
+	GyroDataStamped *rptr;
+	rptr = (GyroDataStamped*) evt.value.p;
+	osMutexWait(GPS_ref_mutex_id, osWaitForever);
+	lgw_cnt2utc(GPS_ref,rptr->RawTimerCount,&utc);
+	rptr->UnixSecs=(uint32_t)(utc.tv_sec);
+	rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
+	osMutexRelease(GPS_ref_mutex_id);
+	porcessedCount++;
+	uint8_t MSGBuffer[sizeof(GyroData)+4]={0};
+	MSGBuffer[0]=0x47;
+	MSGBuffer[1]=0x59;
+	MSGBuffer[2]=0x52;
+	MSGBuffer[3]=0x33;
+	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroData));
+	/* reference the data into the netbuf */
+	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+
+	/* send the text */
+	netconn_send(conn, buf);
+	osPoolFree(GyroPool, rptr);
+}
+#endif
 		evtGPS = osMessageGet(GPSTimeBuffer,0);
 		if (evtGPS.status == osEventMessage) {
 			uint32_t rptrGPS =  evtGPS.value.v;
@@ -533,6 +587,22 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 #define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+#if USE_L3GD20
+		GyroDataStamped *mptr;
+		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
+		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
+		if (mptr != NULL) {
+			*mptr = Gyro.GetStampedData(0x00000000,
+					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					captureCount);
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
+			osWaitForever);
+		} else {
+			MissedCount++;
+		}
+#endif
+#if USE_BMA280
 		AccelDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
@@ -546,6 +616,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		} else {
 			MissedCount++;
 		}
+#endif
 		captureCount++;
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
