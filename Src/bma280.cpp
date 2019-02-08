@@ -210,12 +210,13 @@ AccelData BMA280::GetData(){
 	return returnVal;
 }
 
-AccelDataStamped BMA280::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount){
+AccelDataStamped BMA280::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
 	AccelDataStamped returnVal{0,0,0,0};
 	returnVal.Data=BMA280::GetData();
 	returnVal.UnixSecs=UnixSecs;
 	returnVal.RawTimerCount=RawTimerCount;
 	returnVal.CaptureCount=CaptureCount;
+	returnVal.ADCValue=ADCVal;
 	return returnVal;
 }
 

@@ -356,12 +356,13 @@ AccelData ADXL345::GetData(){
 	return retVal;
 }
 
-AccelDataStamped ADXL345::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount){
+AccelDataStamped ADXL345::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
 	AccelDataStamped returnVal{0,0,0,0};
 	returnVal.Data=ADXL345::GetData();
 	returnVal.UnixSecs=UnixSecs;
 	returnVal.RawTimerCount=RawTimerCount;
 	returnVal.CaptureCount=CaptureCount;
+	returnVal.ADCValue=ADCVal;
 	return returnVal;
 
 }

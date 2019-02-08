@@ -66,7 +66,7 @@ def imu_publisher():
             while not rospy.is_shutdown():
                 data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
                 if(data.startswith("ACC3")):
-                    unpackeddata=unpack('IIIIIIffff',data)
+                    unpackeddata=unpack('IIIIIIHffff',data)
                     imu_msg = Imu()
                     imu_msg.linear_acceleration.x=unpackeddata[6]
                     imu_msg.linear_acceleration.y=unpackeddata[7]
@@ -78,7 +78,7 @@ def imu_publisher():
                     DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                     DtataCSVwriter.writerow(unpackeddata)
                 if(data.startswith("GYR3")):
-                    unpackeddata=unpack('IIIIIIffff',data)
+                    unpackeddata=unpack('IIIIIIHffff',data)
                     print(unpackeddata)
                     #DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                     #DtataCSVwriter.writerow(unpackeddata) 

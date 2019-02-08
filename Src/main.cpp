@@ -592,7 +592,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		if (mptr != NULL) {
 			*mptr = Gyro.GetStampedData(0x00000000,
 					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
-					captureCount);
+					captureCount,ADCValue);
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
 			osWaitForever);
@@ -607,7 +607,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		if (mptr != NULL) {
 			*mptr = Acc.GetStampedData(0x00000000,
 					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
-					captureCount);
+					captureCount,ADCValue);
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
 			osWaitForever);

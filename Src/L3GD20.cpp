@@ -169,7 +169,7 @@ _gyrorange=DEFAULT_GYRORANGE ;
     // Shift values to create properly formed integer (low byte first)
     tmp_x = (int16_t)(Raw_data[2] | (Raw_data[3] << 8));
     tmp_y = (int16_t)(Raw_data[4] | (Raw_data[5] << 8));
-    tmp_z = (int16_t)(Raw_data[6] | (Raw_data[5] << 8));
+    tmp_z = (int16_t)(Raw_data[6] | (Raw_data[7] << 8));
     tmp_tmperature=(int8_t)(Raw_data[0]);
 	#else
     uint8_t raw[2]={0};
@@ -211,12 +211,13 @@ _gyrorange=DEFAULT_GYRORANGE ;
     return data;
   }
 
-  GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount){
+  GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
 	GyroDataStamped returnVal{0,0,0,0};
   	returnVal.Data=L3GD20::GetData();
   	returnVal.UnixSecs=UnixSecs;
   	returnVal.RawTimerCount=RawTimerCount;
   	returnVal.CaptureCount=CaptureCount;
+  	returnVal.ADCValue=ADCVal;
   	return returnVal;
   }
 

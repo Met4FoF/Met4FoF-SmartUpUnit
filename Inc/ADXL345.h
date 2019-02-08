@@ -126,6 +126,7 @@ struct AccelData {
  	uint32_t TimeUncer;
  	uint32_t RawTimerCount;
  	uint32_t CaptureCount;
+ 	uint16_t ADCValue;
  	AccelData Data;
  };
 /**
@@ -158,7 +159,7 @@ public:
 	 * @param CaptureCount
 	 * @return Mesurment timestamped Mesurment data
 	 */
-	 AccelDataStamped GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount);
+	 AccelDataStamped GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
 	/**
 	 * Read the device ID register on the device.
 	 *
