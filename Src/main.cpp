@@ -209,6 +209,7 @@ int main(void) {
 	#if USE_L3GD20
 	Gyro.init(GYRO_RANGE_2000DPS,GYRO_UPDATE_200_HZ);
 	#endif
+	HAL_ADC_Start(&hadc1);
 	//MPU6050Acc.initialize();
 	// ADXL345
 	//Go into standby mode to configure the device.
@@ -582,6 +583,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t GPSEdges=0;
 #define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		static uint16_t ADCValue = HAL_ADC_GetValue(&hadc1);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 #if USE_L3GD20
 		GyroDataStamped *mptr;
