@@ -581,9 +581,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
 	static uint32_t GPSEdges=0;
+	static uint16_t ADCValue;
 #define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		static uint16_t ADCValue = HAL_ADC_GetValue(&hadc1);
+		HAL_ADC_PollForConversion(&hadc1, 2);
+		ADCValue = HAL_ADC_GetValue(&hadc1);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 #if USE_L3GD20
 		GyroDataStamped *mptr;

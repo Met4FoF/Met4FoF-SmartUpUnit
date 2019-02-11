@@ -135,6 +135,9 @@
 #define RST_Pin GPIO_PIN_1
 #define RST_GPIO_Port GPIOD
 
+#define ADC_TRIG_Pin 11
+#define ADC_TRIG_Port GPIOF
+
 #define DATABUFFESEIZE 128
 #define GPSBUFFERSIZE 32
 /* ########################## Assert Selection ############################## */
