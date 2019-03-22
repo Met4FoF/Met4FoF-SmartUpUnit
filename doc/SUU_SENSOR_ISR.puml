@@ -1,0 +1,15 @@
+@startuml
+:DataRDY interupt from Sensor|
+fork
+:Start ADC1 Conversion|
+:wait for ADC1 conversion;
+fork again
+:Capture timer Val|
+:timer ISR;
+:Allocate shared membuffer;
+:copy timestamp in membuffer;
+:get data from device and copy to membuffer;
+end fork
+:get data from ADC1 and copy to membuffer;
+:send membuffer pointer to dataproccesing thread;
+@enduml

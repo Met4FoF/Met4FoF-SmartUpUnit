@@ -574,6 +574,24 @@ void _Error_Handler(char * file, int line) {
 	/* USER CODE END Error_Handler_Debug */
 }
 
+
+/*
+@startuml
+:DataRDY Interupt from Sensor|
+fork
+:Start ADC1 Conversion|
+:wait for ADC conversion;
+fork again
+:Capture Timer Val|
+:timer ISR;
+:Allocate Sharred membuffer;
+:copy timestamp in membuffer;
+:get data From device and copy to membuffer;
+end fork
+:get data from ADC and copy to membuffer;
+:send membuffer pointer to dataproccesing thread;
+@enduml
+*/
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	//GPS testing change this to an que based aproche in the future
 	static int32_t GPSMissedCpatureCount = 0;
@@ -628,6 +646,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 	else if (htim->Instance == TIM2
 				&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+
 			//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 			static NMEASTamped *mptr_active=NULL;
 			static NMEASTamped *mptr_old=NULL;
