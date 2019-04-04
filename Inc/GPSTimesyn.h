@@ -53,11 +53,9 @@ osMessageQDef(NMEABuffer, NMEABUFFERSIZE,  uint32_t);
 osMessageQId NMEABuffer;
 
 //MemPool For the data
-osPoolDef(GPSDebugMsgPool, NMEABUFFERSIZE , GPSDebugMsg);
-osPoolId GPSDebugMsgPool;
+osMailQDef (GPSDebugMail, NMEABUFFERSIZE , GPSDebugMsg);
+osMailQId GPSDebugMail;
 
-osMessageQDef(GPSDebugMsgBuffer, NMEABUFFERSIZE,  uint32_t);
-osMessageQId GPSDebugMsgBuffer;
 
 osThreadId NemaParserTID;
 

@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
 import matplotlib.pyplot as plt
 
-sollFreq=512
+sollFreq=20
+tickTimens=10
 SollDeltaT=1/sollFreq
-raw_data = np.genfromtxt('log_files/k050HZTekAFG3101ext10MHzacc.csv', delimiter=';', unpack=True)
+raw_data = np.genfromtxt('log_files/20HzGPSSynctest8acc.csv', delimiter=';', unpack=True)
 deltaTick=raw_data[4,1:]-raw_data[4,:-1]
 TGPS=raw_data[1]-raw_data[1,0]+raw_data[2]*1e-9
 deltaGPS=TGPS[1:]-TGPS[:-1]
@@ -48,4 +49,24 @@ ax3.plot(TSOll,TGPS)
 ax3.set_xlabel(r'\textbf{Time} $T$ /s', fontsize=16)
 ax3.set_ylabel(r'\textbf{GPS Time} $T$ /s', fontsize=16)
 ax3.set_title(r'GPS Timing gliches', fontsize=16,)
+plt.show()
+
+Ticks=np.uint32(raw_data[4,:])
+DeltaTicks=Ticks[1:]-Ticks[:-1]
+TickSum=np.cumsum(DeltaTicks)
+TickSum-=TickSum[0]
+MeanDeltaTicks=np.mean(DeltaTicks)
+TickDiff=(DeltaTicks-MeanDeltaTicks)
+print("Counter Frequency= "+str(MeanDeltaTicks*20)+" Hz")
+TickdiffSum=np.cumsum(TickDiff)
+TickSumFloatDiff=(TickSum-np.floor(MeanDeltaTicks)*np.arange(0,TickSum.size,1))
+
+CountsPerSecond=np.zeros(int(np.floor(DeltaTicks.size/20)))
+for i in range (0,int(np.floor(DeltaTicks.size/20))):
+    pos=int(i*20)
+    CountsPerSecond[i]=np.sum(DeltaTicks[pos:pos+20])
+
+CPS_X=np.linspace(0,CountsPerSecond.size-1,num=CountsPerSecond.size)
+DeltaTicks_X=np.linspace(0,(DeltaTicks.size-1)/sollFreq,num=DeltaTicks.size)
+plt.plot(DeltaTicks_X,DeltaTicks*sollFreq,CPS_X,CountsPerSecond)
 plt.show()

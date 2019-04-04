@@ -66,11 +66,13 @@
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
-#define USE_L3GD20 1
-#define USE_BMA280 0
+#define USE_L3GD20 0
+#define USE_BMA280 1
 // Sensors
 //#include "ADXL345.h"
+#if USE_BMA280
 #include "bma280.h"
+#endif
 // FOR MPU6050
 //#include "I2Cdev.h"
 //#include "MPU6050.h"
@@ -93,47 +95,31 @@ osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
 osThreadId LCDTID;
 
-
 //I2Cdev I2CdevIface(&hi2c1);
 //MPU6050 MPU6050Acc(I2CdevIface);
 
 #if USE_L3GD20
 L3GD20 Gyro(GPIOG, SPI3_CS_Pin, &hspi3);
-osPoolDef(GyroPool, DATABUFFESEIZE, GyroDataStamped);
-osPoolId GyroPool;
-
-//MessageQ for the time Stamped data
-osMessageQDef(GyroMsgBuffer, DATABUFFESEIZE, uint32_t);
-osMessageQId GyroMsgBuffer;
+//MemPool For the data
+osMailQDef(GyroMail, DATABUFFESEIZE, GyroDataStamped);
+osMailQId GyroMail;
 #endif
-
-//TODO update website
-AccelDataStamped ACCData;
 #if USE_BMA280
 
-BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
 //MemPool For the data
-osPoolDef(AccPool, DATABUFFESEIZE, AccelDataStamped);
-osPoolId AccPool;
+BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+osMailQDef(AccMail, DATABUFFESEIZE, AccelDataStamped);
+osMailQId AccMail;
 
-//MessageQ for the time Stamped data
-osMessageQDef(ACCMsgBuffer, DATABUFFESEIZE, uint32_t);
-osMessageQId ACCMsgBuffer;
 #endif
+//TODO update website
+AccelDataStamped ACCData;
 
-
-//MessageQ for the GPS PPS Timestamps
-osMessageQDef(GPSTimeBuffer, GPSBUFFERSIZE, uint32_t);
-osMessageQId GPSTimeBuffer;
-
-//MessageQ for the Refclock  PPS Timestamps
-osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
-osMessageQId RefClockTimeBuffer;
 
 // Network interface Ip
-uint8_t ETH_IP_ADDRESS[4]={192,168,0,10};
+uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
 // Target IP for udp straming
-uint8_t UDP_TARGET_IP_ADDRESS[4]={192,168,0,1};
+uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 
 #ifdef __cplusplus
 
@@ -203,42 +189,32 @@ int main(void) {
 	MX_TIM2_Init();
 	MX_I2C1_Init();
 	MX_I2C2_Init();
-	#if USE_BMA280
+#if USE_BMA280
+	AccMail = osMailCreate(osMailQ(AccMail), NULL);
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	#endif
-	#if USE_L3GD20
-	Gyro.init(GYRO_RANGE_2000DPS,GYRO_UPDATE_200_HZ);
-	#endif
-	HAL_ADC_Start(&hadc1);
-	//MPU6050Acc.initialize();
-	// ADXL345
-	//Go into standby mode to configure the device.
-	//Acc.setPowerControl(0x00);
-	//Acc.setResolution(ADXL345_AFS_FULL_RANGE);
-	//Acc.setDataRate(ADXL345_3200HZ);
-	//Activate DataRdy Interrupt
-	//Acc.setInterruptEnableControl(0x80);
+#endif
+#if USE_L3GD20
+//	GyroPool = osPoolCreate(osPool(GyroPool));
+//	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
+	GyroMail = osMailCreate(osMailQ(GyroMail), NULL);
+	Gyro.init(GYRO_RANGE_2000DPS, GYRO_UPDATE_200_HZ);
+#endif
 
-	//Acc.setInterruptMappingControl(0x00);
-	//Measurement mode.
-	//Acc.setPowerControl(0x08);
 	// ADXL345
-
+#if USE_ADXL345
+	Go into standby mode to configure the device.
+	Acc.setPowerControl(0x00);
+	Acc.setResolution(ADXL345_AFS_FULL_RANGE);
+	Acc.setDataRate(ADXL345_3200HZ);
+	Activate DataRdy Interrupt
+	Acc.setInterruptEnableControl(0x80);
+	Acc.setInterruptMappingControl(0x00);
+	Measurement mode.
+	Acc.setPowerControl(0x08);
+#endif
 
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC and GPS data
-	#if USE_BMA280
-	AccPool = osPoolCreate(osPool(AccPool));
-	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
-	#endif
-	#if USE_L3GD20
-	GyroPool = osPoolCreate(osPool(GyroPool));
-	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
-	#endif
-	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
-
-	RefClockTimeBuffer = osMessageCreate(osMessageQ(RefClockTimeBuffer), NULL);
-
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
@@ -248,16 +224,15 @@ int main(void) {
 	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
-	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityNormal,
-			0, 256);
+	osThreadDef(DataProcessingThread, StartDataProcessingThread,
+			osPriorityNormal, 0, 256);
 	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
 	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal,
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
-			0, 256);
+	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
 
 	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 	/* USER CODE END 2 */
@@ -344,8 +319,8 @@ void SystemClock_Config(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART2
-			| RCC_PERIPHCLK_CLK48;
+	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3
+			| RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_CLK48;
 	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -396,34 +371,37 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-	 while (1) {
+	while (1) {
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
 }
 
-void  StartLCDThread(void const * argument) {
-	ILI9341_Init();//initial driver setup to drive ili9341
+void StartLCDThread(void const * argument) {
+	ILI9341_Init(); //initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text,"Build.date:%s",__DATE__);
+	sprintf(Temp_Buffer_text, "Build.date:%s", __DATE__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text,"Build.time:%s",__TIME__);
+	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],ETH_IP_ADDRESS[1],ETH_IP_ADDRESS[2],ETH_IP_ADDRESS[3]);
+	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],
+			ETH_IP_ADDRESS[1], ETH_IP_ADDRESS[2], ETH_IP_ADDRESS[3]);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],UDP_TARGET_IP_ADDRESS[1],UDP_TARGET_IP_ADDRESS[2],UDP_TARGET_IP_ADDRESS[3]);
+	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
+			UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+			UDP_TARGET_IP_ADDRESS[3]);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	//----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
 	while (1) {
 		osDelay(1000);
 		timespec utc;
 		timespec gps_time;
-		lgw_gps_get(&utc,&gps_time, NULL, NULL);
+		lgw_gps_get(&utc, &gps_time, NULL, NULL);
 		tm* current_time = localtime(&(utc.tv_sec));
-		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S",current_time);
+		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 	}
 	osThreadTerminate(NULL);
@@ -431,123 +409,88 @@ void  StartLCDThread(void const * argument) {
 
 void StartDataStreamingThread(void const * argument) {
 	static uint32_t porcessedCount = 0;
-	osEvent evt;
-	osEvent evtGPS;
-	osEvent evtRefClock;
 	struct netconn *conn;
 	struct netbuf *buf;
 	//UDP target ip Adress
 	ip_addr_t targetipaddr;
-	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
-			UDP_TARGET_IP_ADDRESS[3]);
+	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
+			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
-
 	/* connect the connection to the remote host */
 	netconn_connect(conn, &targetipaddr, 7000);
-
 	/* create a new netbuf */
 	buf = netbuf_new();
-	while (1){
-		#if USE_BMA280
-		AccelDataStamped *rptr;
+	while (1) {
+#if USE_BMA280
+		AccelDataStamped *Accrptr;
 		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
-		evt = osMessageGet(ACCMsgBuffer,200);
+		osEvent Accevt = osMailGet(AccMail,200);
 		struct timespec utc;
-		if (evt.status == osEventMessage) {
-			rptr = (AccelDataStamped*) evt.value.p;
-			ACCData = *rptr;
+		if (Accevt.status == osEventMail) {
+			Accrptr = (AccelDataStamped*) Accevt.value.p;
+			ACCData = *Accrptr;
 			osMutexWait(GPS_ref_mutex_id, osWaitForever);
-			lgw_cnt2utc(GPS_ref,rptr->RawTimerCount,&utc);
-			rptr->UnixSecs=(uint32_t)(utc.tv_sec);
-			rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
+			lgw_cnt2utc(GPS_ref,Accrptr->RawTimerCount,&utc);
+			Accrptr->UnixSecs=(uint32_t)(utc.tv_sec);
+			Accrptr->NanoSecs=(uint32_t)(utc.tv_nsec);
 			osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
-			uint8_t MSGBuffer[sizeof(ACCData)+4]={0};
+			uint8_t MSGBuffer[sizeof(ACCData)+4]= {0};
 			MSGBuffer[0]=0x41;
 			MSGBuffer[1]=0x43;
 			MSGBuffer[2]=0x43;
 			MSGBuffer[3]=0x33;
-			memcpy(&MSGBuffer[4],&*rptr, sizeof(ACCData));
+			memcpy(&MSGBuffer[4],&*Accrptr, sizeof(ACCData));
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
 			/* send the text */
 			netconn_send(conn, buf);
-			osPoolFree(AccPool, rptr);
+			osMailFree(AccMail, Accrptr);
 		}
-		#endif
+#endif
 #if USE_L3GD20
 //Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
-evt = osMessageGet(GyroMsgBuffer,200);
-struct timespec utc;
-if (evt.status == osEventMessage) {
-	GyroDataStamped *rptr;
-	rptr = (GyroDataStamped*) evt.value.p;
-	osMutexWait(GPS_ref_mutex_id, osWaitForever);
-	lgw_cnt2utc(GPS_ref,rptr->RawTimerCount,&utc);
-	rptr->UnixSecs=(uint32_t)(utc.tv_sec);
-	rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
-	osMutexRelease(GPS_ref_mutex_id);
-	porcessedCount++;
-	uint8_t MSGBuffer[sizeof(GyroDataStamped)+4]={0};
-	MSGBuffer[0]=0x47;
-	MSGBuffer[1]=0x59;
-	MSGBuffer[2]=0x52;
-	MSGBuffer[3]=0x33;
-	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroDataStamped));
-	/* reference the data into the netbuf */
-	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+		struct timespec utc;
+		osEvent Gyroevt = osMailGet(GyroMail, 200);
+		if (Gyroevt.status == osEventMail) {
+			GyroDataStamped *Gyrorptr;
+			Gyrorptr = (GyroDataStamped*) Gyroevt.value.p;
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_cnt2utc(GPS_ref, Gyrorptr->RawTimerCount, &utc);
+			Gyrorptr->UnixSecs = (uint32_t) (utc.tv_sec);
+			Gyrorptr->NanoSecs = (uint32_t) (utc.tv_nsec);
+			osMutexRelease(GPS_ref_mutex_id);
+			porcessedCount++;
+			uint8_t MSGBuffer[sizeof(GyroDataStamped) + 4] = { 0 };
+			MSGBuffer[0] = 0x47;
+			MSGBuffer[1] = 0x59;
+			MSGBuffer[2] = 0x52;
+			MSGBuffer[3] = 0x33;
+			memcpy(&MSGBuffer[4], &*Gyrorptr, sizeof(GyroDataStamped));
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
-	/* send the text */
-	netconn_send(conn, buf);
-	osPoolFree(GyroPool, rptr);
-}
+			/* send the text */
+			netconn_send(conn, buf);
+			osMailFree(GyroMail, Gyrorptr);
+		}
 #endif
-		evtGPS = osMessageGet(GPSTimeBuffer,0);
-		if (evtGPS.status == osEventMessage) {
-			uint32_t rptrGPS =  evtGPS.value.v;
-			uint8_t MSGBuffer[8]={0};
-			MSGBuffer[0]=0x47;
-			MSGBuffer[1]=0x50;
-			MSGBuffer[2]=0x53;
-			MSGBuffer[3]=0x54;
-			memcpy(&MSGBuffer[4],&rptrGPS, sizeof(rptrGPS));
+		osEvent GPSMailevnt = osMailGet(GPSDebugMail, 0);
+		if (GPSMailevnt.status == osEventMail) {
+			GPSDebugMsg *GPSDebugrptr;
+			GPSDebugrptr = (GPSDebugMsg*) GPSMailevnt.value.p;
+			uint8_t MSGBuffer[sizeof(GPSDebugMsg) + 5] = { 0 }; //added trashbyte so the packet is better visable in wiereshark
+			MSGBuffer[0] = 0x47; //GPSD=47 50 53 44
+			MSGBuffer[1] = 0x50;
+			MSGBuffer[2] = 0x53;
+			MSGBuffer[3] = 0x44;
+			memcpy(&MSGBuffer[4], &*GPSDebugrptr, sizeof(GPSDebugMsg));
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 			/* send the text */
-			netconn_send(conn, buf);
-		}
-		evtGPS = osMessageGet(GPSDebugMsgBuffer,0);
-		if (evtGPS.status == osEventMessage) {
-			GPSDebugMsg *rptr;
-			rptr = (GPSDebugMsg*) evt.value.p;
-			uint8_t MSGBuffer[sizeof(GPSDebugMsg)+5]={0};//added trashbyte so the packet is better visable in wiereshark
-			MSGBuffer[0]=0x47;//GPSD=47 50 53 44
-			MSGBuffer[1]=0x50;
-			MSGBuffer[2]=0x53;
-			MSGBuffer[3]=0x44;
-			memcpy(&MSGBuffer[4],&*rptr, sizeof(GPSDebugMsg));
-			/* reference the data into the netbuf */
-			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-			/* send the text */
-			netconn_send(conn, buf);
-			osPoolFree(GPSDebugMsgPool, rptr);
-		}
-
-		evtRefClock = osMessageGet(RefClockTimeBuffer,0);
-		if (evtRefClock.status == osEventMessage) {
-			uint32_t rptrRefClock =  evtRefClock .value.v;
-			uint8_t MSGBuffer[8]={0};
-			MSGBuffer[0]=0x53;
-			MSGBuffer[1]=0x59;
-			MSGBuffer[2]=0x4E;
-			MSGBuffer[3]=0x54;
-			memcpy(&MSGBuffer[4],&rptrRefClock , sizeof(rptrRefClock));
-			/* reference the data into the netbuf */
-			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
-			/* send the text */
+			osStatus result = osMailFree(GPSDebugMail, GPSDebugrptr);
 			netconn_send(conn, buf);
 		}
 	}
@@ -590,32 +533,29 @@ void _Error_Handler(char * file, int line) {
 	/* USER CODE END Error_Handler_Debug */
 }
 
-
 /*
-@startuml
-:DataRDY Interupt from Sensor|
-fork
-:Start ADC1 Conversion|
-:wait for ADC conversion;
-fork again
-:Capture Timer Val|
-:timer ISR;
-:Allocate Sharred membuffer;
-:copy timestamp in membuffer;
-:get data From device and copy to membuffer;
-end fork
-:get data from ADC and copy to membuffer;
-:send membuffer pointer to dataproccesing thread;
-@enduml
-*/
+ @startuml
+ :DataRDY Interupt from Sensor|
+ fork
+ :Start ADC1 Conversion|
+ :wait for ADC conversion;
+ fork again
+ :Capture Timer Val|
+ :timer ISR;
+ :Allocate Sharred membuffer;
+ :copy timestamp in membuffer;
+ :get data From device and copy to membuffer;
+ end fork
+ :get data from ADC and copy to membuffer;
+ :send membuffer pointer to dataproccesing thread;
+ @enduml
+ */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	//GPS testing change this to an que based aproche in the future
-	static int32_t GPSMissedCpatureCount = 0;
-	static int32_t RefClockMissedCpatureCount = 0;
 	static uint32_t captureCount = 0;
-	static uint32_t MissedCount = 0;
-	static uint32_t GPSEdges=0;
+	static uint32_t GPSEdges = 0;
 	static uint16_t ADCValue;
+	static uint32_t Errorcount=0;
 #define GPSDEVIDER 1
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_ADC_PollForConversion(&hadc1, 2);
@@ -624,111 +564,103 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 #if USE_L3GD20
 		GyroDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
-		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
+		mptr = (GyroDataStamped *) osMailAlloc(GyroMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 		if (mptr != NULL) {
 			*mptr = Gyro.GetStampedData(0x00000000,
 					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
-					captureCount,ADCValue);
+					captureCount, ADCValue);
 			//put dater pointer into MSGQ
-			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
-			osWaitForever);
-		} else {
-			MissedCount++;
+			osStatus result = osMailPut(GyroMail, mptr);
 		}
 #endif
 #if USE_BMA280
 		AccelDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
-		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
+		mptr = (AccelDataStamped *) osMailAlloc(AccMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 		if (mptr != NULL) {
 			*mptr = Acc.GetStampedData(0x00000000,
 					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
 					captureCount,ADCValue);
 			//put dater pointer into MSGQ
-			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
-			osWaitForever);
-		} else {
-			MissedCount++;
+			osStatus result = osMailPut(AccMail,mptr);
 		}
 #endif
 		captureCount++;
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
+	} else if (htim->Instance == TIM2
+			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 	}
-	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-			osStatus result = osMessagePut(RefClockTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_3),osWaitForever);
-			if (result!=osOK){RefClockMissedCpatureCount++;}
-		}
 
 	else if (htim->Instance == TIM2
-				&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 
-			//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
-			static NMEASTamped *mptr_active=NULL;
-			static NMEASTamped *mptr_old=NULL;
-			static uint32_t GPScaptureCount = 0;
-			uint32_t timestamp=0;
-			timestamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
-
-			osStatus result = osMessagePut(GPSTimeBuffer,timestamp,osWaitForever);
-			if (result != osOK) {
-				GPSMissedCpatureCount++;
-			}
-			GPSEdges++;
-			if(GPSEdges%GPSDEVIDER==0){
+		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
+		static NMEASTamped *mptr_active = NULL;
+		static NMEASTamped *mptr_old = NULL;
+		static uint32_t GPScaptureCount = 0;
+		uint32_t timestamp = 0;
+		timestamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
+		GPSEdges++;
+		if (GPSEdges % GPSDEVIDER == 0) {
 			if (GPScaptureCount > 0) {
-					HAL_UART_DMAStop(&huart2);
-					HAL_DMA_Abort(&hdma_usart2_rx);
-					mptr_old = mptr_active;
-					if(mptr_old!= NULL){
-					osStatus result = osMessagePut(NMEABuffer,(uint32_t) mptr_old,osWaitForever);
-					}
-					mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
-					if (mptr_active != NULL) {
-						mptr_active->RawTimerCount = timestamp;
-						mptr_active->CaptureCount = GPScaptureCount;
-						mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
-						HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
-					}
-					GPScaptureCount++;
+				HAL_UART_DMAStop(&huart2);
+				HAL_DMA_Abort(&hdma_usart2_rx);
+				mptr_old = mptr_active;
+				if (mptr_old != NULL) {
+					osStatus result = osMessagePut(NMEABuffer,
+							(uint32_t) mptr_old, osWaitForever);
+				}
+				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+				if (mptr_active != NULL) {
+					mptr_active->RawTimerCount = timestamp;
+					mptr_active->CaptureCount = GPScaptureCount;
+					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)
+							- 1] = 0;
+					HAL_UART_Receive_DMA(&huart2,
+							&(mptr_active->NMEAMessage[0]),
+							sizeof(mptr_active->NMEAMessage) - 1);
+				}
+				GPScaptureCount++;
 			}
 
 			else if (GPScaptureCount == 0) {
 				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
-				uint32_t debugVar= (uint32_t)mptr_active;
+				uint32_t debugVar = (uint32_t) mptr_active;
 				if (mptr_active != NULL) {
 					(mptr_active->RawTimerCount) = timestamp;
 					(mptr_active->CaptureCount) = GPScaptureCount;
-					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
-					HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
+					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)
+							- 1] = 0;
+					HAL_UART_Receive_DMA(&huart2,
+							&(mptr_active->NMEAMessage[0]),
+							sizeof(mptr_active->NMEAMessage) - 1);
 					GPScaptureCount++;
 				}
 			}
 
-
-			}
+		}
 	}
-	}
+}
 
 float getGVal(int index) {
-switch (index) {
-case 0:
-return ACCData.Data.x;
-case 1:
-return ACCData.Data.y;
-case 2:
-return ACCData.Data.z;
-default:
-int nan = 0x7F800001;
-return *(float*) &nan;
-}
+	switch (index) {
+	case 0:
+		return ACCData.Data.x;
+	case 1:
+		return ACCData.Data.y;
+	case 2:
+		return ACCData.Data.z;
+	default:
+		int nan = 0x7F800001;
+		return *(float*) &nan;
+	}
 
 }
 
 float getBMATemp() {
-return ACCData.Data.temperature;
+	return ACCData.Data.temperature;
 }
-
 
 #ifdef  USE_FULL_ASSERT
 /**
@@ -740,10 +672,10 @@ return ACCData.Data.temperature;
  */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-/* USER CODE BEGIN 6 */
-/* User can add his own implementation to report the file name and line number,
- tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-/* USER CODE END 6 */
+	/* USER CODE BEGIN 6 */
+	/* User can add his own implementation to report the file name and line number,
+	 tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 
