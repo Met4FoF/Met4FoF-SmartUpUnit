@@ -15,13 +15,22 @@
 #include "GPSTimesyn.h"
 #include "NMEAPraser.h"
 #include <time.h>       /* struct timespec */
-
+#include <sys/timespec.h>
 
 
 int initGPSTimesny(){
 	int retval =1;
-	NMEAPool = osPoolCreate(osPool(NMEAPool));
+	GPSDebugMsgPool = osPoolCreate(osPool(GPSDebugMsgPool));
 	//MessageQ for the time Stamped data
+	if(GPSDebugMsgPool!=NULL){
+		retval=0;
+	}
+	GPSDebugMsgBuffer = osMessageCreate(osMessageQ(GPSDebugMsgBuffer), NULL);
+	if(GPSDebugMsgPool!=NULL){
+		retval=0;
+	}
+
+	NMEAPool = osPoolCreate(osPool(NMEAPool));
 	if(NMEAPool!=NULL){
 		retval=0;
 	}
@@ -44,6 +53,7 @@ void StartNemaParserThread(void const * argument) {
 	osEvent evt;
 	enum gps_msg latest_msg;
 	struct timespec utc, gps_time;
+	GPSDebugMsg DebugMsg;
 	while (1) {
 		evt = osMessageGet(NMEABuffer, osWaitForever);
 		if (evt.status == osEventMessage) {
@@ -83,14 +93,26 @@ void StartNemaParserThread(void const * argument) {
 			}
 			lgw_gps_get(&utc,&gps_time, NULL, NULL);
 			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			DebugMsg.RawTimerCount=rptr->RawTimerCount;
+			DebugMsg.CaptureCount=rptr->CaptureCount;
+			DebugMsg.utc=utc;
+			DebugMsg.gps_time=gps_time;
 			lgw_gps_sync(&GPS_ref,rptr->RawTimerCount ,utc,gps_time);
 			osMutexRelease(GPS_ref_mutex_id);
-
-
-		    	//latest_msg=lgw_parse_nmea(&(rptr->NMEAMessage[Dollar]),NewLine-Dollar);
 			osPoolFree(NMEAPool, rptr);
 			porcessedCount++;
+			GPSDebugMsg *mptr;
+			// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
+			mptr = (GPSDebugMsg *) osPoolAlloc(GPSDebugMsgPool);
+			if (mptr != NULL) {
+				*mptr = DebugMsg;
+				//put dater pointer into MSGQ
+				osStatus result = osMessagePut(GPSDebugMsgBuffer, (uint32_t) mptr,
+				osWaitForever);
 		}
+
+		}
+
 
 	}
 

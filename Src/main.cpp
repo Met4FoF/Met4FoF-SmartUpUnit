@@ -515,10 +515,26 @@ if (evt.status == osEventMessage) {
 			memcpy(&MSGBuffer[4],&rptrGPS, sizeof(rptrGPS));
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
 			/* send the text */
 			netconn_send(conn, buf);
 		}
+		evtGPS = osMessageGet(GPSDebugMsgBuffer,0);
+		if (evtGPS.status == osEventMessage) {
+			GPSDebugMsg *rptr;
+			rptr = (GPSDebugMsg*) evt.value.p;
+			uint8_t MSGBuffer[sizeof(GPSDebugMsg)+5]={0};//added trashbyte so the packet is better visable in wiereshark
+			MSGBuffer[0]=0x47;//GPSD=47 50 53 44
+			MSGBuffer[1]=0x50;
+			MSGBuffer[2]=0x53;
+			MSGBuffer[3]=0x44;
+			memcpy(&MSGBuffer[4],&*rptr, sizeof(GPSDebugMsg));
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+			/* send the text */
+			netconn_send(conn, buf);
+			osPoolFree(GPSDebugMsgPool, rptr);
+		}
+
 		evtRefClock = osMessageGet(RefClockTimeBuffer,0);
 		if (evtRefClock.status == osEventMessage) {
 			uint32_t rptrRefClock =  evtRefClock .value.v;
