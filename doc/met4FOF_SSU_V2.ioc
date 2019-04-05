@@ -632,6 +632,7 @@ TIM1.Channel-Input_Capture1_from_TI1=TIM_CHANNEL_1
 TIM1.Channel-Input_Capture2_from_TI2=TIM_CHANNEL_2
 TIM1.Channel-Input_Capture3_from_TI3=TIM_CHANNEL_3
 TIM1.Channel-Input_Capture4_from_TI4=TIM_CHANNEL_4
+<<<<<<< HEAD
 TIM1.IPParameters=Channel-Input_Capture1_from_TI1,Channel-Input_Capture2_from_TI2,Channel-Input_Capture3_from_TI3,Channel-Input_Capture4_from_TI4,Period
 TIM1.Period=0xFFFF
 TIM2.Channel-Input_Capture1_from_TI1=TIM_CHANNEL_1
@@ -639,6 +640,13 @@ TIM2.Channel-Input_Capture3_from_TI3=TIM_CHANNEL_3
 TIM2.Channel-Input_Capture4_from_TI4=TIM_CHANNEL_4
 TIM2.IPParameters=Channel-Input_Capture3_from_TI3,Channel-Input_Capture4_from_TI4,Channel-Input_Capture1_from_TI1,Period
 TIM2.Period=0xFFFFFFFF
+=======
+TIM1.IPParameters=Channel-Input_Capture1_from_TI1,Channel-Input_Capture2_from_TI2,Channel-Input_Capture3_from_TI3,Channel-Input_Capture4_from_TI4
+TIM2.Channel-Input_Capture1_from_TI1=TIM_CHANNEL_1
+TIM2.Channel-Input_Capture3_from_TI3=TIM_CHANNEL_3
+TIM2.Channel-Input_Capture4_from_TI4=TIM_CHANNEL_4
+TIM2.IPParameters=Channel-Input_Capture3_from_TI3,Channel-Input_Capture4_from_TI4,Channel-Input_Capture1_from_TI1
+>>>>>>> master
 UART7.BaudRate=9600
 UART7.IPParameters=BaudRate
 USART3.IPParameters=VirtualMode-Asynchronous
