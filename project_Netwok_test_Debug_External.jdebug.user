@@ -1,0 +1,18 @@
+
+Breakpoint=main.cpp:603, State=BP_STATE_ON
+OpenDocument="main.cpp", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Src\main.cpp", Line=139
+OpenToolbar="Debug", Floating=0, x=0, y=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=2, w=675, h=160, FilterBarShown=0, FilteredItems=[]
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=675, h=334, FilterBarShown=0, ExecCountersShown=0
+OpenWindow="Source", x=0, y=0, w=0, h=0, FilterBarShown=0, ExecCountersShown=0
+OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=580, h=225, FilterBarShown=0, EditorAddress=0x0
+OpenWindow="Watched Data", DockArea=RIGHT, x=0, y=1, w=675, h=229, FilterBarShown=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=251, h=725, FilterBarShown=1
+OpenWindow="Data Graph", DockArea=BOTTOM, x=1, y=0, w=1007, h=225, FilterBarShown=0, VisibleTab=1, SamplingFreq=1 kHz, ClearEvent=RESUME
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=331, h=225, FilterBarShown=0
+TableHeader="Watched Data", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[64;37;52;50;472]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Class";"Source"], ColWidths=[131;64;44;57;100;200]
+TableHeader="DataGraphSamples", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time                    "], ColWidths=[77;48]
+TableHeader="Data Graph", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[104;196;77;77;77;84;78;85;229]
+TableHeader="tableWidgetSamples", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Channel 0"], ColWidths=[72;102;108]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[39;37;582]

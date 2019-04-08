@@ -602,16 +602,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		uint32_t timestamp = 0;
 		timestamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
 		GPSEdges++;
-		if (GPSEdges % GPSDEVIDER == 0) {
 			if (GPScaptureCount > 0) {
 				HAL_UART_DMAStop(&huart2);
 				HAL_DMA_Abort(&hdma_usart2_rx);
-				mptr_old = mptr_active;
-				if (mptr_old != NULL) {
-					osStatus result = osMessagePut(NMEABuffer,
-							(uint32_t) mptr_old, osWaitForever);
+				if (mptr_active != NULL) {
+					osStatus result = osMailPut(NMEAMail, mptr_active);
 				}
-				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+				mptr_active = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR. 
 				if (mptr_active != NULL) {
 					mptr_active->RawTimerCount = timestamp;
 					mptr_active->CaptureCount = GPScaptureCount;
@@ -625,7 +622,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			}
 
 			else if (GPScaptureCount == 0) {
-				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+				mptr_active = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR. 
 				uint32_t debugVar = (uint32_t) mptr_active;
 				if (mptr_active != NULL) {
 					(mptr_active->RawTimerCount) = timestamp;
@@ -638,8 +635,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					GPScaptureCount++;
 				}
 			}
-
-		}
 	}
 }
 

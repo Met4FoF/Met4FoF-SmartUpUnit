@@ -23,13 +23,8 @@ int initGPSTimesny() {
 	if (GPSDebugMail != NULL) {
 		retval = 0;
 	}
-
-	NMEAPool = osPoolCreate(osPool(NMEAPool));
-	if (NMEAPool != NULL) {
-		retval = 0;
-	}
-	NMEABuffer = osMessageCreate(osMessageQ(NMEABuffer), NULL);
-	if (NMEAPool != NULL) {
+	NMEAMail = osMailCreate(osMailQ(NMEAMail), NULL);
+	if (NMEAMail != NULL) {
 		retval = 0;
 	}
 	GPS_ref_mutex_id = osMutexCreate(osMutex(GPS_ref_mutex));
@@ -46,8 +41,8 @@ void StartNemaParserThread(void const * argument) {
 	enum gps_msg latest_msg;
 	struct timespec utc, gps_time;
 	while (1) {
-		evt = osMessageGet(NMEABuffer, osWaitForever);
-		if (evt.status == osEventMessage) {
+		evt = osMailGet(NMEAMail, osWaitForever);
+		if (evt.status == osEventMail) {
 			NMEASTamped *rptr;
 			rptr = (NMEASTamped*) evt.value.p;
 
@@ -97,7 +92,7 @@ void StartNemaParserThread(void const * argument) {
 			osMutexWait(GPS_ref_mutex_id, osWaitForever);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
 			osMutexRelease(GPS_ref_mutex_id);
-			osPoolFree(NMEAPool, rptr);
+			osMailFree(NMEAMail, rptr);
 			porcessedCount++;
 		}
 

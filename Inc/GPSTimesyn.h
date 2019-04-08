@@ -46,13 +46,10 @@ typedef struct {
 struct tref GPS_ref;
 
 //MemPool For the data
-osPoolDef(NMEAPool, NMEABUFFERSIZE , NMEASTamped);
-osPoolId NMEAPool;
+osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
+osMailQId (NMEAMail);
 
-osMessageQDef(NMEABuffer, NMEABUFFERSIZE,  uint32_t);
-osMessageQId NMEABuffer;
-
-//MemPool For the data
+//Mail for timestamp output over ethernet
 osMailQDef (GPSDebugMail, NMEABUFFERSIZE , GPSDebugMsg);
 osMailQId GPSDebugMail;
 
