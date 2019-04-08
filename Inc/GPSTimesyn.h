@@ -36,6 +36,15 @@ typedef struct {
 	uint8_t NMEAMessage[NMEBUFFERLEN]; //248 3 NMEA Sentences
 }NMEASTamped;
 
+typedef struct {
+	uint32_t RawTimerCount;
+	uint32_t CaptureCount;
+    struct timespec utc;        /*!> reference UTC time (from GPS/NMEA) */
+    struct timespec gps_time;        /*!> reference GPS time (since 01.Jan.1980) */
+}GPSDebugMsg;
+
+struct tref GPS_ref;
+
 //MemPool For the data
 osPoolDef(NMEAPool, NMEABUFFERSIZE , NMEASTamped);
 osPoolId NMEAPool;
@@ -43,11 +52,16 @@ osPoolId NMEAPool;
 osMessageQDef(NMEABuffer, NMEABUFFERSIZE,  uint32_t);
 osMessageQId NMEABuffer;
 
+//MemPool For the data
+osMailQDef (GPSDebugMail, NMEABUFFERSIZE , GPSDebugMsg);
+osMailQId GPSDebugMail;
+
+
 osThreadId NemaParserTID;
 
 osMutexDef (GPS_ref_mutex);    // Declare mutex
 osMutexId  (GPS_ref_mutex_id); // Mutex ID
-struct tref GPS_ref;
+
 
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
