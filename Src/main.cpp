@@ -66,10 +66,11 @@
 #include "lwip.h"
 #include "httpserver-netconn.h"
 
-#define USE_L3GD20 0
-#define USE_BMA280 1
+#define USE_L3GD20 1
+#define USE_BMA280 0
 // Sensors
 //#include "ADXL345.h"
+#include "bma280.h"
 #if USE_BMA280
 #include "bma280.h"
 #endif
@@ -228,7 +229,7 @@ int main(void) {
 			osPriorityNormal, 0, 256);
 	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
-	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal,
+	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal ,
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 
@@ -481,7 +482,7 @@ void StartDataStreamingThread(void const * argument) {
 		if (GPSMailevnt.status == osEventMail) {
 			GPSDebugMsg *GPSDebugrptr;
 			GPSDebugrptr = (GPSDebugMsg*) GPSMailevnt.value.p;
-			uint8_t MSGBuffer[sizeof(GPSDebugMsg) + 5] = { 0 }; //added trashbyte so the packet is better visable in wiereshark
+			uint8_t MSGBuffer[sizeof(GPSDebugMsg) + 4] = { 0 }; //added trashbyte so the packet is better visable in wiereshark
 			MSGBuffer[0] = 0x47; //GPSD=47 50 53 44
 			MSGBuffer[1] = 0x50;
 			MSGBuffer[2] = 0x53;
@@ -596,45 +597,33 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
-		static NMEASTamped *mptr_active = NULL;
-		static NMEASTamped *mptr_old = NULL;
+		static NMEASTamped *mptr = NULL;
 		static uint32_t GPScaptureCount = 0;
+		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN]={0};
 		uint32_t timestamp = 0;
 		timestamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
 		GPSEdges++;
 			if (GPScaptureCount > 0) {
-				HAL_UART_DMAStop(&huart2);
 				HAL_DMA_Abort(&hdma_usart2_rx);
-				if (mptr_active != NULL) {
-					osStatus result = osMailPut(NMEAMail, mptr_active);
+				HAL_UART_DMAStop(&huart2);
+				if (mptr != NULL) {
+					osStatus result = osMailPut(NMEAMail, mptr);
 				}
-				mptr_active = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR. 
-				if (mptr_active != NULL) {
-					mptr_active->RawTimerCount = timestamp;
-					mptr_active->CaptureCount = GPScaptureCount;
-					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)
-							- 1] = 0;
-					HAL_UART_Receive_DMA(&huart2,
-							&(mptr_active->NMEAMessage[0]),
-							sizeof(mptr_active->NMEAMessage) - 1);
+				mptr = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR.
+				if (mptr != NULL) {
+					mptr->RawTimerCount = timestamp;
+					mptr->CaptureCount = GPScaptureCount;
+					memcpy(&(mptr->NMEAMessage[0]),&(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
 				}
+				HAL_UART_Receive_DMA(&huart2,
+						&(DMA_NMEABUFFER[0]),
+						NMEBUFFERLEN - 1);
 				GPScaptureCount++;
 			}
-
 			else if (GPScaptureCount == 0) {
-				mptr_active = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR. 
-				uint32_t debugVar = (uint32_t) mptr_active;
-				if (mptr_active != NULL) {
-					(mptr_active->RawTimerCount) = timestamp;
-					(mptr_active->CaptureCount) = GPScaptureCount;
-					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)
-							- 1] = 0;
-					HAL_UART_Receive_DMA(&huart2,
-							&(mptr_active->NMEAMessage[0]),
-							sizeof(mptr_active->NMEAMessage) - 1);
+				HAL_UART_Receive_DMA(&huart2,&(DMA_NMEABUFFER[0]),NMEBUFFERLEN - 1);
 					GPScaptureCount++;
 				}
-			}
 	}
 }
 

@@ -142,10 +142,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle) {
 			// Start UART DMA reciver for GPS
 
 		    /* DMA interrupt init */
-		    HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+		    HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 13, 0);
 		    HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 		    /* Peripheral interrupt init */
-		    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+		    HAL_NVIC_SetPriority(USART2_IRQn, 13, 0);
 		    HAL_NVIC_EnableIRQ(USART2_IRQn);
 		  /* USER CODE BEGIN USART2_MspInit 1 */
 

@@ -63,7 +63,7 @@ def imu_publisher():
     rospy.init_node('imu_publisher', anonymous=True)
     if(LOGGINENABLED): 
         with open(ACCLOGFILENAME, mode='a') as DtataCSV:
-            while not rospy.is_shutdown():
+            while not rospy.is_shutdown():    
                 data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
                 if(data.startswith("ACC3")):
                     unpackeddata=unpack('IIIIIIHffff',data)
@@ -82,22 +82,14 @@ def imu_publisher():
                     print(unpackeddata)
                     #DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                     #DtataCSVwriter.writerow(unpackeddata) 
-                if(data.startswith("GPST")):
-                    unpackeddata=unpack('II',data)
-                    print(GPSTCount,unpackeddata[1],"GPST")
-                    with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
-                        GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        GPSCSV_writer.writerow(["GPST",GPSTCount,unpackeddata[1]])    
-                    GPSTCount=GPSTCount+1
-                if(data.startswith("SYNT")):
-                    unpackeddata=unpack('II',data)
-                    print(GPSTCount,unpackeddata[1],"SYNT")
-                    with open(SYNCLOGFILENAME, mode='a') as SYNCTimeDtataCSV:
-                        SYNCCSV_writer = csv.writer(SYNCTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        SYNCCSV_writer.writerow(["SYNCT",RefCount,unpackeddata[1]])    
-                    RefCount=RefCount+1            
-            
-
+                if(data.startswith("GPSD")):
+                    print(len(data))
+                    unpackeddata=unpack('IIIIIIIIIII',data)
+                    print(unpackeddata)
+                    #with open(LOGFILENAME, mode='a') as GPSTimeDtataCSV:
+                    #    GPSCSV_writer = csv.writer(GPSTimeDtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    #    GPSCSV_writer.writerow(["GPST",GPSTCount,unpackeddata[1]])    
+                    #GPSTCount=GPSTCount+1
         
 if __name__ == '__main__':
     try:
