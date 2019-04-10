@@ -1,21 +1,21 @@
-OpenDocument="main.cpp", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Src\main.cpp", Line=128
-OpenDocument="portmacro.h", FilePath="C:/Users/seeger01/Met4FoF-SmartUpUnit/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1\portmacro.h", Line=223
-OpenDocument="tasks.c", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Middlewares/Third_Party/FreeRTOS/Source\tasks.c", Line=3152
-OpenDocument="startup_stm32f767xx.s", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Debug\../startup\startup_stm32f767xx.s", Line=63
-OpenDocument="stm32f7xx_hal.c", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Drivers/STM32F7xx_HAL_Driver/Src\stm32f7xx_hal.c", Line=304
-OpenDocument="stm32f7xx_hal_uart.c", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Drivers/STM32F7xx_HAL_Driver/Src\stm32f7xx_hal_uart.c", Line=1323
+OpenDocument="NMEAPraser.c", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Src\NMEAPraser.c", Line=65
+OpenDocument="tasks.c", FilePath="C:\Users\seeger01\Met4FoF-SmartUpUnit\Middlewares/Third_Party/FreeRTOS/Source\tasks.c", Line=3155
+OpenDocument="GPSTimesyn.h", FilePath="C:/Users/seeger01/Met4FoF-SmartUpUnit/Inc\GPSTimesyn.h", Line=31
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=2, w=879, h=215, FilterBarShown=0, FilteredItems=[]
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=879, h=214, FilterBarShown=0, ExecCountersShown=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=3, w=672, h=69, FilterBarShown=0, FilteredItems=[]
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=672, h=105, FilterBarShown=0, ExecCountersShown=0
 OpenWindow="Source", x=0, y=0, w=0, h=0, FilterBarShown=0, ExecCountersShown=0
-OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=580, h=122, FilterBarShown=0, EditorAddress=0x0
-OpenWindow="Watched Data", DockArea=RIGHT, x=0, y=1, w=879, h=397, FilterBarShown=0
-OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=538, h=828, FilterBarShown=1
-OpenWindow="Data Graph", DockArea=BOTTOM, x=1, y=0, w=1007, h=122, FilterBarShown=0, VisibleTab=0, SamplingFreq=1 kHz, ClearEvent=RESUME
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=331, h=122, FilterBarShown=0
-TableHeader="Watched Data", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[64;37;52;50;676]
-TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Class";"Source"], ColWidths=[131;64;44;57;100;200]
+OpenWindow="Memory 1", DockArea=BOTTOM, x=3, y=0, w=501, h=287, FilterBarShown=0, EditorAddress=0x20019F68
+OpenWindow="Global Data", DockArea=RIGHT, x=0, y=0, w=672, h=432, FilterBarShown=1
+OpenWindow="Watched Data", DockArea=RIGHT, x=0, y=2, w=672, h=54, FilterBarShown=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=538, h=663, FilterBarShown=1
+OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=720, h=287, FilterBarShown=0
+OpenWindow="Data Graph", DockArea=BOTTOM, x=2, y=0, w=537, h=287, FilterBarShown=0, VisibleTab=0, SamplingFreq=1 kHz, ClearEvent=RESUME
+OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=159, h=287, FilterBarShown=0
+TableHeader="Watched Data", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh";"Access"], ColWidths=[64;37;52;50;469]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Class";"Source"], ColWidths=[131;64;44;57;100;230]
 TableHeader="DataGraphSamples", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time                    "], ColWidths=[77;48]
-TableHeader="Data Graph", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[104;196;77;77;77;84;78;85;229]
+TableHeader="Data Graph", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[104;196;77;77;77;84;78;85;89]
 TableHeader="tableWidgetSamples", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Channel 0"], ColWidths=[72;102;108]
-TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[39;37;786]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[39;37;579]
+TableHeader="Global Data", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Location";"Size";"Type";"Access";"Scope"], ColWidths=[197;50;65;44;48;100;278]

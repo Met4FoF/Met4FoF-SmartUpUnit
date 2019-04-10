@@ -15,14 +15,14 @@ void OnProjectLoad (void) {
   Project.SetDevice ("STM32F767ZI");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
-  Project.SetTIFSpeed ("4 MHz");
+  Project.SetTIFSpeed ("4000");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
   Project.AddPathSubstitute ("C:/Users/seeger01/Met4FoF-SmartUpUnit", "$(ProjectDir)");
   Project.AddPathSubstitute ("c:/users/seeger01/met4fof-smartupunit", "$(ProjectDir)");
   //
   // User settings
   //
-  File.Open ("$(ProjectDir)/Debug/Netwok_test.elf");
+  File.Open ("C:/Users/seeger01/Met4FoF-SmartUpUnit/Debug/Netwok_test.elf");
 }
 
 /*********************************************************************

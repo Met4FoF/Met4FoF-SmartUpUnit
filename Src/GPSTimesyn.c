@@ -51,6 +51,7 @@ void StartNemaParserThread(void const * argument) {
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int DollarCount = 0;
 			int NewLineCount = 0;
+                        SEGGER_RTT_printf(0,"Parsing: NMEA Message\n %s\n",(rptr->NMEAMessage));
 			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
 				if (rptr->NMEAMessage[i]
 						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
