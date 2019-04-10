@@ -2,6 +2,7 @@
 <session>
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <BreakpointListItem trigger="" line="109" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="4" filename="Src/SEGGER_SYSVIEW_Config_FreeRTOS.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -27,6 +28,16 @@
   <ProjectSessionItem path="project;Netwok_test;Drivers;STM32F7xx_HAL_Driver"/>
   <ProjectSessionItem path="project;Netwok_test;Drivers;STM32F7xx_HAL_Driver;Src"/>
   <ProjectSessionItem path="project;Netwok_test;Inc"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;CMSIS_RTOS"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;include"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;portable"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;portable;GCC"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;portable;GCC;ARM_CM7"/>
+  <ProjectSessionItem path="project;Netwok_test;Middlewares;Third_Party;FreeRTOS;Source;portable;GCC;ARM_CM7;r0p1"/>
   <ProjectSessionItem path="project;Netwok_test;Src"/>
  </Project>
  <Register1>
@@ -60,10 +71,27 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="30" y="606" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/main.cpp" selected="1" top="629" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="22" y="94" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/GPSTimesyn.c" selected="0" top="60" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="20" y="49" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/GPSTimesyn.h" selected="0" top="18" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="318" useTextEdit="1" useBinaryEdit="0" left="0" path="Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c" selected="0" top="556" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="152" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/main.cpp" selected="1" top="131" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="94" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/GPSTimesyn.c" selected="0" top="60" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="49" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/GPSTimesyn.h" selected="0" top="18" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="381" useTextEdit="1" useBinaryEdit="0" left="0" path="Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c" selected="0" top="360" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="83" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/usart.c" selected="0" top="168" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="236" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/portmacro.h" selected="0" top="215" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="108" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/SEGGER_SYSVIEW_Config_FreeRTOS.c" selected="0" top="85" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="67" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/SEGGER.h" selected="0" top="190" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="190" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/SEGGER_SYSVIEW.h" selected="0" top="169" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="156" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/FreeRTOSConfig.h" selected="0" top="133" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="469" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/queue.c" selected="0" top="437" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="3623" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/tasks.c" selected="0" top="3602" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/MPU6050.cpp" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="70" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/SEGGER_SYSVIEW_FreeRTOS.h" selected="0" top="54" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="69" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/SEGGER_RTT.h" selected="0" top="63" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="148" useTextEdit="1" useBinaryEdit="0" left="0" path="Src/SEGGER_SYSVIEW.c" selected="0" top="148" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="19" useTextEdit="1" useBinaryEdit="0" left="0" path="Inc/SEGGER_SYSVIEW_Int.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="319" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c" selected="0" top="298" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="490" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/port.c" selected="0" top="70" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="557" useTextEdit="1" useBinaryEdit="0" left="0" path="Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c" selected="0" top="526" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1342" useTextEdit="1" useBinaryEdit="0" left="0" path="Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c" selected="0" top="1321" codecName=""/>
  </Files>
  <ARMCrossStudioWindow activeProject="Netwok_test" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug External" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>
