@@ -50,7 +50,9 @@
 void SysTick_Handler(void);
 void TIM2_IRQHandler(void);
 void TIM8_TRG_COM_TIM14_IRQHandler(void);
+void DMA1_Stream3_IRQHandler(void);
 void ETH_IRQHandler(void);
+void UART7_IRQHandler(void);
 
 #ifdef __cplusplus
 }

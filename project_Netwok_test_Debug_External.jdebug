@@ -12,6 +12,7 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
+  Project.SetTraceSource ("Trace Pins");
   Project.SetDevice ("STM32F767ZI");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
@@ -22,6 +23,7 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
+  Edit.SysVar (VAR_TRACE_CORE_CLOCK, 200000000);
   File.Open ("C:/Users/seeger01/Met4FoF-SmartUpUnit/Debug/Netwok_test.elf");
 }
 

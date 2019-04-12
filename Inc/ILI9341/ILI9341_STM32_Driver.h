@@ -94,19 +94,19 @@
 #define ILI9341_SCREEN_WIDTH 	320
 
 //SPI INSTANCE
-#define HSPI_INSTANCE							&hspi5
+#define HSPI_INSTANCE							&hspi3
 
 //CHIP SELECT PIN AND PORT, STANDARD GPIO
-#define LCD_CS_PORT								CS_GPIO_Port
-#define LCD_CS_PIN								CS_Pin
+#define LCD_CS_PORT								LCD_CS_GPIO_Port
+#define LCD_CS_PIN								LCD_CS_Pin
 
 //DATA COMMAND PIN AND PORT, STANDARD GPIO
-#define LCD_DC_PORT								DC_GPIO_Port
-#define LCD_DC_PIN								DC_Pin
+#define LCD_DC_PORT								LCD_DC_RS_GPIO_Port
+#define LCD_DC_PIN								LCD_DC_RS_Pin
 
 //RESET PIN AND PORT, STANDARD GPIO
-#define	LCD_RST_PORT							RST_GPIO_Port
-#define	LCD_RST_PIN								RST_Pin
+#define	LCD_RST_PORT                                                            LCD_RESET_GPIO_Port
+#define	LCD_RST_PIN								LCD_RESET_Pin
 
 
 #define BURST_MAX_SIZE 	500

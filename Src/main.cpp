@@ -90,6 +90,8 @@
 #include "GPSTimesyn.h"
 #include "NMEAPraser.h"
 
+#include "SEGGER_RTT.h"
+
 osThreadId WebServerTID;
 osThreadId blinkTID;
 osThreadId DataProcessingTID;
@@ -100,7 +102,7 @@ osThreadId LCDTID;
 //MPU6050 MPU6050Acc(I2CdevIface);
 
 #if USE_L3GD20
-L3GD20 Gyro(GPIOG, SPI3_CS_Pin, &hspi3);
+L3GD20 Gyro(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi3);
 //MemPool For the data
 osMailQDef(GyroMail, DATABUFFESEIZE, GyroDataStamped);
 osMailQId GyroMail;
@@ -180,13 +182,14 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	//MX_USART2_UART_Init();
-	MX_USART3_UART_Init();
+        MX_UART7_Init();
+        MX_USART3_UART_Init();
+        MX_USART6_UART_Init();
 	MX_DMA_Init();
 	MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
+	MX_SPI1_Init();
 	MX_SPI3_Init();
-	MX_SPI5_Init();
 	MX_TIM2_Init();
 	MX_I2C1_Init();
 	MX_I2C2_Init();
@@ -320,17 +323,22 @@ void SystemClock_Config(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3
-			| RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_CLK48;
-	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
+        PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART3
+                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART7
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_CLK48;
+	PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIP = RCC_PLLSAIP_DIV8;
 	PeriphClkInitStruct.PLLSAIDivQ = 1;
 	PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
-	PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
-	PeriphClkInitStruct.Usart3ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-	PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
+        PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
+        PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
+        PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
+        PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+        PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
+        PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
 	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
@@ -604,24 +612,35 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		timestamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
 		GPSEdges++;
 			if (GPScaptureCount > 0) {
-				HAL_DMA_Abort(&hdma_usart2_rx);
-				HAL_UART_DMAStop(&huart2);
-				if (mptr != NULL) {
-					osStatus result = osMailPut(NMEAMail, mptr);
-				}
+                                //HAL_UART_RxCpltCallback(&huart7);
+                                if(HAL_UART_DMAStop(&huart7)!=HAL_OK)
+                                {
+                                SEGGER_RTT_printf(0,"HAL_UART_DMAStop returned not ok");
+                                }
+                                if(HAL_DMA_Abort(&hdma_uart7_rx)!=HAL_OK)
+                                {
+                                SEGGER_RTT_printf(0,"HAL_UART_DMAStop returned not ok");
+                                }
 				mptr = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 				if (mptr != NULL) {
 					mptr->RawTimerCount = timestamp;
 					mptr->CaptureCount = GPScaptureCount;
 					memcpy(&(mptr->NMEAMessage[0]),&(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
+                                        osStatus result = osMailPut(NMEAMail, mptr);
 				}
-				HAL_UART_Receive_DMA(&huart2,
-						&(DMA_NMEABUFFER[0]),
+                                SEGGER_RTT_printf(0,"DMA BUFFER:=%s\n",DMA_NMEABUFFER);
+                                memset(DMA_NMEABUFFER, 0, sizeof(DMA_NMEABUFFER));
+				HAL_StatusTypeDef DMA_START_result=HAL_UART_Receive_DMA(&huart7,
+						DMA_NMEABUFFER,
 						NMEBUFFERLEN - 1);
 				GPScaptureCount++;
+                                if(DMA_START_result!=HAL_OK)
+                                {
+                                 SEGGER_RTT_printf(0,"DMA start ERROR");
+                                }
 			}
 			else if (GPScaptureCount == 0) {
-				HAL_UART_Receive_DMA(&huart2,&(DMA_NMEABUFFER[0]),NMEBUFFERLEN - 1);
+				HAL_UART_Receive_DMA(&huart7,&(DMA_NMEABUFFER[0]),NMEBUFFERLEN - 1);
 					GPScaptureCount++;
 				}
 	}

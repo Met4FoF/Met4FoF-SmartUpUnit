@@ -44,8 +44,8 @@
 extern ETH_HandleTypeDef heth;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim14;
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_uart7_rx;
+extern UART_HandleTypeDef huart7;
 
 
 /******************************************************************************/
@@ -102,21 +102,36 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void)
 }
 
 /**
-* @brief This function handles Ethernet global interrupt.
-*/
-
-void DMA1_Stream5_IRQHandler(void)
+  * @brief This function handles DMA1 stream3 global interrupt.
+  */
+void DMA1_Stream3_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
 
-  /* USER CODE END DMA1_Stream5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
-	// use the IRQ Handlers defined in dma_circular.h to handle UART
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart7_rx);
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 
-  /* USER CODE END DMA1_Stream5_IRQn 1 */
+  /* USER CODE END DMA1_Stream3_IRQn 1 */
 }
 
+/**
+  * @brief This function handles UART7 global interrupt.
+  */
+void UART7_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART7_IRQn 0 */
+
+  /* USER CODE END UART7_IRQn 0 */
+  HAL_UART_IRQHandler(&huart7);
+  /* USER CODE BEGIN UART7_IRQn 1 */
+
+  /* USER CODE END UART7_IRQn 1 */
+}
+
+/**
+* @brief This function handles Ethernet global interrupt.
+*/
 
 void ETH_IRQHandler(void)
 {
@@ -128,20 +143,6 @@ void ETH_IRQHandler(void)
 
   /* USER CODE END ETH_IRQn 1 */
 }
-
-/**
-* @brief This function handles USART2 global interrupt.
-*/
-void USART2_IRQHandler(void)
-{
-  /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-  /* USER CODE BEGIN USART2_IRQn 1 */
-  /* USER CODE END USART2_IRQn 1 */
-}
-
 
 /* USER CODE BEGIN 1 */
 
