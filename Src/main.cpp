@@ -495,12 +495,9 @@ if (evt.status == osEventMessage) {
 	rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
 	osMutexRelease(GPS_ref_mutex_id);
 	porcessedCount++;
-	uint8_t MSGBuffer[sizeof(GyroDataStamped)+4]={0};
-	MSGBuffer[0]=0x47;
-	MSGBuffer[1]=0x59;
-	MSGBuffer[2]=0x52;
-	MSGBuffer[3]=0x33;
-	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroDataStamped));
+	uint8_t MSGBuffer[256]={0};
+	GyroDataStamped tmp=*rptr;
+	sprintf((char *)MSGBuffer,"GYR3,%d,%d,%d,%f,%f,%f\n",tmp.CaptureCount,tmp.RawTimerCount,tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z);
 	/* reference the data into the netbuf */
 	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
