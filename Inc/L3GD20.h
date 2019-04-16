@@ -131,7 +131,7 @@ struct GyroDataStamped {
 	uint32_t UnixSecs;
 	uint32_t NanoSecs;
 	uint32_t TimeUncer;
-	uint32_t RawTimerCount;
+	uint64_t RawTimerCount;
 	uint32_t CaptureCount;
 	uint16_t ADCValue;
 	GyroData Data;
@@ -145,7 +145,7 @@ class  L3GD20
   public:
   L3GD20(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* L3GD20spi);
   bool init(gyroRange_t gyrorange,gyroUpdateFreq_t gyroUpdateFreq);
-  GyroDataStamped  GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
+  GyroDataStamped  GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
   GyroData GetData();
   void writeByte(uint8_t subAddress, uint8_t data);
   uint8_t readByte(uint8_t subAddress);

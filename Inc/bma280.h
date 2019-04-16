@@ -138,7 +138,7 @@ struct AccelDataStamped {
 	uint32_t UnixSecs;
 	uint32_t NanoSecs;
 	uint32_t TimeUncer;
-	uint32_t RawTimerCount;
+	uint64_t RawTimerCount;
 	uint32_t CaptureCount;
  	uint16_t ADCValue;
 	AccelData Data;
@@ -157,7 +157,7 @@ class BMA280
   uint8_t getTapType();
   uint8_t getTapStatus();
   AccelData GetData();
-  AccelDataStamped GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
+  AccelDataStamped GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
   void fastCompensation();
   void selfTest();
   void activateDataRDYINT();

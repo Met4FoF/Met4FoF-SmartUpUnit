@@ -58,8 +58,9 @@ def UDP_data_dumper():
         with open(ACCLOGFILENAME, mode='a') as DtataCSV:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
             print(data)
-            if(data.startswith("GYR3")):
-                unpackeddata=unpack('IIIIIIHffff',data)
+            if(data.startswith(b"GYR3")):
+                print(len(data))
+                unpackeddata=unpack('IIIQIIHffff',data)
                 print(unpackeddata)
                 #DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 #DtataCSVwriter.writerow(unpackeddata)           

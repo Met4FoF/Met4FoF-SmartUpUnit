@@ -135,6 +135,9 @@ uint8_t ETH_IP_ADDRESS[4]={192,168,0,10};
 // Target IP for udp straming
 uint8_t UDP_TARGET_IP_ADDRESS[4]={192,168,0,1};
 
+//Top 32 bit for timer2 inputcapture values
+static uint32_t tim2_update_counts;
+static uint64_t tim2_upper_bits_mask;
 #ifdef __cplusplus
 
 extern "C" {
@@ -200,6 +203,7 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_SPI5_Init();
+	tim2_upper_bits_mask=0;//bit mask for the upper 32 bit of 64 bit timer updatet bei update event isr
 	MX_TIM2_Init();
 	MX_I2C1_Init();
 	MX_I2C2_Init();
@@ -256,10 +260,10 @@ int main(void) {
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
-			0, 256);
+	//osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
+	//		0, 256);
 
-	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
+	//LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 	/* USER CODE END 2 */
 
 	//Start timer and arm inputcapture
@@ -275,6 +279,7 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	initGPSTimesny();
 
 	/* Start scheduler */
@@ -555,6 +560,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM14) {
 		HAL_IncTick();
 	}
+	if (htim->Instance == TIM2) {
+	    {
+	    	tim2_update_counts++;
+	    	tim2_upper_bits_mask=uint64_t(tim2_update_counts-1)<<32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+
+	    }
+	}
 	/* USER CODE BEGIN Callback 1 */
 
 	/* USER CODE END Callback 1 */
@@ -574,6 +586,8 @@ void _Error_Handler(char * file, int line) {
 	/* USER CODE END Error_Handler_Debug */
 }
 
+
+
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	//GPS testing change this to an que based aproche in the future
 	static int32_t GPSMissedCpatureCount = 0;
@@ -582,41 +596,121 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t MissedCount = 0;
 	static uint32_t GPSEdges=0;
 	static uint16_t ADCValue;
-#define GPSDEVIDER 1
+
+	// RACE CONDITION CECKING !!
+	// this code occures as well in  void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim) in stm32f7xx_hal_tim.c
+	// this function is called every time an Timer generates an interrupt event and adds it do the Nested Vectored Interrupt Controller (NVIC)
+	// the timer generates an global interrupt witch is always the same regardless the reason for the the interrupt (input capture, output compare, upadte)
+	// so the HAL_TIM_IRQHandler() is called to determin the source of the ISR request, there fore the startus registers of the timer are read.
+	// in that order:
+	// /* Capture compare 1 event */
+	// /* Capture compare 2 event */
+	// /* Capture compare 3 event */
+	// /* Capture compare 4 event */
+	// /* TIM Update event */
+	// ...
+	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
+	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
+	uint64_t tim2_upper_bits_mask_race_condition=0;
+	#define TIM2OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+	bool tim2_race_condition_up_date= false;
+	if (htim->Instance == TIM2){
+	 if(__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET)
+	  {
+	    if(__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) !=RESET)
+	    {
+	      __HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
+	      //the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
+	      //DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
+	      tim2_race_condition_up_date=true;
+	      tim2_upper_bits_mask_race_condition=tim2_upper_bits_mask;
+	      tim2_update_counts++;
+	      tim2_upper_bits_mask=uint64_t(tim2_update_counts-1)<<32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+	    }
+	  }
+	}
+
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_ADC_PollForConversion(&hadc1, 2);
 		ADCValue = HAL_ADC_GetValue(&hadc1);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-#if USE_L3GD20
+	#if USE_L3GD20
 		GyroDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
 		if (mptr != NULL) {
+			if(tim2_race_condition_up_date == false){
+				//this is the nromal case
 			*mptr = Gyro.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					tim2_upper_bits_mask+(uint64_t)HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
 					captureCount,ADCValue);
+			}
+			else
+			{
+				uint32_t timestamp_raw=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
+				uint64_t timestamp;
+				if(timestamp_raw<TIM2OLDTIMERVALMIN)
+					//the timer has overflowen tak the updateted bitmask
+				{
+					timestamp=tim2_upper_bits_mask+(uint64_t)timestamp_raw;
+					*mptr = Gyro.GetStampedData(0x00000000,
+							timestamp,
+							captureCount,ADCValue);
+				}
+				else
+				{
+					//this is an old value using the old bitmask
+					timestamp=tim2_upper_bits_mask_race_condition+(uint64_t)timestamp_raw;
+					*mptr = Gyro.GetStampedData(0x00000000,
+							timestamp,
+							captureCount,ADCValue);
+				}
+
+			}
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
 			osWaitForever);
 		} else {
 			MissedCount++;
 		}
-#endif
-#if USE_BMA280
+	#endif
+	#if USE_BMA280
 		AccelDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
 		if (mptr != NULL) {
+			if(tim2_race_condition_up_date == false){
 			*mptr = Acc.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					tim2_upper_bits_mask+(uint64_t)HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
 					captureCount,ADCValue);
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
+			}
+			else{
+				uint32_t timestamp_raw=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
+				uint64_t timestamp;
+				if(timestamp_raw<TIM2OLDTIMERVALMIN)
+					//the timer has overflowen tak the updateted bitmask
+					{
+					timestamp=tim2_upper_bits_mask+(uint64_t)timestamp_raw;
+					*mptr = Acc.GetStampedData(0x00000000,
+							timestamp,
+							captureCount,ADCValue);
+					}
+					else
+					{
+					//this is an old value using the old bitmask
+					timestamp=tim2_upper_bits_mask_race_condition+(uint64_t)timestamp_raw;
+					*mptr = Acc.GetStampedData(0x00000000,
+					timestamp,
+					captureCount,ADCValue);
+					}
+			}
 			osWaitForever);
 		} else {
 			MissedCount++;
 		}
-#endif
+	#endif
 		captureCount++;
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
@@ -632,15 +726,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			static NMEASTamped *mptr_active=NULL;
 			static NMEASTamped *mptr_old=NULL;
 			static uint32_t GPScaptureCount = 0;
-			uint32_t timestamp=0;
-			timestamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
+			uint64_t timestamp=0;
+			timestamp=tim2_upper_bits_mask+HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
 
 			osStatus result = osMessagePut(GPSTimeBuffer,timestamp,osWaitForever);
 			if (result != osOK) {
 				GPSMissedCpatureCount++;
 			}
 			GPSEdges++;
-			if(GPSEdges%GPSDEVIDER==0){
 			if (GPScaptureCount > 0) {
 					HAL_UART_DMAStop(&huart2);
 					HAL_DMA_Abort(&hdma_usart2_rx);
@@ -672,7 +765,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 
 			}
-	}
 	}
 
 float getGVal(int index) {
