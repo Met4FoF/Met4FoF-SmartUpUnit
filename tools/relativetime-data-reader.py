@@ -39,9 +39,7 @@ from struct import *
 import socket
 import csv
 
-LOGFILENAME ='tmp'
-ACCLOGFILENAME = LOGFILENAME+'gyro.csv'
-GPSLOGFILENAME = LOGFILENAME+'gpst.csv'
+LOGFILENAME ='log_files/tmp.csv'
 LOGGINENABLED = True
 UDP_IP = "192.168.0.1"
 UDP_PORT = 7000
@@ -57,14 +55,18 @@ def UDP_data_dumper():
     try:
         while True:
             if(LOGGINENABLED): 
-                with open(ACCLOGFILENAME, mode='a') as DtataCSV:
+                with open(LOGFILENAME, mode='a') as DtataCSV:
                     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes               
                     if(data.startswith(b"GYR3")):  
                         stringData=str(data)
                         print(stringData.partition(r'\n')[0])
-                        #DtataCSVwriter = csv.writer(DtataCSV, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        #DtataCSVwriter.writerow(unpackeddata)
+                        DtataCSV.write(stringData.partition(r'\n')[0]+'\n')
+                    if(data.startswith(b"REFT")):  
+                        stringData=str(data)
+                        print(stringData.partition(r'\n')[0])
+                        DtataCSV.write(stringData.partition(r'\n')[0]+'\n')
     except KeyboardInterrupt:
+        DtataCSV.close()
         pass
 if __name__ == '__main__':
     UDP_data_dumper()
