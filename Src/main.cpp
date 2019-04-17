@@ -59,7 +59,7 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
-
+#include <inttypes.h>
 //Networkinterface and Webserver
 #include "lwip/api.h"
 #include "lwip/udp.h"
@@ -497,7 +497,7 @@ if (evt.status == osEventMessage) {
 	porcessedCount++;
 	uint8_t MSGBuffer[256]={0};
 	GyroDataStamped tmp=*rptr;
-	sprintf((char *)MSGBuffer,"GYR3,%d,%d,%d,%f,%f,%f\n",tmp.CaptureCount,tmp.RawTimerCount,tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z);
+	sprintf((char *)MSGBuffer,"GYR3,%d,%llu,%d,%f,%f,%f\n",tmp.CaptureCount,tmp.RawTimerCount,tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z);
 	/* reference the data into the netbuf */
 	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
