@@ -106,6 +106,7 @@ void TIM8_TRG_COM_TIM14_IRQHandler(void)
   */
 void DMA1_Stream3_IRQHandler(void)
 {
+SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
 
   /* USER CODE END DMA1_Stream3_IRQn 0 */
@@ -113,6 +114,7 @@ void DMA1_Stream3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 
   /* USER CODE END DMA1_Stream3_IRQn 1 */
+  SEGGER_SYSVIEW_RecordExitISR();
 }
 
 /**
@@ -120,6 +122,7 @@ void DMA1_Stream3_IRQHandler(void)
   */
 void UART7_IRQHandler(void)
 {
+  SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN UART7_IRQn 0 */
 
   /* USER CODE END UART7_IRQn 0 */
@@ -127,6 +130,7 @@ void UART7_IRQHandler(void)
   /* USER CODE BEGIN UART7_IRQn 1 */
 
   /* USER CODE END UART7_IRQn 1 */
+  SEGGER_SYSVIEW_RecordExitISR();
 }
 
 /**
@@ -135,6 +139,7 @@ void UART7_IRQHandler(void)
 
 void ETH_IRQHandler(void)
 {
+  SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN ETH_IRQn 0 */
 
   /* USER CODE END ETH_IRQn 0 */
@@ -142,6 +147,7 @@ void ETH_IRQHandler(void)
   /* USER CODE BEGIN ETH_IRQn 1 */
 
   /* USER CODE END ETH_IRQn 1 */
+    SEGGER_SYSVIEW_RecordExitISR();
 }
 
 /* USER CODE BEGIN 1 */

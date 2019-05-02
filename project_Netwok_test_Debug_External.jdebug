@@ -12,19 +12,19 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.SetTraceSource ("Trace Pins");
   Project.SetDevice ("STM32F767ZI");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4000");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
+  Project.SetTraceSource ("Trace Pins");
   Project.AddPathSubstitute ("C:/Users/seeger01/Met4FoF-SmartUpUnit", "$(ProjectDir)");
   Project.AddPathSubstitute ("c:/users/seeger01/met4fof-smartupunit", "$(ProjectDir)");
   //
   // User settings
   //
-  Edit.SysVar (VAR_TRACE_CORE_CLOCK, 200000000);
   File.Open ("C:/Users/seeger01/Met4FoF-SmartUpUnit/Debug/Netwok_test.elf");
+  Edit.SysVar (VAR_TRACE_CORE_CLOCK, 200000000);
 }
 
 /*********************************************************************

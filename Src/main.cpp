@@ -560,6 +560,7 @@ void _Error_Handler(char * file, int line) {
  @enduml
  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+        SEGGER_SYSVIEW_RecordEnterISR();
 	//GPS testing change this to an que based aproche in the future
 	static uint32_t captureCount = 0;
 	static uint32_t GPSEdges = 0;
@@ -644,6 +645,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					GPScaptureCount++;
 				}
 	}
+        SEGGER_SYSVIEW_RecordExitISR();
 }
 
 float getGVal(int index) {
