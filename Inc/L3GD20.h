@@ -27,7 +27,7 @@
 #include "spi.h"
 #include "gpio.h"
 #include "stm32f7xx_hal.h"
-
+#include "main.h"
 #include <stdint.h>
 #include <cstring>
 #include <math.h>

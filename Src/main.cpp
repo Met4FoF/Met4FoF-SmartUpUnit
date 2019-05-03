@@ -67,7 +67,8 @@
 #include "httpserver-netconn.h"
 #include "math.h"
 
-#define USE_L3GD20 1
+#define USE_MPU9250 1
+#define USE_L3GD20 0
 #define USE_BMA280 0
 // Sensors
 //#include "ADXL345.h"
@@ -79,6 +80,11 @@
 //FOR L3GD20
 #if USE_L3GD20
 #include "L3GD20.h"
+#endif
+
+//FOR L3GD20
+#if USE_MPU9250
+#include "MPU9250.h"
 #endif
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
@@ -105,6 +111,10 @@ osPoolId GyroPool;
 //MessageQ for the time Stamped data
 osMessageQDef(GyroMsgBuffer, DATABUFFESEIZE, uint32_t);
 osMessageQId GyroMsgBuffer;
+#endif
+
+#if USE_MPU9250
+MPU9250 IMU(GPIOG, SPI3_CS_Pin, &hspi3);
 #endif
 
 //TODO update website
@@ -215,6 +225,10 @@ int main(void) {
 #if USE_L3GD20
 	Gyro.init(GYRO_RANGE_2000DPS, GYRO_UPDATE_800_HZ);
 #endif
+#if USE_MPU9250
+	IMU.begin();
+#endif
+
 	HAL_ADC_Start(&hadc1);
 	//MPU6050Acc.initialize();
 	// ADXL345
@@ -250,7 +264,7 @@ int main(void) {
 			128);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 256);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(DataProcessingThread, StartDataProcessingThread,
@@ -395,6 +409,12 @@ void StartWebserverThread(void const * argument) {
 
 void StartBlinkThread(void const * argument) {
 	while (1) {
+		uint8_t MSGBuffer[32]={0};
+		IMU.readSensor();
+		float x=IMU.getAccelX_mss();
+		float y=IMU.getAccelY_mss();
+		float z=IMU.getAccelZ_mss();
+		sprintf((char *) MSGBuffer,"VALS=%f,%f,%f",x,y,z);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		osDelay(100);
 	}
@@ -516,7 +536,7 @@ void StartDataStreamingThread(void const * argument) {
 			osPoolFree(GyroPool, rptr);
 		}
 #endif
-		evtREF = osMessageGet(RefClockTimeBuffer, 0);
+		evtREF = osMessageGet(RefClockTimeBuffer, 200);
 		if (evtREF.status == osEventMessage) {
 			uint64_t *rptr;
 			rptr = (uint64_t*) evtREF.value.p;
@@ -585,11 +605,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t MissedCount = 0;
 	static uint32_t GPSEdges = 0;
 	static uint16_t ADCValue;
-
 	// RACE CONDITION CECKING !!
 	// this code occures as well in  void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim) in stm32f7xx_hal_tim.c
 	// this function is called every time an Timer generates an interrupt event and adds it do the Nested Vectored Interrupt Controller (NVIC)
-	// the timer generates an global interrupt witch is always the same regardless the reason for the the interrupt (input capture, output compare, upadte)
+	// the timer generates an global interrupt(IRQ#44 TIM2_IRQHandler) witch is always the same regardless the reason for the the interrupt (input capture, output compare, upadte)
 	// so the HAL_TIM_IRQHandler() is called to determin the source of the ISR request, there fore the startus registers of the timer are read.
 	// in that order:
 	// /* Capture compare 1 event */
@@ -601,7 +620,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
 	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
 	uint64_t tim2_upper_bits_mask_race_condition = 0;
-#define TIM2OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+	#define TIM2OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
 	bool tim2_race_condition_up_date = false;
 	if (htim->Instance == TIM2) {
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {

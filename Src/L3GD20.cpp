@@ -21,14 +21,9 @@
   Written by Kevin "KTOWN" Townsend for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
-#include <stdint.h>
-#include <cstring>
-#include <math.h>
+
 #include "L3GD20.h"
-#include "stm32f7xx_hal.h"
-#include "spi.h"
-#include "gpio.h"
-#include "main.h"
+
 
 #define USE_MULTIBYTE_READ 1
 
