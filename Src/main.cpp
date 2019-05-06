@@ -115,6 +115,12 @@ osMessageQId GyroMsgBuffer;
 
 #if USE_MPU9250
 MPU9250 IMU(GPIOG, SPI3_CS_Pin, &hspi3);
+osPoolDef(GyroPool, DATABUFFESEIZE, GyroDataStamped);
+osPoolId GyroPool;
+
+//MessageQ for the time Stamped data
+osMessageQDef(GyroMsgBuffer, DATABUFFESEIZE, uint32_t);
+osMessageQId GyroMsgBuffer;
 #endif
 
 //TODO update website
@@ -225,8 +231,10 @@ int main(void) {
 #if USE_L3GD20
 	Gyro.init(GYRO_RANGE_2000DPS, GYRO_UPDATE_800_HZ);
 #endif
+
 #if USE_MPU9250
 	IMU.begin();
+	IMU.enableDataReadyInterrupt();
 #endif
 
 	HAL_ADC_Start(&hadc1);
@@ -251,6 +259,11 @@ int main(void) {
 	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
 #endif
 #if USE_L3GD20
+	GyroPool = osPoolCreate(osPool(GyroPool));
+	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
+#endif
+
+#if USE_MPU9250
 	GyroPool = osPoolCreate(osPool(GyroPool));
 	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
 #endif
@@ -409,12 +422,6 @@ void StartWebserverThread(void const * argument) {
 
 void StartBlinkThread(void const * argument) {
 	while (1) {
-		uint8_t MSGBuffer[32]={0};
-		IMU.readSensor();
-		float x=IMU.getAccelX_mss();
-		float y=IMU.getAccelY_mss();
-		float z=IMU.getAccelZ_mss();
-		sprintf((char *) MSGBuffer,"VALS=%f,%f,%f",x,y,z);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		osDelay(100);
 	}
@@ -423,7 +430,8 @@ void StartBlinkThread(void const * argument) {
 
 void StartDataProcessingThread(void const * argument) {
 	while (1) {
-		osDelay(1000);
+		osDelay(5000);
+		IMU.readSensor();
 	}
 	osThreadTerminate(NULL);
 }
@@ -536,7 +544,32 @@ void StartDataStreamingThread(void const * argument) {
 			osPoolFree(GyroPool, rptr);
 		}
 #endif
-		evtREF = osMessageGet(RefClockTimeBuffer, 200);
+#if USE_MPU9250
+//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+		evt = osMessageGet(GyroMsgBuffer, 200);
+		struct timespec utc;
+		if (evt.status == osEventMessage) {
+			GyroDataStamped *rptr;
+			rptr = (GyroDataStamped*) evt.value.p;
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_cnt2utc(GPS_ref, rptr->RawTimerCount, &utc);
+			rptr->UnixSecs = (uint32_t) (utc.tv_sec);
+			rptr->NanoSecs = (uint32_t) (utc.tv_nsec);
+			osMutexRelease(GPS_ref_mutex_id);
+			porcessedCount++;
+			uint8_t MSGBuffer[256] = { 0 };
+			GyroDataStamped tmp = *rptr;
+			float timeval=(tmp.RawTimerCount/100000000.0);
+			sprintf((char *) MSGBuffer, "GYR3,%d,%llu,%d,%f,%f,%f,\n",
+					tmp.CaptureCount, tmp.RawTimerCount, tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z);
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+			/* send the text */
+			netconn_send(conn, buf);
+			osPoolFree(GyroPool, rptr);
+		}
+#endif
+		evtREF = osMessageGet(RefClockTimeBuffer, 0);
 		if (evtREF.status == osEventMessage) {
 			uint64_t *rptr;
 			rptr = (uint64_t*) evtREF.value.p;
@@ -714,10 +747,53 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			MissedCount++;
 		}
 #endif
+#if USE_MPU9250
+		GyroDataStamped *mptr;
+		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
+		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
+		if (mptr != NULL) {
+			if (tim2_race_condition_up_date == false) {
+				//this is the nromal case
+				*mptr = IMU.GetStampedData(0x00000000,
+						tim2_upper_bits_mask
+								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+										TIM_CHANNEL_1), captureCount, ADCValue);
+			} else {
+				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+						TIM_CHANNEL_1);
+				uint64_t timestamp;
+				if (timestamp_raw < TIM2OLDTIMERVALMIN)
+				//the timer has overflowen tak the updateted bitmask
+				{
+					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+					*mptr = IMU.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				} else {
+					//this is an old value using the old bitmask
+					timestamp = tim2_upper_bits_mask_race_condition
+							+ (uint64_t) timestamp_raw;
+					*mptr = IMU.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				}
+
+			}
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
+			0);
+		} else {
+			MissedCount++;
+		}
+#endif
+//		GyroDataStamped tmp=IMU.GetStampedData(0x00000000,
+//							tim2_upper_bits_mask
+//								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+//									TIM_CHANNEL_1), captureCount, ADCValue);
+
 		captureCount++;
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
-	} else if (htim->Instance == TIM2
+	}
+	else if (htim->Instance == TIM2
 			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 
 		uint64_t timestamp;

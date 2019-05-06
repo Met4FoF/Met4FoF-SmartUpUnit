@@ -40,6 +40,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <cstring>
 #include <math.h>
 
+//TODO find an other way to define this struct in a class o so that multiple sensos libs can be used at the same time
+    struct GyroData {
+      float x;
+      float y;
+      float z;
+      float temperature;
+    };
+    struct GyroDataStamped {
+    	uint32_t UnixSecs;
+    	uint32_t NanoSecs;
+    	uint32_t TimeUncer;
+    	uint64_t RawTimerCount;
+    	uint32_t CaptureCount;
+    	uint16_t ADCValue;
+    	GyroData Data;
+    };
 class MPU9250{
   public:
     enum GyroRange
@@ -127,6 +143,8 @@ class MPU9250{
     void setMagCalX(float bias,float scaleFactor);
     void setMagCalY(float bias,float scaleFactor);
     void setMagCalZ(float bias,float scaleFactor);
+    GyroDataStamped  GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
+    GyroData GetData();
   protected:
     // spi
     GPIO_TypeDef* _SPICSTypeDef;

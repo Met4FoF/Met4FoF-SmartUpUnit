@@ -120,13 +120,12 @@
 
 #define DEFAULT_GYRORANGE GYRO_RANGE_2000DPS
 
-struct GyroData {
-  float x;
-  float y;
-  float z;
-  float temperature;
-};
-
+	struct GyroData {
+	  float x;
+	  float y;
+	  float z;
+	  float temperature;
+	};
 struct GyroDataStamped {
 	uint32_t UnixSecs;
 	uint32_t NanoSecs;
@@ -136,6 +135,8 @@ struct GyroDataStamped {
 	uint16_t ADCValue;
 	GyroData Data;
 };
+
+
 /**
  *  L3GD20 triple axis, digital interface, gyroscope.
  */

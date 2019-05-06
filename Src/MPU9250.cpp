@@ -92,8 +92,8 @@ int MPU9250::begin(){
     return -10;
   }
   _bandwidth = DLPF_BANDWIDTH_184HZ;
-  // setting the sample rate divider to 0 as default
-  if(writeRegister(SMPDIV,0x00) < 0){ 
+  // setting the sample rate divider to 4 as default
+  if(writeRegister(SMPDIV,0x00) < 0){
     return -11;
   } 
   _srd = 0;
@@ -1064,4 +1064,23 @@ int MPU9250::whoAmIAK8963(){
   }
   // return the register value
   return _buffer[0];
+}
+
+GyroData MPU9250::GetData(){
+	GyroData retval;
+	MPU9250::readSensor();
+	retval.x=_gx;
+	retval.y=_gy;
+	retval.z=_gz;
+	return retval;
+}
+
+GyroDataStamped  MPU9250::GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
+    GyroDataStamped returnVal{0,0,0,0};
+	returnVal.Data=MPU9250::GetData();
+	returnVal.UnixSecs=UnixSecs;
+	returnVal.RawTimerCount=RawTimerCount;
+	returnVal.CaptureCount=CaptureCount;
+	returnVal.ADCValue=ADCVal;
+	return returnVal;
 }

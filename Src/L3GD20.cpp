@@ -206,7 +206,7 @@ _gyrorange=DEFAULT_GYRORANGE ;
     return data;
   }
 
-  GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
+  	GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
 	GyroDataStamped returnVal{0,0,0,0};
   	returnVal.Data=L3GD20::GetData();
   	returnVal.UnixSecs=UnixSecs;
