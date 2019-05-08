@@ -193,10 +193,10 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	MX_USART2_UART_Init();
+	//MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
 	MX_DMA_Init();
-	//MX_USB_OTG_FS_PCD_Init();
+	MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_SPI5_Init();
@@ -276,7 +276,7 @@ int main(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 	initGPSTimesny();
-
+        SEGGER_SYSVIEW_Conf();
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -405,7 +405,7 @@ void StartDataProcessingThread(void const * argument) {
 void  StartLCDThread(void const * argument) {
 	ILI9341_Init();//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text,"Build.date:%s",__DATE__);
