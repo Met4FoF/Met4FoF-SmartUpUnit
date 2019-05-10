@@ -90,9 +90,9 @@ void StartNemaParserThread(void const * argument) {
 				osStatus result = osMailPut(GPSDebugMail, (GPSDebugMsg*) mailptr);
 			}
 
-			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
-			osMutexRelease(GPS_ref_mutex_id);
+			//osMutexRelease(GPS_ref_mutex_id);
 			osMailFree(NMEAMail, rptr);
 			porcessedCount++;
 		}

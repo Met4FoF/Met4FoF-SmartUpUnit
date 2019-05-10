@@ -35,3 +35,5 @@ Debug/
 NUCLEO-F767ZI\.xml
 
 tools/log_files/
+
+Release/

@@ -254,6 +254,8 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+          /* Enable ADC1 external trigger */ 
+        HAL_ADC_Start_IT(&hadc1);
 	initGPSTimesny();
         SEGGER_SYSVIEW_Conf();
 	/* Start scheduler */
@@ -361,9 +363,7 @@ void SystemClock_Config(void) {
 
 /* StartDefaultTask function */
 void StartWebserverThread(void const * argument) {
-	/* init code for LWIP */
-	MX_LWIP_Init();
-
+        osDelay(4000);
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {
@@ -417,6 +417,8 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamingThread(void const * argument) {
+	/* init code for LWIP */
+        MX_LWIP_Init();
 	static uint32_t porcessedCount = 0;
 	struct netconn *conn;
 	struct netbuf *buf;
@@ -466,11 +468,11 @@ void StartDataStreamingThread(void const * argument) {
 		if (Gyroevt.status == osEventMail) {
 			GyroDataStamped *Gyrorptr;
 			Gyrorptr = (GyroDataStamped*) Gyroevt.value.p;
-			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
 			lgw_cnt2utc(GPS_ref, Gyrorptr->RawTimerCount, &utc);
 			Gyrorptr->UnixSecs = (uint32_t) (utc.tv_sec);
 			Gyrorptr->NanoSecs = (uint32_t) (utc.tv_nsec);
-			osMutexRelease(GPS_ref_mutex_id);
+			//osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
 			uint8_t MSGBuffer[sizeof(GyroDataStamped) + 4] = { 0 };
 			MSGBuffer[0] = 0x47;
@@ -567,8 +569,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint16_t ADCValue;
 	static uint32_t Errorcount=0;
 #define GPSDEVIDER 1
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		HAL_ADC_PollForConversion(&hadc1, 2);
+	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		HAL_ADC_PollForConversion(&hadc1, 1);
 		ADCValue = HAL_ADC_GetValue(&hadc1);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 #if USE_L3GD20
@@ -599,7 +601,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	} else if (htim->Instance == TIM2
-			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 	}
 
 	else if (htim->Instance == TIM2
