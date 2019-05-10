@@ -50,7 +50,8 @@
 // STM32 Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+//#include "cmsis_os.h"
 #include "adc.h"
 #include "lwip.h"
 #include "spi.h"
@@ -277,6 +278,8 @@ int main(void) {
 	}
 	initGPSTimesny();
         SEGGER_SYSVIEW_Conf();
+        	/* init code for LWIP */
+	MX_LWIP_Init();
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -377,9 +380,7 @@ void SystemClock_Config(void) {
 
 /* StartDefaultTask function */
 void StartWebserverThread(void const * argument) {
-	/* init code for LWIP */
-	MX_LWIP_Init();
-
+        osDelay(2000);
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {

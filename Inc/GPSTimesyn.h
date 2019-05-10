@@ -13,14 +13,17 @@
 #endif
 
 #include <stdint.h>
+#include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include <time.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "cmsis_os.h"
 #include "GPSTimesyn.h"
 #include "NMEAPraser.h"
+
+#include "SEGGER_RTT.h"
+#include "stm32f7xx_hal.h"
 #include <time.h>       /* struct timespec */
 
 #define NMEABUFFERSIZE 10
@@ -47,14 +50,11 @@ osThreadId NemaParserTID;
 
 osMutexDef (GPS_ref_mutex);    // Declare mutex
 osMutexId  (GPS_ref_mutex_id); // Mutex ID
-struct tref GPS_ref;
 
+struct tref GPS_ref;
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 		256);
-
-
-
 
 #ifdef __cplusplus
 }

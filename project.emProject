@@ -1,0 +1,93 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="project" target="8" version="2">
+  <project Name="Netwok_test">
+    <configuration
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M7"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv5-SP-D16"
+      arm_simulator_memory_simulation_parameter="RX 08000000,00200000,FFFFFFFF;RWX 20010000,0003c000,CDCDCDCD"
+      arm_target_device_name="STM32F767ZI"
+      arm_target_interface_type="SWD"
+      debug_start_from_entry_point_symbol="No"
+      debug_target_connection="J-Link"
+      linker_section_placements_segments="FLASH RX 0x08000000 0x00200000;RAM RWX 0x20010000 0x0003c000"
+      project_directory=""
+      project_type="Externally Built Executable" />
+    <configuration
+      Name="Debug"
+      arm_fp_abi="Hard"
+      armgnu_cl_optimization_level="Space"
+      c_additional_options="-g3"
+      c_preprocessor_definitions="__weak=&quot;__attribute__((weak))&quot;;__packed=&quot;__attribute__((__packed__))&quot;;USE_HAL_DRIVER;STM32F767xx"
+      c_user_include_directories="$(ProjectDir)/Inc;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include;$(ProjectDir)/Middlewares/Third_Party/LwIP/system;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif/ppp;$(ProjectDir)/Drivers/CMSIS/Device/ST/STM32F7xx/Include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/apps;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/priv;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/prot;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix/sys;$(ProjectDir)/Middlewares/Third_Party/LwIP/system/arch;$(ProjectDir)/Drivers/CMSIS/Include"
+      gcc_debugging_level="Level 3"
+      gcc_optimization_level="Debug"
+      linker_additional_files="" />
+    <configuration
+      Name="External GNU"
+      build_intermediate_directory="Release"
+      build_output_directory="Release"
+      c_additional_options=";-Os;-g3"
+      link_linker_script_file="STM32F767ZITx_FLASH.ld"
+      link_use_linker_script_file="Yes"
+      post_build_command="$(ToolChainDir)/arm-none-eabi-objcopy -O ihex &quot;Netwok_test.elf&quot; &quot;Netwok_test.hex&quot; &amp;&amp; $(ToolChainDir)/arm-none-eabi-size &quot;Netwok_test.elf&quot;"
+      post_build_command_wd="$(ProjectDir)/Release" />
+    <configuration
+      Name="Release"
+      arm_fp_abi="Hard"
+      c_preprocessor_definitions="__weak=&quot;__attribute__((weak))&quot;;__packed=&quot;__attribute__((__packed__))&quot;;USE_HAL_DRIVER;STM32F767xx"
+      c_user_include_directories="$(ProjectDir)/Inc;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include;$(ProjectDir)/Middlewares/Third_Party/LwIP/system;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif/ppp;$(ProjectDir)/Drivers/CMSIS/Device/ST/STM32F7xx/Include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/apps;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/priv;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/prot;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix/sys;$(ProjectDir)/Middlewares/Third_Party/LwIP/system/arch;$(ProjectDir)/Drivers/CMSIS/Include"
+      gcc_debugging_level="Level 3"
+      gcc_optimization_level="Debug"
+      linker_additional_files="" />
+    <folder Name="Source Files" />
+    <folder
+      Name="Drivers"
+      exclude=""
+      filter="*.*"
+      path="Drivers"
+      recurse="Yes" />
+    <folder Name="Inc" exclude="" filter="*.*" path="Inc" recurse="Yes" />
+    <folder
+      Name="Middlewares"
+      exclude=""
+      filter="*.*"
+      path="Middlewares"
+      recurse="Yes" />
+    <folder Name="Src" exclude="" filter="*.*" path="Src" recurse="Yes" />
+    <folder
+      Name="startup"
+      exclude=""
+      filter="*.*"
+      path="startup"
+      recurse="Yes" />
+    <folder
+      Name="webpages"
+      exclude=""
+      filter="*.*"
+      path="webpages"
+      recurse="Yes" />
+  </project>
+  <configuration
+    Name="External GNU"
+    build_generic_options_file_name="$(StudioDir)/targets/ARMGNU_build_options.xml"
+    build_toolchain_directory="C:/Program Files (x86)/GNU Tools ARM Embedded/6 2017-q2-update/bin"
+    hidden="Yes"
+    linker_additional_options="-Xlinker;--gc-sections;--specs=nano.specs;--specs=nosys.specs;-Wl,--start-group;-lm;-lc;-lgcc" />
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_optimization_level="None"
+    inherited_configurations="External GNU" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="None"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 1"
+    inherited_configurations="External GNU" />
+</solution>

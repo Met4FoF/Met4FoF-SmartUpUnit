@@ -29,11 +29,9 @@ Maintainer: Michael Coracin
 
 #include <stdlib.h>
 
-#include <NMEAPraser.h>
+#include "NMEAPraser.h"
 
-#include "stm32f7xx_hal.h"
 
-#include "SEGGER_RTT.h"
 
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */

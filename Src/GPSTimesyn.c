@@ -5,15 +5,7 @@
  *      Author: seeger01
  */
 
-#include <stdint.h>
-#include "cmsis_os.h"
-#include <time.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-#include "cmsis_os.h"
 #include "GPSTimesyn.h"
-#include "NMEAPraser.h"
 #include <time.h>       /* struct timespec */
 
 
