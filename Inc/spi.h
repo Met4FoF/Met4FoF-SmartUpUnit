@@ -70,7 +70,8 @@ extern SPI_HandleTypeDef hspi5;
 
 extern void _Error_Handler(char *, int);
 
-void MX_SPI3_Init(void);
+void MX_SPI3_Init_fast(void);
+void MX_SPI3_Init_slow(void);
 void MX_SPI5_Init(void);
 
 /* USER CODE BEGIN Prototypes */

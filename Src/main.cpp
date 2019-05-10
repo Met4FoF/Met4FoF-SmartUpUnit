@@ -94,6 +94,12 @@
 #include "GPSTimesyn.h"
 #include "NMEAPraser.h"
 
+//ProtoBuff
+#include "pb.h"
+#include "message.pb.h"
+#include "pb_common.h"
+#include "pb_encode.h"
+
 osThreadId WebServerTID;
 osThreadId blinkTID;
 osThreadId DataProcessingTID;
@@ -219,7 +225,7 @@ int main(void) {
 	MX_DMA_Init();
 	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
-	MX_SPI3_Init();
+	MX_SPI3_Init_slow();
 	MX_SPI5_Init();
 	tim2_upper_bits_mask = 0; //bit mask for the upper 32 bit of 64 bit timer updatet bei update event isr
 	MX_TIM2_Init();
@@ -233,8 +239,10 @@ int main(void) {
 #endif
 
 #if USE_MPU9250
+	MX_SPI3_Init_slow();
 	IMU.begin();
 	IMU.enableDataReadyInterrupt();
+	MX_SPI3_Init_fast();
 #endif
 
 	HAL_ADC_Start(&hadc1);
@@ -421,16 +429,18 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	int i=0;
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		osDelay(100);
+
 	}
 	osThreadTerminate(NULL);
 }
 
 void StartDataProcessingThread(void const * argument) {
 	while (1) {
-		osDelay(5000);
+		osDelay(1000);
 		IMU.readSensor();
 	}
 	osThreadTerminate(NULL);
@@ -546,7 +556,7 @@ void StartDataStreamingThread(void const * argument) {
 #endif
 #if USE_MPU9250
 //Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
-		evt = osMessageGet(GyroMsgBuffer, 200);
+		evt = osMessageGet(GyroMsgBuffer, 20);
 		struct timespec utc;
 		if (evt.status == osEventMessage) {
 			GyroDataStamped *rptr;
@@ -583,6 +593,29 @@ void StartDataStreamingThread(void const * argument) {
 			netconn_send(conn, buf);
 			osPoolFree(RefClockTimePool, rptr);
 		}
+#define PROTO_DUMMY_DATA 1
+#ifdef PROTO_DUMMY_DATA
+		static int i=0;
+		{
+			ProtoGyroDataStamped DataMessage;
+			DataMessage.capture_count=1+i;
+			DataMessage.raw_timer_count=10+i;
+			DataMessage.adc_val=100+i;
+			DataMessage.has_adc_val=true;
+			DataMessage.x=1000+i;
+			DataMessage.y=1000+i;
+			DataMessage.z=1000+i;
+			DataMessage.has_temp=true;
+			DataMessage.temp=1000+i;
+			uint8_t ProtoBuffer[ProtoGyroDataStamped_size];
+			pb_ostream_t stream = pb_ostream_from_buffer(ProtoBuffer, sizeof(ProtoBuffer));
+			pb_encode(&stream, ProtoGyroDataStamped_fields, &DataMessage);
+			i++;
+			netbuf_ref(buf, &ProtoBuffer, stream.bytes_written);
+			/* send the text */
+			netconn_send(conn, buf);
+		}
+#endif
 	}
 	osThreadTerminate(NULL);
 }
