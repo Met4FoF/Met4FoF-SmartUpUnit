@@ -37,7 +37,7 @@ typedef struct {
 }NMEASTamped;
 
 typedef struct {
-	uint32_t RawTimerCount;
+	uint64_t RawTimerCount;
 	uint32_t CaptureCount;
     struct timespec utc;        /*!> reference UTC time (from GPS/NMEA) */
     struct timespec gps_time;        /*!> reference GPS time (since 01.Jan.1980) */

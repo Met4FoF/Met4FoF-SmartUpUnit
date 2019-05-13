@@ -521,7 +521,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struct timespec gps_time) {
+int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struct timespec gps_time) {
     double cnt_diff; /* internal concentrator time difference (in seconds) */
     double utc_diff; /* UTC time difference (in seconds) */
     double slope; /* time slope between new reference and old reference (for sanity check) */
@@ -592,7 +592,7 @@ int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struc
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
+int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc) {
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -622,7 +622,7 @@ int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_utc2cnt(struct tref ref, struct timespec utc, uint32_t *count_us) {
+int lgw_utc2cnt(struct tref ref, struct timespec utc, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
@@ -636,14 +636,14 @@ int lgw_utc2cnt(struct tref ref, struct timespec utc, uint32_t *count_us) {
     delta_sec += 1E-9 * (double)(utc.tv_nsec - ref.utc.tv_nsec);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint32_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
 
     return LGW_GPS_SUCCESS;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_cnt2gps(struct tref ref, uint32_t count_us, struct timespec *gps_time) {
+int lgw_cnt2gps(struct tref ref, uint64_t count_us, struct timespec *gps_time) {
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -673,7 +673,7 @@ int lgw_cnt2gps(struct tref ref, uint32_t count_us, struct timespec *gps_time) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint32_t *count_us) {
+int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
@@ -687,7 +687,7 @@ int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint32_t *count_us) {
     delta_sec += 1E-9 * (double)(gps_time.tv_nsec - ref.gps.tv_nsec);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint32_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
 
     return LGW_GPS_SUCCESS;
 }

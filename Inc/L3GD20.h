@@ -27,10 +27,11 @@
 #include "spi.h"
 #include "gpio.h"
 #include "stm32f7xx_hal.h"
-
 #include <stdint.h>
 #include <cstring>
 #include <math.h>
+#include "main.h"
+#include "message.pb.h"
 
 //I2C currently not supportet
 /*=========================================================================
@@ -119,23 +120,6 @@
     } gyroUpdateFreq_t;
 
 #define DEFAULT_GYRORANGE GYRO_RANGE_2000DPS
-
-struct GyroData {
-  float x;
-  float y;
-  float z;
-  float temperature;
-};
-
-struct GyroDataStamped {
-	uint32_t UnixSecs;
-	uint32_t NanoSecs;
-	uint32_t TimeUncer;
-	uint32_t RawTimerCount;
-	uint32_t CaptureCount;
-	uint16_t ADCValue;
-	GyroData Data;
-};
 /**
  *  L3GD20 triple axis, digital interface, gyroscope.
  */
@@ -145,8 +129,8 @@ class  L3GD20
   public:
   L3GD20(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* L3GD20spi);
   bool init(gyroRange_t gyrorange,gyroUpdateFreq_t gyroUpdateFreq);
-  GyroDataStamped  GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
-  GyroData GetData();
+  ProtoIMUStamped  GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal);
+  bool GetData(float * x,float * y,float * z,float * temperature);
   void writeByte(uint8_t subAddress, uint8_t data);
   uint8_t readByte(uint8_t subAddress);
   bool readBytes(uint8_t subAddress, uint8_t count, uint8_t* dest);

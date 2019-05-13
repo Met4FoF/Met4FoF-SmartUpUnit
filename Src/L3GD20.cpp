@@ -21,14 +21,9 @@
   Written by Kevin "KTOWN" Townsend for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
-#include <stdint.h>
-#include <cstring>
-#include <math.h>
+
 #include "L3GD20.h"
-#include "stm32f7xx_hal.h"
-#include "spi.h"
-#include "gpio.h"
-#include "main.h"
+
 
 #define USE_MULTIBYTE_READ 1
 
@@ -144,9 +139,8 @@ _gyrorange=DEFAULT_GYRORANGE ;
 	    return true;
 	  }
 
-  GyroData L3GD20::GetData()
+  bool L3GD20::GetData(float * x,float * y,float * z,float * temperature)
   {
-	  GyroData data={float NAN, float NAN ,float NAN ,float NAN };
 	  int16_t tmp_x,tmp_y,tmp_z=0;
 	  int8_t tmp_tmperature=0;
 	  /*
@@ -190,35 +184,36 @@ _gyrorange=DEFAULT_GYRORANGE ;
     switch(_gyrorange)
     {
       case GYRO_RANGE_250DPS:
-        data.x = GYRO_SENSITIVITY_250DPS*(float)tmp_x;
-        data.y = GYRO_SENSITIVITY_250DPS*(float)tmp_y;
-        data.z = GYRO_SENSITIVITY_250DPS*(float)tmp_z;
-        data.temperature=-tmp_tmperature;
+        *x = GYRO_SENSITIVITY_250DPS*(float)tmp_x;
+        *y = GYRO_SENSITIVITY_250DPS*(float)tmp_y;
+        *z = GYRO_SENSITIVITY_250DPS*(float)tmp_z;
+        *temperature=-tmp_tmperature;
         break;
       case GYRO_RANGE_500DPS:
-        data.x = GYRO_SENSITIVITY_500DPS*(float)tmp_x;
-        data.y = GYRO_SENSITIVITY_500DPS*(float)tmp_y;
-        data.z = GYRO_SENSITIVITY_500DPS*(float)tmp_z;
-        data.temperature=-tmp_tmperature;
+        *x = GYRO_SENSITIVITY_500DPS*(float)tmp_x;
+        *y = GYRO_SENSITIVITY_500DPS*(float)tmp_y;
+        *z = GYRO_SENSITIVITY_500DPS*(float)tmp_z;
+        *temperature=-tmp_tmperature;
         break;
       case GYRO_RANGE_2000DPS:
-        data.x = GYRO_SENSITIVITY_2000DPS*(float)tmp_x;
-        data.y = GYRO_SENSITIVITY_2000DPS*(float)tmp_y;
-        data.z = GYRO_SENSITIVITY_2000DPS*(float)tmp_z;
-        data.temperature=-tmp_tmperature;
+        *x = GYRO_SENSITIVITY_2000DPS*(float)tmp_x;
+        *y = GYRO_SENSITIVITY_2000DPS*(float)tmp_y;
+        *z = GYRO_SENSITIVITY_2000DPS*(float)tmp_z;
+        *temperature=-tmp_tmperature;
         break;
     }
-    return data;
+    return true;
   }
 
-  GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
-	GyroDataStamped returnVal{0,0,0,0};
-  	returnVal.Data=L3GD20::GetData();
-  	returnVal.UnixSecs=UnixSecs;
-  	returnVal.RawTimerCount=RawTimerCount;
-  	returnVal.CaptureCount=CaptureCount;
-  	returnVal.ADCValue=ADCVal;
-  	return returnVal;
+  ProtoIMUStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
+	ProtoIMUStamped Data;
+	Data.has_rotx,Data.has_roty,Data.has_rotz,Data.has_temp,Data.has_unix_secs,Data.has_adc_val=true;
+  	L3GD20::GetData(&Data.rotx,&Data.rotx,&Data.rotx,&Data.temp);
+  	Data.unix_secs=UnixSecs;
+  	Data.raw_timer_count=RawTimerCount;
+  	Data.capture_count=CaptureCount;
+  	Data.adc_val=ADCVal;
+  	return Data;
   }
 
   void L3GD20::writeByte(uint8_t subAddress, uint8_t data) {

@@ -92,6 +92,12 @@
 
 #include "SEGGER_RTT.h"
 
+//Protobuff
+#include "pb.h"
+#include "message.pb.h"
+#include "pb_common.h"
+#include "pb_encode.h"
+
 osThreadId WebServerTID;
 osThreadId blinkTID;
 osThreadId DataProcessingTID;
@@ -104,13 +110,13 @@ osThreadId LCDTID;
 #if USE_L3GD20
 L3GD20 Gyro(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi3);
 //MemPool For the data
-osMailQDef(GyroMail, DATABUFFESEIZE, GyroDataStamped);
+osMailQDef(GyroMail, DATABUFFESEIZE, ProtoIMUStamped);
 osMailQId GyroMail;
 #endif
 #if USE_BMA280
 
 //MemPool For the data
-BMA280 Acc(GPIOG, SPI3_CS_Pin, &hspi3);
+BMA280 Acc(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi3);
 osMailQDef(AccMail, DATABUFFESEIZE, AccelDataStamped);
 osMailQId AccMail;
 
@@ -124,6 +130,9 @@ uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
 // Target IP for udp straming
 uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 
+//Top 32 bit for timer2 inputcapture values
+static uint32_t tim2_update_counts;
+static uint64_t tim2_upper_bits_mask;
 #ifdef __cplusplus
 
 extern "C" {
@@ -182,11 +191,11 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-        MX_UART7_Init();
-        MX_USART3_UART_Init();
-        MX_USART6_UART_Init();
+    MX_UART7_Init();
+    MX_USART3_UART_Init();
+    MX_USART6_UART_Init();
 	MX_DMA_Init();
-	MX_USB_OTG_FS_PCD_Init();
+	//MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI1_Init();
 	MX_SPI3_Init();
@@ -254,10 +263,11 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
           /* Enable ADC1 external trigger */ 
-        HAL_ADC_Start_IT(&hadc1);
+    HAL_ADC_Start_IT(&hadc1);
 	initGPSTimesny();
-        SEGGER_SYSVIEW_Conf();
+    SEGGER_SYSVIEW_Conf();
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -417,6 +427,7 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamingThread(void const * argument) {
+#define MTU_SIZE 1500
 	/* init code for LWIP */
         MX_LWIP_Init();
 	static uint32_t porcessedCount = 0;
@@ -466,23 +477,21 @@ void StartDataStreamingThread(void const * argument) {
 		struct timespec utc;
 		osEvent Gyroevt = osMailGet(GyroMail, 200);
 		if (Gyroevt.status == osEventMail) {
-			GyroDataStamped *Gyrorptr;
-			Gyrorptr = (GyroDataStamped*) Gyroevt.value.p;
+
+			ProtoIMUStamped *Gyrorptr;
+			Gyrorptr = (ProtoIMUStamped*) Gyroevt.value.p;
 			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
-			lgw_cnt2utc(GPS_ref, Gyrorptr->RawTimerCount, &utc);
-			Gyrorptr->UnixSecs = (uint32_t) (utc.tv_sec);
-			Gyrorptr->NanoSecs = (uint32_t) (utc.tv_nsec);
+			lgw_cnt2utc(GPS_ref, Gyrorptr->raw_timer_count, &utc);
+			Gyrorptr->unix_secs = (uint32_t) (utc.tv_sec);
+			Gyrorptr->unix_nsecs = (uint32_t) (utc.tv_nsec);
 			//osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
-			uint8_t MSGBuffer[sizeof(GyroDataStamped) + 4] = { 0 };
-			MSGBuffer[0] = 0x47;
-			MSGBuffer[1] = 0x59;
-			MSGBuffer[2] = 0x52;
-			MSGBuffer[3] = 0x33;
-			memcpy(&MSGBuffer[4], &*Gyrorptr, sizeof(GyroDataStamped));
+			//todo remove this code and add protobuff serialisation
+			uint8_t ProtoBuffer[ProtoIMUStamped_size] = { 0 };
+			pb_ostream_t stream = pb_ostream_from_buffer(ProtoBuffer, sizeof(ProtoBuffer));
+			pb_encode(&stream, ProtoIMUStamped_fields, &Gyrorptr);
 			/* reference the data into the netbuf */
-			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
+			netbuf_ref(buf, &ProtoBuffer, stream.bytes_written);
 			/* send the text */
 			netconn_send(conn, buf);
 			osMailFree(GyroMail, Gyrorptr);
@@ -522,6 +531,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	/* USER CODE BEGIN Callback 0 */
 
 	/* USER CODE END Callback 0 */
+	// update the upper 32 bits if nothing other has happend this should be the normal case
+	if (htim->Instance == TIM2) {
+		{
+			tim2_update_counts++;
+			tim2_upper_bits_mask = uint64_t(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+
+		}
+	}
 	if (htim->Instance == TIM14) {
 		HAL_IncTick();
 	}
@@ -562,24 +579,68 @@ void _Error_Handler(char * file, int line) {
  @enduml
  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
-        SEGGER_SYSVIEW_RecordEnterISR();
 	//GPS testing change this to an que based aproche in the future
 	static uint32_t captureCount = 0;
 	static uint32_t GPSEdges = 0;
 	static uint16_t ADCValue;
-	static uint32_t Errorcount=0;
-#define GPSDEVIDER 1
+	// RACE CONDITION CECKING !!
+	// this code occures as well in  void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim) in stm32f7xx_hal_tim.c
+	// this function is called every time an Timer generates an interrupt event and adds it do the Nested Vectored Interrupt Controller (NVIC)
+	// the timer generates an global interrupt(IRQ#44 TIM2_IRQHandler) witch is always the same regardless the reason for the the interrupt (input capture, output compare, upadte)
+	// so the HAL_TIM_IRQHandler() is called to determin the source of the ISR request, there fore the startus registers of the timer are read.
+	// in that order:
+	// /* Capture compare 1 event */
+	// /* Capture compare 2 event */
+	// /* Capture compare 3 event */
+	// /* Capture compare 4 event */
+	// /* TIM Update event */
+	// ...
+	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
+	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
+	uint64_t tim2_upper_bits_mask_race_condition = 0;
+	#define TIM2OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+	bool tim2_race_condition_up_date = false;
+	if (htim->Instance == TIM2) {
+		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
+			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
+				__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
+				//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
+				//DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
+				tim2_race_condition_up_date = true;
+				tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
+				tim2_update_counts++;
+				tim2_upper_bits_mask = uint64_t(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+			}
+		}
+	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		uint64_t timstamp64=0;
+		if (tim2_race_condition_up_date == false) {
+			timstamp64=tim2_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_3);
+		}
+		else {
+		uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+								TIM_CHANNEL_3);
+						if (timestamp_raw < TIM2OLDTIMERVALMIN)
+						//the timer has overflowen take the updateted bitmask
+						{
+							timstamp64 = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+						} else {
+							//this is an old value using the old bitmask
+							timstamp64 = tim2_upper_bits_mask_race_condition
+									+ (uint64_t) timestamp_raw;
+						}
+		}
 		HAL_ADC_PollForConversion(&hadc1, 1);
 		ADCValue = HAL_ADC_GetValue(&hadc1);
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 #if USE_L3GD20
-		GyroDataStamped *mptr;
+		ProtoIMUStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
-		mptr = (GyroDataStamped *) osMailAlloc(GyroMail,0);//The parameter millisec must be 0 for using this function in an ISR.
+		mptr = (ProtoIMUStamped *) osMailAlloc(GyroMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 		if (mptr != NULL) {
 			*mptr = Gyro.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					timstamp64,
 					captureCount, ADCValue);
 			//put dater pointer into MSGQ
 			osStatus result = osMailPut(GyroMail, mptr);
@@ -591,7 +652,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr = (AccelDataStamped *) osMailAlloc(AccMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 		if (mptr != NULL) {
 			*mptr = Acc.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+					timstamp64,
 					captureCount,ADCValue);
 			//put dater pointer into MSGQ
 			osStatus result = osMailPut(AccMail,mptr);
@@ -602,17 +663,49 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	} else if (htim->Instance == TIM2
 			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		uint64_t timstamp64=0;
+		if (tim2_race_condition_up_date == false) {
+			timstamp64=tim2_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_1);
+		}
+		else {
+		uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+								TIM_CHANNEL_1);
+						if (timestamp_raw < TIM2OLDTIMERVALMIN)
+						//the timer has overflowen take the updateted bitmask
+						{
+							timstamp64 = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+						} else {
+							//this is an old value using the old bitmask
+							timstamp64 = tim2_upper_bits_mask_race_condition
+									+ (uint64_t) timestamp_raw;
+						}
+		}
 	}
 
 	else if (htim->Instance == TIM2
 			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+		uint64_t timstamp64=0;
+		if (tim2_race_condition_up_date == false) {
+			timstamp64=tim2_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_4);
+		}
+		else {
+		uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+								TIM_CHANNEL_4);
+						if (timestamp_raw < TIM2OLDTIMERVALMIN)
+						//the timer has overflowen take the updateted bitmask
+						{
+							timstamp64 = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+						} else {
+							//this is an old value using the old bitmask
+							timstamp64 = tim2_upper_bits_mask_race_condition
+									+ (uint64_t) timestamp_raw;
+						}
+		}
 
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
 		static uint32_t GPScaptureCount = 0;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN]={0};
-		uint32_t timestamp = 0;
-		timestamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
 		GPSEdges++;
 			if (GPScaptureCount > 0) {
                                 //HAL_UART_RxCpltCallback(&huart7);
@@ -626,7 +719,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
                                 }
 				mptr = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR.
 				if (mptr != NULL) {
-					mptr->RawTimerCount = timestamp;
+					mptr->RawTimerCount = timstamp64;
 					mptr->CaptureCount = GPScaptureCount;
 					memcpy(&(mptr->NMEAMessage[0]),&(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
                                         osStatus result = osMailPut(NMEAMail, mptr);
@@ -647,7 +740,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					GPScaptureCount++;
 				}
 	}
-        SEGGER_SYSVIEW_RecordExitISR();
 }
 
 float getGVal(int index) {
