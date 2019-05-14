@@ -250,22 +250,7 @@ int main(void) {
 	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 	/* USER CODE END 2 */
 
-	//Start timer and arm inputcapture
-	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
-		/* Starting Error */
-		_Error_Handler(__FILE__, __LINE__);
-	}
-	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3) != HAL_OK) {
-		/* Starting Error */
-		_Error_Handler(__FILE__, __LINE__);
-	}
-	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4) != HAL_OK) {
-		/* Starting Error */
-		_Error_Handler(__FILE__, __LINE__);
-	}
-	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
-          /* Enable ADC1 external trigger */ 
-    HAL_ADC_Start_IT(&hadc1);
+
 	initGPSTimesny();
     SEGGER_SYSVIEW_Conf();
 	/* Start scheduler */
@@ -427,9 +412,32 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamingThread(void const * argument) {
-#define MTU_SIZE 1500
 	/* init code for LWIP */
-        MX_LWIP_Init();
+    MX_LWIP_Init();
+        osDelay(1000);
+	//Start timer and arm inputcapture
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4) != HAL_OK) {
+		/* Starting Error */
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+          /* Enable ADC1 external trigger */
+    HAL_ADC_Start_IT(&hadc1);
+
+
+        //defining Protobuff output stream with Maximum Transfer unit (MTU) size of the networkpackages
+	#define MTU_SIZE 512
+    uint8_t ProtoBuffer[MTU_SIZE] = { 0 };
+	pb_ostream_t ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+
 	static uint32_t porcessedCount = 0;
 	struct netconn *conn;
 	struct netbuf *buf;
@@ -477,7 +485,35 @@ void StartDataStreamingThread(void const * argument) {
 		struct timespec utc;
 		osEvent Gyroevt = osMailGet(GyroMail, 200);
 		if (Gyroevt.status == osEventMail) {
-
+			if(ProtoStream.bytes_written>(MTU_SIZE-ProtoIMUStamped_size)){
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
+				/* send the text */
+				err_t net_conn_result =netconn_send(conn, buf);
+				if (net_conn_result!=ERR_OK){
+					switch(net_conn_result){
+					case -1: SEGGER_RTT_printf(0,"LWIP ERR_MEM: Out of memory error.");break;
+					case -2: SEGGER_RTT_printf(0,"LWIP ERR_BUF: Buffer error. ");break;
+					case -3: SEGGER_RTT_printf(0,"LWIP ERR_TIMEOUT: Time Out. ");break;
+					case -4: SEGGER_RTT_printf(0,"LWIP ERR_RTE: Routing problem. ");break;
+					case -5: SEGGER_RTT_printf(0,"LWIP ERR_INPROGRESS: Operation in progress ");break;
+					case -6: SEGGER_RTT_printf(0,"LWIP ERR_VAL: Illegal value");break;
+					case -7: SEGGER_RTT_printf(0,"LWIP ERR_WOULDBLOCK: Operation would block.");break;
+					case -8: SEGGER_RTT_printf(0,"LWIP ERR_USE: Address in use.");break;
+					case -9: SEGGER_RTT_printf(0,"LWIP ERR_ALREADY: Already connecting.");break;
+					case -10: SEGGER_RTT_printf(0,"LWIP ERR_ISCONN: Conn already established.");break;
+					case -11: SEGGER_RTT_printf(0,"LWIP ERR_CONN: Not connected.");break;
+					case -12: SEGGER_RTT_printf(0,"LWIP ERR_IF: Low-level netif error.");break;
+					case -13: SEGGER_RTT_printf(0,"LWIP ERR_ABRT: Connection aborted.");break;
+					case -14: SEGGER_RTT_printf(0,"LWIP ERR_RST: Connection reset.");break;
+					case -15: SEGGER_RTT_printf(0,"LWIP ERR_CLSD: Connection closed. ");break;
+					case -16: SEGGER_RTT_printf(0,"LWIP ERR_ARG: Illegal argument.");break;
+					}
+				}
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+			}
 			ProtoIMUStamped *Gyrorptr;
 			Gyrorptr = (ProtoIMUStamped*) Gyroevt.value.p;
 			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
@@ -486,15 +522,10 @@ void StartDataStreamingThread(void const * argument) {
 			Gyrorptr->unix_nsecs = (uint32_t) (utc.tv_nsec);
 			//osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
-			//todo remove this code and add protobuff serialisation
-			uint8_t ProtoBuffer[ProtoIMUStamped_size] = { 0 };
-			pb_ostream_t stream = pb_ostream_from_buffer(ProtoBuffer, sizeof(ProtoBuffer));
-			pb_encode(&stream, ProtoIMUStamped_fields, &Gyrorptr);
+			pb_encode(&ProtoStream, ProtoIMUStamped_fields, &Gyrorptr);
 			/* reference the data into the netbuf */
-			netbuf_ref(buf, &ProtoBuffer, stream.bytes_written);
-			/* send the text */
-			netconn_send(conn, buf);
 			osMailFree(GyroMail, Gyrorptr);
+
 		}
 #endif
 		osEvent GPSMailevnt = osMailGet(GPSDebugMail, 0);
