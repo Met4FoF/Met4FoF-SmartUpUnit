@@ -150,6 +150,7 @@ void _Error_Handler(char * file, int line);
 //TODO remove this getter functions and implement it in the dataprocessing
 float getGVal(int index);
 float getBMATemp();
+void Check_LWIP_RETURN_VAL(err_t retVal);
 #ifdef __cplusplus
 
 }
@@ -242,7 +243,7 @@ int main(void) {
 	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
 	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal ,
-			0, 2048);
+			0, 8192);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 
 	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
@@ -414,7 +415,27 @@ void StartLCDThread(void const * argument) {
 void StartDataStreamingThread(void const * argument) {
 	/* init code for LWIP */
     MX_LWIP_Init();
-        osDelay(1000);
+        //defining Protobuff output stream with Maximum Transfer unit (MTU) size of the networkpackages
+	#define MTU_SIZE 500
+    uint8_t ProtoBuffer[MTU_SIZE] = { 0 };
+	pb_ostream_t ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+
+	static uint32_t porcessedCount = 0;
+	struct netconn *conn;
+	struct netbuf *buf;
+	//UDP target ip Adress
+	ip_addr_t targetipaddr;
+	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
+			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+	/* create a new connection */
+	conn = netconn_new(NETCONN_UDP);
+	/* connect the connection to the remote host */
+	err_t net_conn_result=netconn_connect(conn, &targetipaddr, 7000);
+	Check_LWIP_RETURN_VAL(net_conn_result);
+	/* create a new netbuf */
+	buf = netbuf_new();
+
+	osDelay(2000);
 	//Start timer and arm inputcapture
 	if (HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1) != HAL_OK) {
 		/* Starting Error */
@@ -433,24 +454,6 @@ void StartDataStreamingThread(void const * argument) {
     HAL_ADC_Start_IT(&hadc1);
 
 
-        //defining Protobuff output stream with Maximum Transfer unit (MTU) size of the networkpackages
-	#define MTU_SIZE 512
-    uint8_t ProtoBuffer[MTU_SIZE] = { 0 };
-	pb_ostream_t ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
-
-	static uint32_t porcessedCount = 0;
-	struct netconn *conn;
-	struct netbuf *buf;
-	//UDP target ip Adress
-	ip_addr_t targetipaddr;
-	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
-			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
-	/* create a new connection */
-	conn = netconn_new(NETCONN_UDP);
-	/* connect the connection to the remote host */
-	netconn_connect(conn, &targetipaddr, 7000);
-	/* create a new netbuf */
-	buf = netbuf_new();
 	while (1) {
 #if USE_BMA280
 		AccelDataStamped *Accrptr;
@@ -490,26 +493,7 @@ void StartDataStreamingThread(void const * argument) {
 				netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
 				/* send the text */
 				err_t net_conn_result =netconn_send(conn, buf);
-				if (net_conn_result!=ERR_OK){
-					switch(net_conn_result){
-					case -1: SEGGER_RTT_printf(0,"LWIP ERR_MEM: Out of memory error.");break;
-					case -2: SEGGER_RTT_printf(0,"LWIP ERR_BUF: Buffer error. ");break;
-					case -3: SEGGER_RTT_printf(0,"LWIP ERR_TIMEOUT: Time Out. ");break;
-					case -4: SEGGER_RTT_printf(0,"LWIP ERR_RTE: Routing problem. ");break;
-					case -5: SEGGER_RTT_printf(0,"LWIP ERR_INPROGRESS: Operation in progress ");break;
-					case -6: SEGGER_RTT_printf(0,"LWIP ERR_VAL: Illegal value");break;
-					case -7: SEGGER_RTT_printf(0,"LWIP ERR_WOULDBLOCK: Operation would block.");break;
-					case -8: SEGGER_RTT_printf(0,"LWIP ERR_USE: Address in use.");break;
-					case -9: SEGGER_RTT_printf(0,"LWIP ERR_ALREADY: Already connecting.");break;
-					case -10: SEGGER_RTT_printf(0,"LWIP ERR_ISCONN: Conn already established.");break;
-					case -11: SEGGER_RTT_printf(0,"LWIP ERR_CONN: Not connected.");break;
-					case -12: SEGGER_RTT_printf(0,"LWIP ERR_IF: Low-level netif error.");break;
-					case -13: SEGGER_RTT_printf(0,"LWIP ERR_ABRT: Connection aborted.");break;
-					case -14: SEGGER_RTT_printf(0,"LWIP ERR_RST: Connection reset.");break;
-					case -15: SEGGER_RTT_printf(0,"LWIP ERR_CLSD: Connection closed. ");break;
-					case -16: SEGGER_RTT_printf(0,"LWIP ERR_ARG: Illegal argument.");break;
-					}
-				}
+				Check_LWIP_RETURN_VAL(net_conn_result);
 				// reallocating buffer this is maybe performance intensive profile this
 				//TODO profile this code
 				ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
@@ -809,6 +793,29 @@ void assert_failed(uint8_t* file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
+void Check_LWIP_RETURN_VAL(err_t retVal)
+{
+				if (retVal!=ERR_OK){
+					switch(retVal){
+					case -1: SEGGER_RTT_printf(0,"LWIP ERR_MEM: Out of memory error.");break;
+					case -2: SEGGER_RTT_printf(0,"LWIP ERR_BUF: Buffer error. ");break;
+					case -3: SEGGER_RTT_printf(0,"LWIP ERR_TIMEOUT: Time Out. ");break;
+					case -4: SEGGER_RTT_printf(0,"LWIP ERR_RTE: Routing problem. ");break;
+					case -5: SEGGER_RTT_printf(0,"LWIP ERR_INPROGRESS: Operation in progress ");break;
+					case -6: SEGGER_RTT_printf(0,"LWIP ERR_VAL: Illegal value");break;
+					case -7: SEGGER_RTT_printf(0,"LWIP ERR_WOULDBLOCK: Operation would block.");break;
+					case -8: SEGGER_RTT_printf(0,"LWIP ERR_USE: Address in use.");break;
+					case -9: SEGGER_RTT_printf(0,"LWIP ERR_ALREADY: Already connecting.");break;
+					case -10: SEGGER_RTT_printf(0,"LWIP ERR_ISCONN: Conn already established.");break;
+					case -11: SEGGER_RTT_printf(0,"LWIP ERR_CONN: Not connected.");break;
+					case -12: SEGGER_RTT_printf(0,"LWIP ERR_IF: Low-level netif error.");break;
+					case -13: SEGGER_RTT_printf(0,"LWIP ERR_ABRT: Connection aborted.");break;
+					case -14: SEGGER_RTT_printf(0,"LWIP ERR_RST: Connection reset.");break;
+					case -15: SEGGER_RTT_printf(0,"LWIP ERR_CLSD: Connection closed. ");break;
+					case -16: SEGGER_RTT_printf(0,"LWIP ERR_ARG: Illegal argument.");break;
+					}
+				}
+}
 /**
  * @}
  */
