@@ -26,6 +26,8 @@ Maintainer: Michael Coracin
 #include <stdint.h>     /* C99 types */
 #include <time.h>       /* time library */
 #include <unistd.h>     /* ssize_t */
+#include "SEGGER_RTT.h"
+#include "stm32f7xx_hal.h"
 
 /* -------------------------------------------------------------------------- */
 /* --- PUBLIC TYPES --------------------------------------------------------- */

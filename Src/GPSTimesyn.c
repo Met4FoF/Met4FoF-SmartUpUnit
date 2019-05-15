@@ -5,15 +5,7 @@
  *      Author: seeger01
  */
 
-#include <stdint.h>
-#include "cmsis_os.h"
-#include <time.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
-#include "cmsis_os.h"
 #include "GPSTimesyn.h"
-#include "NMEAPraser.h"
 #include <time.h>       /* struct timespec */
 
 
@@ -51,14 +43,15 @@ void StartNemaParserThread(void const * argument) {
 			rptr = (NMEASTamped*) evt.value.p;
 
 			//find all $ start tokens and '\n' end tokens
-			int DollarIndexs[MAXNEMASENTENCECOUNT]={0};
-			int NewLineIndexs[MAXNEMASENTENCECOUNT]={0};
-			int DollarCount=0;
-			int NewLineCount=0;
-			for(int i=0;i<sizeof(rptr->NMEAMessage);i++){
-				if(rptr->NMEAMessage[i]=='$'&&DollarCount<MAXNEMASENTENCECOUNT)
-				{
-					DollarIndexs[DollarCount]=i;
+			int DollarIndexs[MAXNEMASENTENCECOUNT] = { 0 };
+			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
+			int DollarCount = 0;
+			int NewLineCount = 0;
+                        SEGGER_RTT_printf(0,"Parsing: NMEA Message\n %s\n",(rptr->NMEAMessage));
+			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
+				if (rptr->NMEAMessage[i]
+						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
+					DollarIndexs[DollarCount] = i;
 					DollarCount++;
 			    }
 				if(rptr->NMEAMessage[i]=='\n'&&NewLineCount<MAXNEMASENTENCECOUNT)

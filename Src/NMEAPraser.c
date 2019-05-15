@@ -29,9 +29,9 @@ Maintainer: Michael Coracin
 
 #include <stdlib.h>
 
-#include <NMEAPraser.h>
+#include "NMEAPraser.h"
 
-#include "stm32f7xx_hal.h"
+
 
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */
@@ -42,7 +42,7 @@ Maintainer: Michael Coracin
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) fprintf(stderr,"%x.",c[a]);fprintf(stderr,"end\n")
     #define CHECK_NULL(a)       if(a==NULL){fprintf(stderr,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
 #else
-    #define DEBUG_MSG(args...)
+    #define DEBUG_MSG(args...) SEGGER_RTT_printf(0,args)
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a!=0;){}
     #define CHECK_NULL(a)       if(a==NULL){return LGW_GPS_ERROR;}
 #endif
@@ -389,6 +389,7 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         No fix: $GPRMC,,V,,,,,,,,,,N*00
         */
         memcpy(parser_buf, serial_buff, buff_size);
+        DEBUG_MSG("parser_buf=%s",parser_buf);
         parser_buf[buff_size] = '\0';
         nb_fields = str_chop(parser_buf, buff_size, ',', str_index, ARRAY_SIZE(str_index));
         if (nb_fields != 13) {

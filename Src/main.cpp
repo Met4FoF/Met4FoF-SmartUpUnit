@@ -50,7 +50,8 @@
 // STM32 Hardware drivers
 #include "dma.h"
 #include "stm32f7xx_hal.h"
-#include "cmsis_os.h"
+#include "FreeRTOS.h"
+//#include "cmsis_os.h"
 #include "adc.h"
 #include "lwip.h"
 #include "spi.h"
@@ -220,10 +221,10 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	MX_USART2_UART_Init();
+	//MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
 	MX_DMA_Init();
-	//MX_USB_OTG_FS_PCD_Init();
+	MX_USB_OTG_FS_PCD_Init();
 	MX_ADC1_Init();
 	MX_SPI3_Init_slow();
 	MX_SPI5_Init();
@@ -317,7 +318,9 @@ int main(void) {
 	}
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	initGPSTimesny();
-
+        SEGGER_SYSVIEW_Conf();
+        	/* init code for LWIP */
+	MX_LWIP_Init();
 	/* Start scheduler */
 	osKernelStart();
 	/* We should never get here as control is now taken by the scheduler */
@@ -418,9 +421,7 @@ void SystemClock_Config(void) {
 
 /* StartDefaultTask function */
 void StartWebserverThread(void const * argument) {
-	/* init code for LWIP */
-	MX_LWIP_Init();
-
+        osDelay(2000);
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {
@@ -449,7 +450,7 @@ void StartDataProcessingThread(void const * argument) {
 void StartLCDThread(void const * argument) {
 	ILI9341_Init();	//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "Build.date:%s", __DATE__);
