@@ -113,6 +113,8 @@ void Error_Handler(void);
 #define RMII_RXD0_GPIO_Port GPIOC
 #define RMII_RXD1_Pin GPIO_PIN_5
 #define RMII_RXD1_GPIO_Port GPIOC
+#define LD1_Pin GPIO_PIN_0
+#define LD1_GPIO_Port GPIOB
 #define LED_BT2_Pin GPIO_PIN_15
 #define LED_BT2_GPIO_Port GPIOF
 #define CAN1_MODE_Pin GPIO_PIN_0
