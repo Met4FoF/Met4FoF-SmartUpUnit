@@ -67,6 +67,9 @@
 #include "usb_otg.h"
 #include "gpio.h"
 
+// Segger RTT
+#include "SEGGER_RTT.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -90,13 +93,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-osThreadId blinkTID;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-void StartBlinkThread(void const * argument);
+float peekValFormChannel(int channel);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -164,11 +166,10 @@ int main(void)
 
   /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
+  SEGGER_SYSVIEW_Conf();
 
-  //Defining Blink thread
-  osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
-  blinkTID = osThreadCreate(osThread(blinkThread), NULL);
   /* Start scheduler */
+
   osKernelStart();
   
   /* We should never get here as control is now taken by the scheduler */
@@ -312,11 +313,10 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
-void StartBlinkThread(void const * argument) {
-	while (1) {
-		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		osDelay(100);
-	}
-	osThreadTerminate(NULL);
+float peekValFormChannel(int channel)
+{
+float returnVal=channel;
+return returnVal;
 }
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

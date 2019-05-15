@@ -80,7 +80,7 @@ void MX_TIM1_Init(void)
     Error_Handler();
   }
   sSlaveConfig.SlaveMode = TIM_SLAVEMODE_TRIGGER;
-  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
+  sSlaveConfig.InputTrigger = TIM_TS_ITR1;
   if (HAL_TIM_SlaveConfigSynchronization(&htim1, &sSlaveConfig) != HAL_OK)
   {
     Error_Handler();
@@ -191,6 +191,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
+    /* TIM1 interrupt Init */
+    HAL_NVIC_SetPriority(TIM1_CC_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
   /* USER CODE BEGIN TIM1_MspInit 1 */
 
   /* USER CODE END TIM1_MspInit 1 */
@@ -224,6 +227,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* TIM2 interrupt Init */
+    HAL_NVIC_SetPriority(TIM2_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(TIM2_IRQn);
   /* USER CODE BEGIN TIM2_MspInit 1 */
 
   /* USER CODE END TIM2_MspInit 1 */
@@ -249,6 +255,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
     */
     HAL_GPIO_DeInit(GPIOE, GPIO_PIN_9|GPIO_PIN_11|GPIO_PIN_13|GPIO_PIN_14);
 
+    /* TIM1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM1_CC_IRQn);
   /* USER CODE BEGIN TIM1_MspDeInit 1 */
 
   /* USER CODE END TIM1_MspDeInit 1 */
@@ -270,6 +278,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10);
 
+    /* TIM2 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(TIM2_IRQn);
   /* USER CODE BEGIN TIM2_MspDeInit 1 */
 
   /* USER CODE END TIM2_MspDeInit 1 */

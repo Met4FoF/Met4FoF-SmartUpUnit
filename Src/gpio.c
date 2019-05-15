@@ -214,6 +214,12 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_BT1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : USER_Btn_Pi */
+  GPIO_InitStruct.Pin = USER_Btn_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(USER_Btn_GPIO_Port, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 2 */

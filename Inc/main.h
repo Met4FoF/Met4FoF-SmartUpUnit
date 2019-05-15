@@ -179,6 +179,8 @@ void Error_Handler(void);
 #define SENSOR_CS1_GPIO_Port GPIOB
 #define LED_BT1_Pin GPIO_PIN_0
 #define LED_BT1_GPIO_Port GPIOE
+#define User_Blue_Button_Pin GPIO_PIN_13
+#define User_Blue_Button_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

@@ -53,6 +53,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "httpserver-netconn.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
@@ -78,7 +79,9 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId defaultTaskHandle;
+osThreadId IOTID;
+osThreadId blinkTID;
+osThreadId WebServerTID;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -86,9 +89,11 @@ osThreadId defaultTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
-
+void StartWebserverThread(void const * argument);
+extern void StartBlinkThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
+
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -116,8 +121,14 @@ void MX_FREERTOS_Init(void) {
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  IOTID = osThreadCreate(osThread(defaultTask), NULL);
 
+  osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
+  blinkTID = osThreadCreate(osThread(blinkThread), NULL);
+
+  osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
+			128);
+  WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -149,6 +160,37 @@ void StartDefaultTask(void const * argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartWebserverThread(void const * argument) {
+	osDelay(4000);
+	// wait until LWIP is inited
+	http_server_netconn_init();
+	/* Infinite loop */
+	for (;;) {
+		osThreadTerminate(NULL);
+	}
+}
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the idle LED Blink thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartBlinkThread(void const * argument) {
+	while (1) {
+		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		osDelay(100);
+	}
+	osThreadTerminate(NULL);
 }
 
 /* Private application code --------------------------------------------------*/
