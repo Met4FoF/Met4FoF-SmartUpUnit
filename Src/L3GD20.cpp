@@ -21,14 +21,9 @@
   Written by Kevin "KTOWN" Townsend for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
-#include <stdint.h>
-#include <cstring>
-#include <math.h>
+
 #include "L3GD20.h"
-#include "stm32f7xx_hal.h"
-#include "spi.h"
-#include "gpio.h"
-#include "main.h"
+
 
 #define USE_MULTIBYTE_READ 1
 
@@ -211,7 +206,7 @@ _gyrorange=DEFAULT_GYRORANGE ;
     return data;
   }
 
-  GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint32_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
+  	GyroDataStamped  L3GD20::GetStampedData(uint32_t UnixSecs,uint64_t RawTimerCount,uint32_t CaptureCount,uint16_t ADCVal){
 	GyroDataStamped returnVal{0,0,0,0};
   	returnVal.Data=L3GD20::GetData();
   	returnVal.UnixSecs=UnixSecs;

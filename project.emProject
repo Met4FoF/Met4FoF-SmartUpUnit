@@ -20,7 +20,7 @@
       Name="Debug"
       arm_fp_abi="Hard"
       armgnu_cl_optimization_level="Space"
-      c_additional_options="-g3"
+      c_additional_options="-g3;-g3"
       c_preprocessor_definitions="__weak=&quot;__attribute__((weak))&quot;;__packed=&quot;__attribute__((__packed__))&quot;;USE_HAL_DRIVER;STM32F767xx"
       c_user_include_directories="$(ProjectDir)/Inc;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include;$(ProjectDir)/Middlewares/Third_Party/LwIP/system;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc;$(ProjectDir)/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif/ppp;$(ProjectDir)/Drivers/CMSIS/Device/ST/STM32F7xx/Include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/include;$(ProjectDir)/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/apps;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/priv;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/lwip/prot;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/netif;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix;$(ProjectDir)/Middlewares/Third_Party/LwIP/src/include/posix/sys;$(ProjectDir)/Middlewares/Third_Party/LwIP/system/arch;$(ProjectDir)/Drivers/CMSIS/Include"
       gcc_debugging_level="Level 3"

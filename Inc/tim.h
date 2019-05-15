@@ -62,7 +62,6 @@
 /* USER CODE END Includes */
 
 extern TIM_HandleTypeDef htim2;
-
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

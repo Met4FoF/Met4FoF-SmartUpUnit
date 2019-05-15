@@ -60,14 +60,16 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
-
+#include <inttypes.h>
 //Networkinterface and Webserver
 #include "lwip/api.h"
 #include "lwip/udp.h"
 #include "lwip.h"
 #include "httpserver-netconn.h"
+#include "math.h"
 
-#define USE_L3GD20 1
+#define USE_MPU9250 1
+#define USE_L3GD20 0
 #define USE_BMA280 0
 // Sensors
 //#include "ADXL345.h"
@@ -79,6 +81,11 @@
 //FOR L3GD20
 #if USE_L3GD20
 #include "L3GD20.h"
+#endif
+
+//FOR L3GD20
+#if USE_MPU9250
+#include "MPU9250.h"
 #endif
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
@@ -94,12 +101,21 @@ osThreadId DataProcessingTID;
 osThreadId DataStreamingTID;
 osThreadId LCDTID;
 
-
 //I2Cdev I2CdevIface(&hi2c1);
 //MPU6050 MPU6050Acc(I2CdevIface);
 
 #if USE_L3GD20
 L3GD20 Gyro(GPIOG, SPI3_CS_Pin, &hspi3);
+osPoolDef(GyroPool, DATABUFFESEIZE, GyroDataStamped);
+osPoolId GyroPool;
+
+//MessageQ for the time Stamped data
+osMessageQDef(GyroMsgBuffer, DATABUFFESEIZE, uint32_t);
+osMessageQId GyroMsgBuffer;
+#endif
+
+#if USE_MPU9250
+MPU9250 IMU(GPIOG, SPI3_CS_Pin, &hspi3);
 osPoolDef(GyroPool, DATABUFFESEIZE, GyroDataStamped);
 osPoolId GyroPool;
 
@@ -122,7 +138,6 @@ osMessageQDef(ACCMsgBuffer, DATABUFFESEIZE, uint32_t);
 osMessageQId ACCMsgBuffer;
 #endif
 
-
 //MessageQ for the GPS PPS Timestamps
 osMessageQDef(GPSTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId GPSTimeBuffer;
@@ -131,11 +146,17 @@ osMessageQId GPSTimeBuffer;
 osMessageQDef(RefClockTimeBuffer, GPSBUFFERSIZE, uint32_t);
 osMessageQId RefClockTimeBuffer;
 
-// Network interface Ip
-uint8_t ETH_IP_ADDRESS[4]={192,168,0,10};
-// Target IP for udp straming
-uint8_t UDP_TARGET_IP_ADDRESS[4]={192,168,0,1};
+osPoolDef(RefClockTimePool, GPSBUFFERSIZE, uint64_t);
+osPoolId RefClockTimePool;
 
+// Network interface Ip
+uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
+// Target IP for udp straming
+uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
+
+//Top 32 bit for timer2 inputcapture values
+static uint32_t tim2_update_counts;
+static uint64_t tim2_upper_bits_mask;
 #ifdef __cplusplus
 
 extern "C" {
@@ -201,15 +222,22 @@ int main(void) {
 	MX_ADC1_Init();
 	MX_SPI3_Init();
 	MX_SPI5_Init();
+	tim2_upper_bits_mask = 0; //bit mask for the upper 32 bit of 64 bit timer updatet bei update event isr
 	MX_TIM2_Init();
 	MX_I2C1_Init();
 	MX_I2C2_Init();
-	#if USE_BMA280
+#if USE_BMA280
 	Acc.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	#endif
-	#if USE_L3GD20
-	Gyro.init(GYRO_RANGE_2000DPS,GYRO_UPDATE_200_HZ);
-	#endif
+#endif
+#if USE_L3GD20
+	Gyro.init(GYRO_RANGE_2000DPS, GYRO_UPDATE_800_HZ);
+#endif
+
+#if USE_MPU9250
+	IMU.begin();
+	IMU.enableDataReadyInterrupt();
+#endif
+
 	HAL_ADC_Start(&hadc1);
 	//MPU6050Acc.initialize();
 	// ADXL345
@@ -225,19 +253,23 @@ int main(void) {
 	//Acc.setPowerControl(0x08);
 	// ADXL345
 
-
 	/* USER CODE BEGIN 2 */
 	//create the defined Buffer and Pool for ACC and GPS data
-	#if USE_BMA280
+#if USE_BMA280
 	AccPool = osPoolCreate(osPool(AccPool));
 	ACCMsgBuffer = osMessageCreate(osMessageQ(ACCMsgBuffer), NULL);
-	#endif
-	#if USE_L3GD20
+#endif
+#if USE_L3GD20
 	GyroPool = osPoolCreate(osPool(GyroPool));
 	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
-	#endif
-	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
+#endif
 
+#if USE_MPU9250
+	GyroPool = osPoolCreate(osPool(GyroPool));
+	GyroMsgBuffer = osMessageCreate(osMessageQ(GyroMsgBuffer), NULL);
+#endif
+	GPSTimeBuffer = osMessageCreate(osMessageQ(GPSTimeBuffer), NULL);
+	RefClockTimePool = osPoolCreate(osPool(RefClockTimePool));
 	RefClockTimeBuffer = osMessageCreate(osMessageQ(RefClockTimeBuffer), NULL);
 
 	/* Create the thread(s) */
@@ -246,21 +278,21 @@ int main(void) {
 			128);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 256);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
-	osThreadDef(DataProcessingThread, StartDataProcessingThread, osPriorityNormal,
-			0, 256);
+	osThreadDef(DataProcessingThread, StartDataProcessingThread,
+			osPriorityNormal, 0, 256);
 	DataProcessingTID = osThreadCreate(osThread(DataProcessingThread), NULL);
 
 	osThreadDef(DataStreamingThread, StartDataStreamingThread, osPriorityNormal,
 			0, 2048);
 	DataStreamingTID = osThreadCreate(osThread(DataStreamingThread), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
-			0, 256);
+	//osThreadDef(LCDThread, StartLCDThread, osPriorityNormal,
+	//		0, 256);
 
-	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
+	//LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 	/* USER CODE END 2 */
 
 	//Start timer and arm inputcapture
@@ -276,6 +308,7 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	initGPSTimesny();
         SEGGER_SYSVIEW_Conf();
         	/* init code for LWIP */
@@ -347,8 +380,8 @@ void SystemClock_Config(void) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_USART2
-			| RCC_PERIPHCLK_CLK48;
+	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3
+			| RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_CLK48;
 	PeriphClkInitStruct.PLLSAI.PLLSAIN = 384;
 	PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
 	PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -397,34 +430,38 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartDataProcessingThread(void const * argument) {
-	 while (1) {
-		osDelay(1000);
+	while (1) {
+		osDelay(5000);
+		IMU.readSensor();
 	}
 	osThreadTerminate(NULL);
 }
 
-void  StartLCDThread(void const * argument) {
-	ILI9341_Init();//initial driver setup to drive ili9341
+void StartLCDThread(void const * argument) {
+	ILI9341_Init();	//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text,"Build.date:%s",__DATE__);
+	sprintf(Temp_Buffer_text, "Build.date:%s", __DATE__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text,"Build.time:%s",__TIME__);
+	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],ETH_IP_ADDRESS[1],ETH_IP_ADDRESS[2],ETH_IP_ADDRESS[3]);
+	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],
+			ETH_IP_ADDRESS[1], ETH_IP_ADDRESS[2], ETH_IP_ADDRESS[3]);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],UDP_TARGET_IP_ADDRESS[1],UDP_TARGET_IP_ADDRESS[2],UDP_TARGET_IP_ADDRESS[3]);
+	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
+			UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+			UDP_TARGET_IP_ADDRESS[3]);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	//----------------------------------------------------------IMAGE EXAMPLE, Snow Tiger
 	while (1) {
 		osDelay(1000);
 		timespec utc;
 		timespec gps_time;
-		lgw_gps_get(&utc,&gps_time, NULL, NULL);
+		lgw_gps_get(&utc, &gps_time, NULL, NULL);
 		tm* current_time = localtime(&(utc.tv_sec));
-		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S",current_time);
+		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 	}
 	osThreadTerminate(NULL);
@@ -432,15 +469,16 @@ void  StartLCDThread(void const * argument) {
 
 void StartDataStreamingThread(void const * argument) {
 	static uint32_t porcessedCount = 0;
+	static uint32_t ReftimeCounts = 0;
 	osEvent evt;
 	osEvent evtGPS;
-	osEvent evtRefClock;
+	osEvent evtREF;
 	struct netconn *conn;
 	struct netbuf *buf;
 	//UDP target ip Adress
 	ip_addr_t targetipaddr;
-	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
-			UDP_TARGET_IP_ADDRESS[3]);
+	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
+			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 
@@ -449,8 +487,8 @@ void StartDataStreamingThread(void const * argument) {
 
 	/* create a new netbuf */
 	buf = netbuf_new();
-	while (1){
-		#if USE_BMA280
+	while (1) {
+#if USE_BMA280
 		AccelDataStamped *rptr;
 		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 		evt = osMessageGet(ACCMsgBuffer,200);
@@ -464,7 +502,7 @@ void StartDataStreamingThread(void const * argument) {
 			rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
 			osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
-			uint8_t MSGBuffer[sizeof(ACCData)+4]={0};
+			uint8_t MSGBuffer[sizeof(ACCData)+4]= {0};
 			MSGBuffer[0]=0x41;
 			MSGBuffer[1]=0x43;
 			MSGBuffer[2]=0x43;
@@ -477,63 +515,74 @@ void StartDataStreamingThread(void const * argument) {
 			netconn_send(conn, buf);
 			osPoolFree(AccPool, rptr);
 		}
-		#endif
+#endif
 #if USE_L3GD20
 //Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
-evt = osMessageGet(GyroMsgBuffer,200);
-struct timespec utc;
-if (evt.status == osEventMessage) {
-	GyroDataStamped *rptr;
-	rptr = (GyroDataStamped*) evt.value.p;
-	osMutexWait(GPS_ref_mutex_id, osWaitForever);
-	lgw_cnt2utc(GPS_ref,rptr->RawTimerCount,&utc);
-	rptr->UnixSecs=(uint32_t)(utc.tv_sec);
-	rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
-	osMutexRelease(GPS_ref_mutex_id);
-	porcessedCount++;
-	uint8_t MSGBuffer[sizeof(GyroDataStamped)+4]={0};
-	MSGBuffer[0]=0x47;
-	MSGBuffer[1]=0x59;
-	MSGBuffer[2]=0x52;
-	MSGBuffer[3]=0x33;
-	memcpy(&MSGBuffer[4],&*rptr, sizeof(GyroDataStamped));
-	/* reference the data into the netbuf */
-	netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
-	/* send the text */
-	netconn_send(conn, buf);
-	osPoolFree(GyroPool, rptr);
-}
-#endif
-		evtGPS = osMessageGet(GPSTimeBuffer,0);
-		if (evtGPS.status == osEventMessage) {
-			uint32_t rptrGPS =  evtGPS.value.v;
-			uint8_t MSGBuffer[8]={0};
-			MSGBuffer[0]=0x47;
-			MSGBuffer[1]=0x50;
-			MSGBuffer[2]=0x53;
-			MSGBuffer[3]=0x54;
-			memcpy(&MSGBuffer[4],&rptrGPS, sizeof(rptrGPS));
+		evt = osMessageGet(GyroMsgBuffer, 200);
+		struct timespec utc;
+		if (evt.status == osEventMessage) {
+			GyroDataStamped *rptr;
+			rptr = (GyroDataStamped*) evt.value.p;
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_cnt2utc(GPS_ref, rptr->RawTimerCount, &utc);
+			rptr->UnixSecs = (uint32_t) (utc.tv_sec);
+			rptr->NanoSecs = (uint32_t) (utc.tv_nsec);
+			osMutexRelease(GPS_ref_mutex_id);
+			porcessedCount++;
+			uint8_t MSGBuffer[256] = { 0 };
+			GyroDataStamped tmp = *rptr;
+			float timeval=(tmp.RawTimerCount/100000000.0);
+			float x,y,z=0;
+			x=sin(timeval);
+			y=cos(timeval);
+			z=tan(timeval);
+			sprintf((char *) MSGBuffer, "GYR3SIMULATIONMODE,%d,%llu,%d,%f,%f,%f,\n",
+					tmp.CaptureCount, tmp.RawTimerCount, tmp.ADCValue,x,y,z);
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
 			/* send the text */
 			netconn_send(conn, buf);
+			osPoolFree(GyroPool, rptr);
 		}
-		evtRefClock = osMessageGet(RefClockTimeBuffer,0);
-		if (evtRefClock.status == osEventMessage) {
-			uint32_t rptrRefClock =  evtRefClock .value.v;
-			uint8_t MSGBuffer[8]={0};
-			MSGBuffer[0]=0x53;
-			MSGBuffer[1]=0x59;
-			MSGBuffer[2]=0x4E;
-			MSGBuffer[3]=0x54;
-			memcpy(&MSGBuffer[4],&rptrRefClock , sizeof(rptrRefClock));
+#endif
+#if USE_MPU9250
+//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+		evt = osMessageGet(GyroMsgBuffer, 200);
+		struct timespec utc;
+		if (evt.status == osEventMessage) {
+			GyroDataStamped *rptr;
+			rptr = (GyroDataStamped*) evt.value.p;
+			osMutexWait(GPS_ref_mutex_id, osWaitForever);
+			lgw_cnt2utc(GPS_ref, rptr->RawTimerCount, &utc);
+			rptr->UnixSecs = (uint32_t) (utc.tv_sec);
+			rptr->NanoSecs = (uint32_t) (utc.tv_nsec);
+			osMutexRelease(GPS_ref_mutex_id);
+			porcessedCount++;
+			uint8_t MSGBuffer[256] = { 0 };
+			GyroDataStamped tmp = *rptr;
+			float timeval=(tmp.RawTimerCount/100000000.0);
+			sprintf((char *) MSGBuffer, "GYR3,%d,%llu,%d,%f,%f,%f,\n",
+					tmp.CaptureCount, tmp.RawTimerCount, tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z);
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
-
 			/* send the text */
 			netconn_send(conn, buf);
+			osPoolFree(GyroPool, rptr);
+		}
+#endif
+		evtREF = osMessageGet(RefClockTimeBuffer, 0);
+		if (evtREF.status == osEventMessage) {
+			uint64_t *rptr;
+			rptr = (uint64_t*) evtREF.value.p;
+			uint8_t MSGBuffer[32] = { 0 };
+			uint64_t tmp = *rptr;
+			sprintf((char *) MSGBuffer, "REFT,%d,%llu\n", ReftimeCounts, tmp);
+			ReftimeCounts++;
+			/* reference the data into the netbuf */
+			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
+			/* send the text */
+			netconn_send(conn, buf);
+			osPoolFree(RefClockTimePool, rptr);
 		}
 	}
 	osThreadTerminate(NULL);
@@ -555,6 +604,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	/* USER CODE END Callback 0 */
 	if (htim->Instance == TIM14) {
 		HAL_IncTick();
+	}
+	if (htim->Instance == TIM2) {
+		{
+			tim2_update_counts++;
+			tim2_upper_bits_mask = uint64_t(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+
+		}
 	}
 	/* USER CODE BEGIN Callback 1 */
 
@@ -581,9 +637,39 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static int32_t RefClockMissedCpatureCount = 0;
 	static uint32_t captureCount = 0;
 	static uint32_t MissedCount = 0;
-	static uint32_t GPSEdges=0;
+	static uint32_t GPSEdges = 0;
 	static uint16_t ADCValue;
-#define GPSDEVIDER 1
+	// RACE CONDITION CECKING !!
+	// this code occures as well in  void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim) in stm32f7xx_hal_tim.c
+	// this function is called every time an Timer generates an interrupt event and adds it do the Nested Vectored Interrupt Controller (NVIC)
+	// the timer generates an global interrupt(IRQ#44 TIM2_IRQHandler) witch is always the same regardless the reason for the the interrupt (input capture, output compare, upadte)
+	// so the HAL_TIM_IRQHandler() is called to determin the source of the ISR request, there fore the startus registers of the timer are read.
+	// in that order:
+	// /* Capture compare 1 event */
+	// /* Capture compare 2 event */
+	// /* Capture compare 3 event */
+	// /* Capture compare 4 event */
+	// /* TIM Update event */
+	// ...
+	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
+	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
+	uint64_t tim2_upper_bits_mask_race_condition = 0;
+	#define TIM2OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+	bool tim2_race_condition_up_date = false;
+	if (htim->Instance == TIM2) {
+		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
+			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
+				__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
+				//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
+				//DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
+				tim2_race_condition_up_date = true;
+				tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
+				tim2_update_counts++;
+				tim2_upper_bits_mask = uint64_t(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+			}
+		}
+	}
+
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		HAL_ADC_PollForConversion(&hadc1, 2);
 		ADCValue = HAL_ADC_GetValue(&hadc1);
@@ -593,12 +679,34 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
 		if (mptr != NULL) {
-			*mptr = Gyro.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
-					captureCount,ADCValue);
+			if (tim2_race_condition_up_date == false) {
+				//this is the nromal case
+				*mptr = Gyro.GetStampedData(0x00000000,
+						tim2_upper_bits_mask
+								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+										TIM_CHANNEL_1), captureCount, ADCValue);
+			} else {
+				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+						TIM_CHANNEL_1);
+				uint64_t timestamp;
+				if (timestamp_raw < TIM2OLDTIMERVALMIN)
+				//the timer has overflowen tak the updateted bitmask
+				{
+					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+					*mptr = Gyro.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				} else {
+					//this is an old value using the old bitmask
+					timestamp = tim2_upper_bits_mask_race_condition
+							+ (uint64_t) timestamp_raw;
+					*mptr = Gyro.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				}
+
+			}
 			//put dater pointer into MSGQ
 			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
-			osWaitForever);
+			0);
 		} else {
 			MissedCount++;
 		}
@@ -608,93 +716,185 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (AccelDataStamped *) osPoolAlloc(AccPool);
 		if (mptr != NULL) {
-			*mptr = Acc.GetStampedData(0x00000000,
-					HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
-					captureCount,ADCValue);
-			//put dater pointer into MSGQ
-			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
-			osWaitForever);
+			if(tim2_race_condition_up_date == false) {
+				*mptr = Acc.GetStampedData(0x00000000,
+						tim2_upper_bits_mask+(uint64_t)HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
+						captureCount,ADCValue);
+				//put dater pointer into MSGQ
+				osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
+					}
+					else {
+						uint32_t timestamp_raw=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
+						uint64_t timestamp;
+						if(timestamp_raw<TIM2OLDTIMERVALMIN)
+						//the timer has overflowen tak the updateted bitmask
+						{
+							timestamp=tim2_upper_bits_mask+(uint64_t)timestamp_raw;
+							*mptr = Acc.GetStampedData(0x00000000,
+									timestamp,
+									captureCount,ADCValue);
+						}
+						else
+						{
+							//this is an old value using the old bitmask
+							timestamp=tim2_upper_bits_mask_race_condition+(uint64_t)timestamp_raw;
+							*mptr = Acc.GetStampedData(0x00000000,
+									timestamp,
+									captureCount,ADCValue);
+						}
+					}
+					osWaitForever);
 		} else {
 			MissedCount++;
 		}
 #endif
+#if USE_MPU9250
+		GyroDataStamped *mptr;
+		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
+		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
+		if (mptr != NULL) {
+			if (tim2_race_condition_up_date == false) {
+				//this is the nromal case
+				*mptr = IMU.GetStampedData(0x00000000,
+						tim2_upper_bits_mask
+								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+										TIM_CHANNEL_1), captureCount, ADCValue);
+			} else {
+				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+						TIM_CHANNEL_1);
+				uint64_t timestamp;
+				if (timestamp_raw < TIM2OLDTIMERVALMIN)
+				//the timer has overflowen tak the updateted bitmask
+				{
+					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+					*mptr = IMU.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				} else {
+					//this is an old value using the old bitmask
+					timestamp = tim2_upper_bits_mask_race_condition
+							+ (uint64_t) timestamp_raw;
+					*mptr = IMU.GetStampedData(0x00000000, timestamp,
+							captureCount, ADCValue);
+				}
+
+			}
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(GyroMsgBuffer, (uint32_t) mptr,
+			0);
+		} else {
+			MissedCount++;
+		}
+#endif
+//		GyroDataStamped tmp=IMU.GetStampedData(0x00000000,
+//							tim2_upper_bits_mask
+//								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+//									TIM_CHANNEL_1), captureCount, ADCValue);
+
 		captureCount++;
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		//osMessagePut(ACCBuffer,(uint32_t)mptr,osWaitForever);
 	}
-	else if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-			osStatus result = osMessagePut(RefClockTimeBuffer,HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_3),osWaitForever);
-			if (result!=osOK){RefClockMissedCpatureCount++;}
+	else if (htim->Instance == TIM2
+			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+
+		uint64_t timestamp;
+		uint64_t reftimstamp = HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_3);
+		uint64_t * mptr;
+		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
+		mptr = (uint64_t *) osPoolAlloc(RefClockTimePool);
+		if (mptr != NULL) {
+			if (tim2_race_condition_up_date == false) {
+				//this is the nromal case
+				*mptr = tim2_upper_bits_mask + reftimstamp;
+			} else {
+
+				if (reftimstamp < TIM2OLDTIMERVALMIN)
+				//the timer has overflowen tak the updateted bitmask
+				{
+					reftimstamp = tim2_upper_bits_mask + (uint64_t) reftimstamp;
+					*mptr = reftimstamp;
+				} else {
+					//this is an old value using the old bitmask
+					timestamp = tim2_upper_bits_mask_race_condition
+							+ (uint64_t) reftimstamp;
+					*mptr = timestamp;
+				}
+
+			}
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(RefClockTimeBuffer, (uint32_t) mptr,
+			0);
+		}
+	} else if (htim->Instance == TIM2
+			&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
+		static NMEASTamped *mptr_active = NULL;
+		static NMEASTamped *mptr_old = NULL;
+		static uint32_t GPScaptureCount = 0;
+		uint64_t timestamp = 0;
+		timestamp = tim2_upper_bits_mask
+				+ HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
+
+		osStatus result = osMessagePut(GPSTimeBuffer, timestamp, osWaitForever);
+		if (result != osOK) {
+			GPSMissedCpatureCount++;
+		}
+		GPSEdges++;
+		if (GPScaptureCount > 0) {
+			HAL_UART_DMAStop(&huart2);
+			HAL_DMA_Abort(&hdma_usart2_rx);
+			mptr_old = mptr_active;
+			if (mptr_old != NULL) {
+				osStatus result = osMessagePut(NMEABuffer, (uint32_t) mptr_old,
+						osWaitForever);
+			}
+			mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+			if (mptr_active != NULL) {
+				mptr_active->RawTimerCount = timestamp;
+				mptr_active->CaptureCount = GPScaptureCount;
+				mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage) - 1] =
+						0;
+				HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]),
+						sizeof(mptr_active->NMEAMessage) - 1);
+			}
+			GPScaptureCount++;
 		}
 
-	else if (htim->Instance == TIM2
-				&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-			//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
-			static NMEASTamped *mptr_active=NULL;
-			static NMEASTamped *mptr_old=NULL;
-			static uint32_t GPScaptureCount = 0;
-			uint32_t timestamp=0;
-			timestamp=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_4);
-
-			osStatus result = osMessagePut(GPSTimeBuffer,timestamp,osWaitForever);
-			if (result != osOK) {
-				GPSMissedCpatureCount++;
+		else if (GPScaptureCount == 0) {
+			mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
+			uint32_t debugVar = (uint32_t) mptr_active;
+			if (mptr_active != NULL) {
+				(mptr_active->RawTimerCount) = timestamp;
+				(mptr_active->CaptureCount) = GPScaptureCount;
+				mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage) - 1] =
+						0;
+				HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]),
+						sizeof(mptr_active->NMEAMessage) - 1);
+				GPScaptureCount++;
 			}
-			GPSEdges++;
-			if(GPSEdges%GPSDEVIDER==0){
-			if (GPScaptureCount > 0) {
-					HAL_UART_DMAStop(&huart2);
-					HAL_DMA_Abort(&hdma_usart2_rx);
-					mptr_old = mptr_active;
-					if(mptr_old!= NULL){
-					osStatus result = osMessagePut(NMEABuffer,(uint32_t) mptr_old,osWaitForever);
-					}
-					mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
-					if (mptr_active != NULL) {
-						mptr_active->RawTimerCount = timestamp;
-						mptr_active->CaptureCount = GPScaptureCount;
-						mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
-						HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
-					}
-					GPScaptureCount++;
-			}
+		}
 
-			else if (GPScaptureCount == 0) {
-				mptr_active = (NMEASTamped *) osPoolAlloc(NMEAPool);
-				uint32_t debugVar= (uint32_t)mptr_active;
-				if (mptr_active != NULL) {
-					(mptr_active->RawTimerCount) = timestamp;
-					(mptr_active->CaptureCount) = GPScaptureCount;
-					mptr_active->NMEAMessage[sizeof(mptr_active->NMEAMessage)-1]=0;
-					HAL_UART_Receive_DMA(&huart2, &(mptr_active->NMEAMessage[0]), sizeof(mptr_active->NMEAMessage)-1);
-					GPScaptureCount++;
-				}
-			}
-
-
-			}
 	}
-	}
+}
 
 float getGVal(int index) {
-switch (index) {
-case 0:
-return ACCData.Data.x;
-case 1:
-return ACCData.Data.y;
-case 2:
-return ACCData.Data.z;
-default:
-int nan = 0x7F800001;
-return *(float*) &nan;
-}
+	switch (index) {
+	case 0:
+		return ACCData.Data.x;
+	case 1:
+		return ACCData.Data.y;
+	case 2:
+		return ACCData.Data.z;
+	default:
+		int nan = 0x7F800001;
+		return *(float*) &nan;
+	}
 
 }
 
 float getBMATemp() {
-return ACCData.Data.temperature;
+	return ACCData.Data.temperature;
 }
-
 
 #ifdef  USE_FULL_ASSERT
 /**
@@ -706,10 +906,10 @@ return ACCData.Data.temperature;
  */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-/* USER CODE BEGIN 6 */
-/* User can add his own implementation to report the file name and line number,
- tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-/* USER CODE END 6 */
+	/* USER CODE BEGIN 6 */
+	/* User can add his own implementation to report the file name and line number,
+	 tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
 
