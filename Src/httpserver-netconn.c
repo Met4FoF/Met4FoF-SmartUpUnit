@@ -85,7 +85,7 @@ void http_server_serve(struct netconn *conn)
     		  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     	  }
     	  if (strncmp((char const *)buf,"GET /btn1", 9) == 0) {
-    		  if(HAL_GPIO_ReadPin(User_Blue_Button_GPIO_Port, User_Blue_Button_Pin) == GPIO_PIN_SET)
+    		  if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_SET)
     			  netconn_write(conn, (const unsigned char*)"ON", 2, NETCONN_NOCOPY);
     		  else
     			  netconn_write(conn, (const unsigned char*)"OFF", 3, NETCONN_NOCOPY);
@@ -95,15 +95,15 @@ void http_server_serve(struct netconn *conn)
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /xacc", 8) == 0) {
-    		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(0));
-    		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
-    	  }
-    	  if (strncmp((char const *)buf,"GET /yacc", 8) == 0) {
     		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(1));
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
-    	  if (strncmp((char const *)buf,"GET /zacc", 8) == 0) {
+    	  if (strncmp((char const *)buf,"GET /yacc", 8) == 0) {
     		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(2));
+    		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
+    	  }
+    	  if (strncmp((char const *)buf,"GET /zacc", 8) == 0) {
+    		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(3));
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
       }

@@ -54,6 +54,9 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "httpserver-netconn.h"
+//LCD
+#include "ILI9341/ILI9341_STM32_Driver.h"
+#include "ILI9341/ILI9341_GFX.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
@@ -76,13 +79,12 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
 osThreadId IOTID;
 osThreadId blinkTID;
 osThreadId WebServerTID;
-
+osThreadId LCDTID;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
    
@@ -91,6 +93,7 @@ osThreadId WebServerTID;
 void StartDefaultTask(void const * argument);
 void StartWebserverThread(void const * argument);
 extern void StartBlinkThread(void const * argument);
+void StartLCDThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
 
@@ -129,6 +132,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
 			128);
   WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
+
+  osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
+
+  LCDTID = osThreadCreate(osThread(LCDThread), NULL);
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -162,33 +169,66 @@ void StartDefaultTask(void const * argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
 void StartWebserverThread(void const * argument) {
-	osDelay(4000);
 	// wait until LWIP is inited
+	osDelay(5000);
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {
 		osThreadTerminate(NULL);
 	}
 }
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
-  * @brief  Function implementing the idle LED Blink thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
+
 void StartBlinkThread(void const * argument) {
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		osDelay(100);
+	}
+	osThreadTerminate(NULL);
+}
+
+void StartLCDThread(void const * argument) {
+
+	/* USER CODE BEGIN Variables */
+	//TODO use real ip adress
+	uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
+	// Target IP for udp straming
+	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
+	ILI9341_Init(); //initial driver setup to drive ili9341
+	ILI9341_Fill_Screen(BLUE);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	char Temp_Buffer_text[40];
+	/*
+	ILI9341_Draw_Text(" Wer das liest ist doof.", 0, 60, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Wie dat leest, is dom.", 0, 80, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Who reads that is stupid.", 0, 100, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Celui qui lit ca est stupide.", 0, 120, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Quienquiera que lea eso es estupido.", 0, 140, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Quem le isso e estupido.", 0, 160, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Chiunque lo legga e stupido.", 0, 180, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Ktokolwiek to czyta, jest glupi.", 0, 200, WHITE, 1.5, BLUE);
+	ILI9341_Draw_Text(" Kto by ehto ni chital, ehto glupo.", 0, 220, WHITE, 1.5, BLUE);
+		 */
+	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "Build.date:%s", __DATE__);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],
+			ETH_IP_ADDRESS[1], ETH_IP_ADDRESS[2], ETH_IP_ADDRESS[3]);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
+			UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+			UDP_TARGET_IP_ADDRESS[3]);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
+	while (1) {
+		osDelay(1000);
+		//timespec utc;
+		//timespec gps_time;
+		//lgw_gps_get(&utc, &gps_time, NULL, NULL);
+		//tm* current_time = localtime(&(utc.tv_sec));
+		//strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
+		//ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 	}
 	osThreadTerminate(NULL);
 }

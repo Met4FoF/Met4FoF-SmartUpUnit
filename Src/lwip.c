@@ -71,9 +71,13 @@ struct netif gnetif;
 ip4_addr_t ipaddr;
 ip4_addr_t netmask;
 ip4_addr_t gw;
-uint8_t ETH_IP_ADDRESS[4];// at the moment 192.168.0.10
+//extern uint8_t ETH_IP_ADDRESS[4];// at the moment 192.168.0.10
 uint8_t NETMASK_ADDRESS[4];
 uint8_t GATEWAY_ADDRESS[4];
+/* USER CODE BEGIN Variables */
+uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
+// Target IP for udp straming
+uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 /* IP addresses initialization */
 
 /* USER CODE BEGIN 2 */
@@ -89,10 +93,6 @@ void MX_LWIP_Init(void)
   tcpip_init( NULL, NULL );
 
   /* IP addresses initialization with DHCP (IPv4) */
-  ETH_IP_ADDRESS[0] = 192;
-  ETH_IP_ADDRESS[1] = 168;
-  ETH_IP_ADDRESS[2] = 0;
-  ETH_IP_ADDRESS[3] = 10;
   NETMASK_ADDRESS[0] = 255;
   NETMASK_ADDRESS[1] = 255;
   NETMASK_ADDRESS[2] = 255;

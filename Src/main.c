@@ -69,7 +69,6 @@
 
 // Segger RTT
 #include "SEGGER_RTT.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -82,6 +81,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// Network interface Ip
+
 
 /* USER CODE END PD */
 
@@ -117,7 +118,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
 
@@ -315,7 +315,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 
 float peekValFormChannel(int channel)
 {
-float returnVal=channel;
+float returnVal=(float)channel*10;
 return returnVal;
 }
 

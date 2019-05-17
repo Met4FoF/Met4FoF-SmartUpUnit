@@ -106,7 +106,6 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
   /* USER CODE END HardFault_IRQn 0 */
