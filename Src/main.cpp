@@ -316,9 +316,10 @@ int main(void) {
 		/* Starting Error */
 		_Error_Handler(__FILE__, __LINE__);
 	}
+	 HAL_ADC_Start_IT(&hadc1);
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	initGPSTimesny();
-        SEGGER_SYSVIEW_Conf();
+    SEGGER_SYSVIEW_Conf();
         	/* init code for LWIP */
 	MX_LWIP_Init();
 	/* Start scheduler */
@@ -441,8 +442,8 @@ void StartBlinkThread(void const * argument) {
 
 void StartDataProcessingThread(void const * argument) {
 	while (1) {
-		osDelay(1000);
-		IMU.readSensor();
+		osDelay(5000);
+		//IMU.readSensor();
 	}
 	osThreadTerminate(NULL);
 }
@@ -594,29 +595,6 @@ void StartDataStreamingThread(void const * argument) {
 			netconn_send(conn, buf);
 			osPoolFree(RefClockTimePool, rptr);
 		}
-#define PROTO_DUMMY_DATA 1
-#ifdef PROTO_DUMMY_DATA
-		static int i=0;
-		{
-			ProtoGyroDataStamped DataMessage;
-			DataMessage.capture_count=1+i;
-			DataMessage.raw_timer_count=10+i;
-			DataMessage.adc_val=100+i;
-			DataMessage.has_adc_val=true;
-			DataMessage.x=1000+i;
-			DataMessage.y=1000+i;
-			DataMessage.z=1000+i;
-			DataMessage.has_temp=true;
-			DataMessage.temp=1000+i;
-			uint8_t ProtoBuffer[ProtoGyroDataStamped_size];
-			pb_ostream_t stream = pb_ostream_from_buffer(ProtoBuffer, sizeof(ProtoBuffer));
-			pb_encode(&stream, ProtoGyroDataStamped_fields, &DataMessage);
-			i++;
-			netbuf_ref(buf, &ProtoBuffer, stream.bytes_written);
-			/* send the text */
-			netconn_send(conn, buf);
-		}
-#endif
 	}
 	osThreadTerminate(NULL);
 }
@@ -665,6 +643,7 @@ void _Error_Handler(char * file, int line) {
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 	//GPS testing change this to an que based aproche in the future
 	static int32_t GPSMissedCpatureCount = 0;
 	static int32_t RefClockMissedCpatureCount = 0;
@@ -704,9 +683,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	}
 
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		HAL_ADC_PollForConversion(&hadc1, 2);
+		HAL_ADC_PollForConversion(&hadc1, 1);
 		ADCValue = HAL_ADC_GetValue(&hadc1);
-		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 #if USE_L3GD20
 		GyroDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
@@ -782,6 +760,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 #endif
 #if USE_MPU9250
+		if(true){
 		GyroDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);
@@ -816,6 +795,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			0);
 		} else {
 			MissedCount++;
+		}
 		}
 #endif
 //		GyroDataStamped tmp=IMU.GetStampedData(0x00000000,
