@@ -243,6 +243,7 @@ int main(void) {
 	MX_SPI3_Init_slow();
 	IMU.begin();
 	IMU.enableDataReadyInterrupt();
+	IMU.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 	MX_SPI3_Init_fast();
 #endif
 
@@ -760,7 +761,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 #endif
 #if USE_MPU9250
-		if(true){
+		if(captureCount%2==0){
 		GyroDataStamped *mptr;
 		// ATENTION!! if buffer is full the allocation function is blocking aprox 60µs
 		mptr = (GyroDataStamped *) osPoolAlloc(GyroPool);

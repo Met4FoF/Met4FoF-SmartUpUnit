@@ -44,6 +44,7 @@ int MPU9250::begin(){
   if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
     return -1;
   }
+  /*
   // enable I2C master mode
   if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
     return -2;
@@ -68,6 +69,7 @@ int MPU9250::begin(){
   if((whoAmI() != 113)&&(whoAmI() != 115)){
     return -5;
   }
+  */
   // enable accelerometer and gyro
   if(writeRegister(PWR_MGMNT_2,SEN_ENABLE) < 0){
     return -6;
@@ -97,6 +99,7 @@ int MPU9250::begin(){
     return -11;
   } 
   _srd = 0;
+  /*
   // enable I2C master mode
   if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
   	return -12;
@@ -109,7 +112,7 @@ int MPU9250::begin(){
 	if( whoAmIAK8963() != 72 ){
     return -14;
 	}
-  /* get the magnetometer calibration */
+  // get the magnetometer calibration
   // set AK8963 to Power Down
   if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
     return -15;
@@ -142,6 +145,7 @@ int MPU9250::begin(){
   // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
   readAK8963Registers(AK8963_HXL,7,_buffer);
   // estimate gyro bias
+  */
   if (calibrateGyro() < 0) {
     return -20;
   }
