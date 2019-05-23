@@ -1,7 +1,7 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.c
+  * @file           : main.cpp
   * @brief          : Main program body
   ******************************************************************************
   * This notice applies to any and all portions of this file
@@ -66,9 +66,13 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
+#include "freertos_cubemx.h"
 
 // Segger RTT
 #include "SEGGER_RTT.h"
+
+//Protbuff
+#include "pb.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -98,8 +102,6 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
-float peekValFormChannel(int channel);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -312,11 +314,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-float peekValFormChannel(int channel)
-{
-float returnVal=(float)channel*10;
-return returnVal;
-}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -44,6 +44,7 @@
 u32_t nPageHits = 0;
 
 /* Private function prototypes -----------------------------------------------*/
+float peekValFormChannel(int channel);
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -166,4 +167,10 @@ static void http_server_netconn_thread()
 void http_server_netconn_init()
 {
   sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
+}
+
+float peekValFormChannel(int channel)
+{
+float returnVal=(float)channel*10;
+return returnVal;
 }

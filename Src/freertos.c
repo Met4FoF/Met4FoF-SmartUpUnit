@@ -57,6 +57,7 @@
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
+#include "freertos_cubemx.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
@@ -79,26 +80,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END Variables */
-osThreadId IOTID;
-osThreadId blinkTID;
-osThreadId WebServerTID;
-osThreadId LCDTID;
-/* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN FunctionPrototypes */
-   
-/* USER CODE END FunctionPrototypes */
-
-void StartDefaultTask(void const * argument);
-void StartWebserverThread(void const * argument);
-extern void StartBlinkThread(void const * argument);
-void StartLCDThread(void const * argument);
-extern void MX_LWIP_Init(void);
-extern void MX_FATFS_Init(void);
-
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
 /**
   * @brief  FreeRTOS initialization
   * @param  None
