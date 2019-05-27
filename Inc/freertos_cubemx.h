@@ -74,6 +74,7 @@ extern "C" {
 //#include "lwip/udp.h"
 #include "lwip.h"
 #include "httpserver-netconn.h"
+#include "SEGGER_RTT.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
