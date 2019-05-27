@@ -231,13 +231,15 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[3]);
 		/* create a new connection */
 		conn = netconn_new(NETCONN_UDP);
-
 		/* connect the connection to the remote host */
 		netconn_connect(conn, &targetipaddr, 7000);
 		/* create a new netbuf */
 		buf = netbuf_new();
+		int i=0;
 		while (1) {
-			char dummyBuffer[32]="Hallo Welt";
+			i++;
+			char dummyBuffer[32]="Hallo Welt\n\r";
+			SEGGER_RTT_printf(0,"%d %s",i,dummyBuffer);
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &dummyBuffer, sizeof(dummyBuffer));
 
