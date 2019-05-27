@@ -75,6 +75,11 @@
 
 /* Global Variables ----------------------------------------------------------*/
 extern ETH_HandleTypeDef heth;
+/* IP addresses initialization */
+extern uint8_t ETH_IP_ADDRESS[4];
+// Target IP for udp straming
+extern uint8_t UDP_TARGET_IP_ADDRESS[4];
+extern struct netif gnetif;
 
 /* LWIP init function */	
 void MX_LWIP_Init(void);

@@ -78,7 +78,6 @@ uint8_t GATEWAY_ADDRESS[4];
 uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
 // Target IP for udp straming
 uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
-/* IP addresses initialization */
 
 /* USER CODE BEGIN 2 */
 
