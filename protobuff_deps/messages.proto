@@ -1,0 +1,56 @@
+syntax = "proto2";
+
+message DataMessage {
+  required uint32 id = 1;
+  required uint32 sample_number = 2;
+  required uint32 unix_time = 3;
+  required uint32 unix_time_nsecs = 4;
+  required uint32 time_uncertainty = 5;
+  required float Data_01 =6;
+  optional float Data_02 =7;
+  optional float Data_03 =8;
+  optional float Data_04 =9;
+  optional float Data_05 =10;
+  optional float Data_06 =11;
+  optional float Data_07 =12;
+  optional float Data_08 =13;
+  optional float Data_09 =14;
+  optional float Data_10 =15;
+  optional float Data_11 =16;
+}
+
+message DescriptionMessage {
+  required uint32 id = 1;
+  required string Sensor_name = 2;
+  enum  DESCRIPTION_TYPE{
+  PHYSICAL_QUANTITY = 0;
+  UINT = 1;
+  UNCERTAINTY_TYPE = 2;
+  RESOLUTION = 3;
+  MIN_SCALE = 4;
+  MAX_SCALE = 5;
+  }
+  required DESCRIPTION_TYPE Description_Type =3;
+  optional string str_Data_01 =4;
+  optional string str_Data_02 =5;
+  optional string str_Data_03 =6;
+  optional string str_Data_04 =7;
+  optional string str_Data_05 =8;
+  optional string str_Data_06 =9;
+  optional string str_Data_07 =10;
+  optional string str_Data_08 =11;
+  optional string str_Data_09 =12;
+  optional string str_Data_10 =13;
+  optional string str_Data_11 =14;
+  optional float f_Data_01 =15;
+  optional float f_Data_02 =16;
+  optional float f_Data_03 =17;
+  optional float f_Data_04 =18;
+  optional float f_Data_05 =19;
+  optional float f_Data_06 =20;
+  optional float f_Data_07 =21;
+  optional float f_Data_08 =22;
+  optional float f_Data_09 =23;
+  optional float f_Data_10 =24;
+  optional float f_Data_11 =25;
+}

@@ -57,6 +57,7 @@
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
+#include "freertos_cubemx.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
@@ -79,26 +80,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END Variables */
-osThreadId IOTID;
-osThreadId blinkTID;
-osThreadId WebServerTID;
-osThreadId LCDTID;
-/* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN FunctionPrototypes */
-   
-/* USER CODE END FunctionPrototypes */
-
-void StartDefaultTask(void const * argument);
-void StartWebserverThread(void const * argument);
-extern void StartBlinkThread(void const * argument);
-void StartLCDThread(void const * argument);
-extern void MX_LWIP_Init(void);
-extern void MX_FATFS_Init(void);
-
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
 /**
   * @brief  FreeRTOS initialization
   * @param  None
@@ -191,9 +172,9 @@ void StartLCDThread(void const * argument) {
 
 	/* USER CODE BEGIN Variables */
 	//TODO use real ip adress
-	uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
+	//uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
 	// Target IP for udp straming
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
+	//uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 	ILI9341_Init(); //initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
@@ -214,8 +195,9 @@ void StartLCDThread(void const * argument) {
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "IP      :%d.%d.%d.%d", ETH_IP_ADDRESS[0],
-			ETH_IP_ADDRESS[1], ETH_IP_ADDRESS[2], ETH_IP_ADDRESS[3]);
+	char * iPadressBuffer[17]={};
+	ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
+	sprintf(Temp_Buffer_text, "IP %s",iPadressBuffer);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
 			UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
