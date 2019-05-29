@@ -98,11 +98,11 @@ extern "C" {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE END Variables */
-osThreadId IOTID;
-osThreadId blinkTID;
-osThreadId WebServerTID;
-osThreadId LCDTID;
-osThreadId DataStreamerTID;
+extern osThreadId IOTID;
+extern osThreadId blinkTID;
+extern osThreadId WebServerTID;
+extern osThreadId LCDTID;
+extern osThreadId DataStreamerTID;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
@@ -115,6 +115,7 @@ void StartLCDThread(void const * argument);
 void StartDataStreamerThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
+void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
 
