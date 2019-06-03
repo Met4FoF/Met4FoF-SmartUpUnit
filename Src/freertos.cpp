@@ -223,7 +223,13 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[3]);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		while (1) {
-			osDelay(1000);
+			osDelay(10000);
+			ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
+			sprintf(Temp_Buffer_text, "IP %s",iPadressBuffer);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
+			sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
+					UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+					UDP_TARGET_IP_ADDRESS[3]);
 			//timespec utc;
 			//timespec gps_time;
 			//lgw_gps_get(&utc, &gps_time, NULL, NULL);
@@ -252,24 +258,26 @@ void MX_FREERTOS_Init(void) {
 		Check_LWIP_RETURN_VAL(net_conn_result);
 		/* create a new netbuf */
 		buf = netbuf_new();
-		int i=0;
+		static int i=0;
 		static uint32_t ID;
 		HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *) ID);
         //defining Protobuff output stream with Maximum Transfer unit (MTU) size of the networkpackages
-		#define MTU_SIZE 500
-		uint8_t ProtoBuffer[MTU_SIZE] = { 0 };
-		pb_ostream_t ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+		#define MTU_SIZE 1000
+		uint8_t ProtoBufferData[MTU_SIZE] = { 0 };
+		pb_ostream_t ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+		uint8_t ProtoBufferDescription[MTU_SIZE] = { 0 };
+		pb_ostream_t ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
 		while (1) {
-			if(ProtoStream.bytes_written>(MTU_SIZE-DataMessage_size)){
+			if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
 				//sending the buffer
-				netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
+				netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
 				/* send the text */
 				err_t net_conn_result =netconn_send(conn, buf);
 				Check_LWIP_RETURN_VAL(net_conn_result);
 				// reallocating buffer this is maybe performance intensive profile this
 				//TODO profile this code
-				ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
-}
+				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+			}
 			union Randombytes
 			{
 			    uint32_t asuint;
@@ -291,7 +299,7 @@ void MX_FREERTOS_Init(void) {
 			PrtotTestdata.Data_03=cos((float)i/10)+(float)RandomNoise.asbyt[0]/1000;
 			PrtotTestdata.has_Data_04=true;
 			PrtotTestdata.Data_04=cos((float)i/20)+(float)RandomNoise.asuint/4.294e9-0.5;
-			pb_encode(&ProtoStream,DataMessage_fields, &PrtotTestdata);
+			pb_encode_ex(&ProtoStreamData,DataMessage_fields, &PrtotTestdata,PB_ENCODE_DELIMITED);
 			//sending the buffer
 			//netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
 			/* send the text */
@@ -301,6 +309,29 @@ void MX_FREERTOS_Init(void) {
 			i++;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 			osDelay(100);
+			if(i%10==0)
+			{
+				DescriptionMessage ProtoDescriptionMessage;
+				ProtoDescriptionMessage.id=ID;
+				strlcpy(ProtoDescriptionMessage.Sensor_name, "simulated test data",sizeof(ProtoDescriptionMessage.Sensor_name));
+				ProtoDescriptionMessage.Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+				ProtoDescriptionMessage.has_str_Data_01=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_01,"X Acceleration",sizeof(ProtoDescriptionMessage.str_Data_01));
+				ProtoDescriptionMessage.has_str_Data_02=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_02,"Y Acceleration",sizeof(ProtoDescriptionMessage.str_Data_02));
+				ProtoDescriptionMessage.has_str_Data_03=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_03,"Z Acceleration",sizeof(ProtoDescriptionMessage.str_Data_03));
+				ProtoDescriptionMessage.has_str_Data_04=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_04,"X Rotation",sizeof(ProtoDescriptionMessage.str_Data_04));
+				pb_encode_ex(&ProtoStreamDescription,DescriptionMessage_fields, &ProtoDescriptionMessage,PB_ENCODE_DELIMITED);
+				netbuf_ref(buf, &ProtoBufferDescription, ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result =netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
+			}
 		}
 		osThreadTerminate(NULL);
 	}
