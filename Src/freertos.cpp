@@ -260,6 +260,16 @@ void MX_FREERTOS_Init(void) {
 		uint8_t ProtoBuffer[MTU_SIZE] = { 0 };
 		pb_ostream_t ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
 		while (1) {
+			if(ProtoStream.bytes_written>(MTU_SIZE-DataMessage_size)){
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
+				/* send the text */
+				err_t net_conn_result =netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+}
 			union Randombytes
 			{
 			    uint32_t asuint;
@@ -283,10 +293,11 @@ void MX_FREERTOS_Init(void) {
 			PrtotTestdata.Data_04=cos((float)i/20)+(float)RandomNoise.asuint/4.294e9-0.5;
 			pb_encode(&ProtoStream,DataMessage_fields, &PrtotTestdata);
 			//sending the buffer
-			netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
+			//netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
 			/* send the text */
-			err_t net_conn_result=netconn_send(conn, buf);
-			Check_LWIP_RETURN_VAL(net_conn_result);
+			//err_t net_conn_result=netconn_send(conn, buf);
+			//Check_LWIP_RETURN_VAL(net_conn_result);
+			//ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
 			i++;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 			osDelay(100);
@@ -296,24 +307,25 @@ void MX_FREERTOS_Init(void) {
 
 	void Check_LWIP_RETURN_VAL(err_t retVal)
 	{
+		static uint32_t LWIP_RRT_PRINT_ErrorCount=0;
 					if (retVal!=ERR_OK){
 						switch(retVal){
-						case -1: SEGGER_RTT_printf(0,"LWIP ERR_MEM: Out of memory error.");break;
-						case -2: SEGGER_RTT_printf(0,"LWIP ERR_BUF: Buffer error. ");break;
-						case -3: SEGGER_RTT_printf(0,"LWIP ERR_TIMEOUT: Time Out. ");break;
-						case -4: SEGGER_RTT_printf(0,"LWIP ERR_RTE: Routing problem. ");break;
-						case -5: SEGGER_RTT_printf(0,"LWIP ERR_INPROGRESS: Operation in progress ");break;
-						case -6: SEGGER_RTT_printf(0,"LWIP ERR_VAL: Illegal value");break;
-						case -7: SEGGER_RTT_printf(0,"LWIP ERR_WOULDBLOCK: Operation would block.");break;
-						case -8: SEGGER_RTT_printf(0,"LWIP ERR_USE: Address in use.");break;
-						case -9: SEGGER_RTT_printf(0,"LWIP ERR_ALREADY: Already connecting.");break;
-						case -10: SEGGER_RTT_printf(0,"LWIP ERR_ISCONN: Conn already established.");break;
-						case -11: SEGGER_RTT_printf(0,"LWIP ERR_CONN: Not connected.");break;
-						case -12: SEGGER_RTT_printf(0,"LWIP ERR_IF: Low-level netif error.");break;
-						case -13: SEGGER_RTT_printf(0,"LWIP ERR_ABRT: Connection aborted.");break;
-						case -14: SEGGER_RTT_printf(0,"LWIP ERR_RST: Connection reset.");break;
-						case -15: SEGGER_RTT_printf(0,"LWIP ERR_CLSD: Connection closed. ");break;
-						case -16: SEGGER_RTT_printf(0,"LWIP ERR_ARG: Illegal argument.");break;
+						case -1: SEGGER_RTT_printf(0,"%u LWIP ERR_MEM: Out of memory error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -2: SEGGER_RTT_printf(0,"%u LWIP ERR_BUF: Buffer error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -3: SEGGER_RTT_printf(0,"%u LWIP ERR_TIMEOUT: Time Out.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -4: SEGGER_RTT_printf(0,"%u LWIP ERR_RTE: Routing problem.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -5: SEGGER_RTT_printf(0,"%u LWIP ERR_INPROGRESS: Operation in progress.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -6: SEGGER_RTT_printf(0,"%u LWIP ERR_VAL: Illegal value.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -7: SEGGER_RTT_printf(0,"%u LWIP ERR_WOULDBLOCK: Operation would block.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -8: SEGGER_RTT_printf(0,"%u LWIP ERR_USE: Address in use.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -9: SEGGER_RTT_printf(0,"%u LWIP ERR_ALREADY: Already connecting.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -10: SEGGER_RTT_printf(0,"%u LWIP ERR_ISCONN: Conn already established.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -11: SEGGER_RTT_printf(0,"%u LWIP ERR_CONN: Not connected.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -12: SEGGER_RTT_printf(0,"%u LWIP ERR_IF: Low-level netif error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -13: SEGGER_RTT_printf(0,"%u LWIP ERR_ABRT: Connection aborted.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -14: SEGGER_RTT_printf(0,"%u LWIP ERR_RST: Connection reset.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -15: SEGGER_RTT_printf(0,"%u LWIP ERR_CLSD: Connection closed.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -16: SEGGER_RTT_printf(0,"%u LWIP ERR_ARG: Illegal argument.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
 						}
 					}
 	}
