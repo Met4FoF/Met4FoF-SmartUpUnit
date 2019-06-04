@@ -119,17 +119,17 @@ void MX_FREERTOS_Init(void) {
 
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
-	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
 	IOTID = osThreadCreate(osThread(defaultTask), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 16);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 512);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
-			128);
+			512);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
+	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 512);
 
 	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 
