@@ -225,7 +225,8 @@ void MX_FREERTOS_Init(void) {
 		while (1) {
 			osDelay(10000);
 			ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
-			sprintf(Temp_Buffer_text, "IP %s",iPadressBuffer);
+			iPadressBuffer[17]= {};
+			sprintf(Temp_Buffer_text, "IP %s    ",iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
 			sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
 					UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
