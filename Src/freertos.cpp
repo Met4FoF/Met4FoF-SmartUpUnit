@@ -59,6 +59,16 @@
 #include "ILI9341/ILI9341_GFX.h"
 #include "freertos_cubemx.h"
 
+#include "SEGGER_RTT.h"
+
+#include "pb.h"
+#include "message.pb.h"
+#include "pb_encode.h"
+
+#include "rng.h"
+
+#include <math.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -80,6 +90,11 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+osThreadId IOTID;
+osThreadId blinkTID;
+osThreadId WebServerTID;
+osThreadId LCDTID;
+osThreadId DataStreamerTID;
 /**
  * @brief  FreeRTOS initialization
  * @param  None
@@ -173,7 +188,7 @@ void MX_FREERTOS_Init(void) {
 	}
 
 	void StartLCDThread(void const * argument) {
-
+		//osDelay(3000);
 		/* USER CODE BEGIN Variables */
 		//TODO use real ip adress
 		//uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
@@ -199,7 +214,7 @@ void MX_FREERTOS_Init(void) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
 		sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
-		char * iPadressBuffer[17]= {};
+		char iPadressBuffer[17]= {};
 		ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
 		sprintf(Temp_Buffer_text, "IP %s",(const char *)&iPadressBuffer);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
@@ -208,7 +223,14 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[3]);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		while (1) {
-			osDelay(1000);
+			osDelay(10000);
+			ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
+			iPadressBuffer[17]= {};
+			sprintf(Temp_Buffer_text, "IP %s    ",iPadressBuffer);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
+			sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
+					UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
+					UDP_TARGET_IP_ADDRESS[3]);
 			//timespec utc;
 			//timespec gps_time;
 			//lgw_gps_get(&utc, &gps_time, NULL, NULL);
@@ -231,24 +253,113 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[3]);
 		/* create a new connection */
 		conn = netconn_new(NETCONN_UDP);
+
 		/* connect the connection to the remote host */
-		netconn_connect(conn, &targetipaddr, 7000);
+		err_t net_conn_result=netconn_connect(conn, &targetipaddr, 7000);
+		Check_LWIP_RETURN_VAL(net_conn_result);
 		/* create a new netbuf */
 		buf = netbuf_new();
-		int i=0;
+		static int i=0;
+		static uint32_t ID;
+		HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *) ID);
+        //defining Protobuff output stream with Maximum Transfer unit (MTU) size of the networkpackages
+		#define MTU_SIZE 1000
+		uint8_t ProtoBufferData[MTU_SIZE] = { 0 };
+		pb_ostream_t ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+		uint8_t ProtoBufferDescription[MTU_SIZE] = { 0 };
+		pb_ostream_t ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
 		while (1) {
-			i++;
-			char dummyBuffer[32]="Hallo Welt\n\r";
-			SEGGER_RTT_printf(0,"%d %s",i,dummyBuffer);
-			/* reference the data into the netbuf */
-			netbuf_ref(buf, &dummyBuffer, sizeof(dummyBuffer));
-
+			if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
+				/* send the text */
+				err_t net_conn_result =netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+			}
+			union Randombytes
+			{
+			    uint32_t asuint;
+			    uint8_t asbyt[sizeof(uint32_t)];
+			};
+			Randombytes RandomNoise;
+			HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *)RandomNoise.asuint);
+			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+			DataMessage PrtotTestdata;
+			PrtotTestdata.id=ID;
+			PrtotTestdata.sample_number=i;
+			PrtotTestdata.unix_time=0x80000000+i/10;
+			PrtotTestdata.unix_time_nsecs=i%10*100000;
+			PrtotTestdata.time_uncertainty=0xFFFFFFFF;
+			PrtotTestdata.Data_01=cos((float)i/10);
+			PrtotTestdata.has_Data_02=true;
+			PrtotTestdata.Data_02=cos((float)i/20);
+			PrtotTestdata.has_Data_03=true;
+			PrtotTestdata.Data_03=cos((float)i/10)+(float)RandomNoise.asbyt[0]/1000;
+			PrtotTestdata.has_Data_04=true;
+			PrtotTestdata.Data_04=cos((float)i/20)+(float)RandomNoise.asuint/4.294e9-0.5;
+			pb_encode_ex(&ProtoStreamData,DataMessage_fields, &PrtotTestdata,PB_ENCODE_DELIMITED);
+			//sending the buffer
+			//netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
 			/* send the text */
-			netconn_send(conn, buf);
+			//err_t net_conn_result=netconn_send(conn, buf);
+			//Check_LWIP_RETURN_VAL(net_conn_result);
+			//ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+			i++;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 			osDelay(100);
+			if(i%10==0)
+			{
+				DescriptionMessage ProtoDescriptionMessage;
+				ProtoDescriptionMessage.id=ID;
+				strlcpy(ProtoDescriptionMessage.Sensor_name, "simulated test data",sizeof(ProtoDescriptionMessage.Sensor_name));
+				ProtoDescriptionMessage.Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+				ProtoDescriptionMessage.has_str_Data_01=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_01,"X Acceleration",sizeof(ProtoDescriptionMessage.str_Data_01));
+				ProtoDescriptionMessage.has_str_Data_02=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_02,"Y Acceleration",sizeof(ProtoDescriptionMessage.str_Data_02));
+				ProtoDescriptionMessage.has_str_Data_03=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_03,"Z Acceleration",sizeof(ProtoDescriptionMessage.str_Data_03));
+				ProtoDescriptionMessage.has_str_Data_04=true;
+				strlcpy(ProtoDescriptionMessage.str_Data_04,"X Rotation",sizeof(ProtoDescriptionMessage.str_Data_04));
+				pb_encode_ex(&ProtoStreamDescription,DescriptionMessage_fields, &ProtoDescriptionMessage,PB_ENCODE_DELIMITED);
+				netbuf_ref(buf, &ProtoBufferDescription, ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result =netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
+			}
 		}
 		osThreadTerminate(NULL);
+	}
+
+	void Check_LWIP_RETURN_VAL(err_t retVal)
+	{
+		static uint32_t LWIP_RRT_PRINT_ErrorCount=0;
+					if (retVal!=ERR_OK){
+						switch(retVal){
+						case -1: SEGGER_RTT_printf(0,"%u LWIP ERR_MEM: Out of memory error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -2: SEGGER_RTT_printf(0,"%u LWIP ERR_BUF: Buffer error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -3: SEGGER_RTT_printf(0,"%u LWIP ERR_TIMEOUT: Time Out.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -4: SEGGER_RTT_printf(0,"%u LWIP ERR_RTE: Routing problem.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -5: SEGGER_RTT_printf(0,"%u LWIP ERR_INPROGRESS: Operation in progress.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -6: SEGGER_RTT_printf(0,"%u LWIP ERR_VAL: Illegal value.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -7: SEGGER_RTT_printf(0,"%u LWIP ERR_WOULDBLOCK: Operation would block.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -8: SEGGER_RTT_printf(0,"%u LWIP ERR_USE: Address in use.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -9: SEGGER_RTT_printf(0,"%u LWIP ERR_ALREADY: Already connecting.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -10: SEGGER_RTT_printf(0,"%u LWIP ERR_ISCONN: Conn already established.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -11: SEGGER_RTT_printf(0,"%u LWIP ERR_CONN: Not connected.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -12: SEGGER_RTT_printf(0,"%u LWIP ERR_IF: Low-level netif error.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -13: SEGGER_RTT_printf(0,"%u LWIP ERR_ABRT: Connection aborted.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -14: SEGGER_RTT_printf(0,"%u LWIP ERR_RST: Connection reset.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -15: SEGGER_RTT_printf(0,"%u LWIP ERR_CLSD: Connection closed.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						case -16: SEGGER_RTT_printf(0,"%u LWIP ERR_ARG: Illegal argument.\r\n",LWIP_RRT_PRINT_ErrorCount);LWIP_RRT_PRINT_ErrorCount++;break;
+						}
+					}
 	}
 	/* Private application code --------------------------------------------------*/
 	/* USER CODE BEGIN Application */

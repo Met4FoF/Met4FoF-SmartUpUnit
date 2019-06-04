@@ -115,10 +115,6 @@ void SystemClock_Config(void);
   * @brief  The application entry point.
   * @retval int
   */
-
-//TODO 	char  ip[17];
-//	ip4addr_ntoa_r(&(gnetif.ip_addr),ip,sizeof(ip));
-//	sprintf(Temp_Buffer_text, "IP%s",ip);
 int main(void)
 {
   /* USER CODE BEGIN 1 */

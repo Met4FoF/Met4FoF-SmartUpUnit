@@ -61,19 +61,30 @@ typedef struct _DataMessage {
 
 typedef struct _DescriptionMessage {
     uint32_t id;
-    pb_callback_t Sensor_name;
+    char Sensor_name[40];
     DescriptionMessage_DESCRIPTION_TYPE Description_Type;
-    pb_callback_t str_Data_01;
-    pb_callback_t str_Data_02;
-    pb_callback_t str_Data_03;
-    pb_callback_t str_Data_04;
-    pb_callback_t str_Data_05;
-    pb_callback_t str_Data_06;
-    pb_callback_t str_Data_07;
-    pb_callback_t str_Data_08;
-    pb_callback_t str_Data_09;
-    pb_callback_t str_Data_10;
-    pb_callback_t str_Data_11;
+    bool has_str_Data_01;
+    char str_Data_01[40];
+    bool has_str_Data_02;
+    char str_Data_02[40];
+    bool has_str_Data_03;
+    char str_Data_03[40];
+    bool has_str_Data_04;
+    char str_Data_04[40];
+    bool has_str_Data_05;
+    char str_Data_05[40];
+    bool has_str_Data_06;
+    char str_Data_06[40];
+    bool has_str_Data_07;
+    char str_Data_07[40];
+    bool has_str_Data_08;
+    char str_Data_08[40];
+    bool has_str_Data_09;
+    char str_Data_09[40];
+    bool has_str_Data_10;
+    char str_Data_10[40];
+    bool has_str_Data_11;
+    char str_Data_11[40];
     bool has_f_Data_01;
     float f_Data_01;
     bool has_f_Data_02;
@@ -102,9 +113,9 @@ typedef struct _DescriptionMessage {
 
 /* Initializer values for message structs */
 #define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_default          {0, {{NULL}, NULL}, _DescriptionMessage_DESCRIPTION_TYPE_MIN, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_zero             {0, {{NULL}, NULL}, _DescriptionMessage_DESCRIPTION_TYPE_MIN, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define DataMessage_id_tag                       1
@@ -172,19 +183,19 @@ X(a, STATIC, OPTIONAL, FLOAT, Data_11, 16)
 
 #define DescriptionMessage_FIELDLIST(X, a) \
 X(a, STATIC, REQUIRED, UINT32, id, 1) \
-X(a, CALLBACK, REQUIRED, STRING, Sensor_name, 2) \
+X(a, STATIC, REQUIRED, STRING, Sensor_name, 2) \
 X(a, STATIC, REQUIRED, UENUM, Description_Type, 3) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_01, 4) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_02, 5) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_03, 6) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_04, 7) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_05, 8) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_06, 9) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_07, 10) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_08, 11) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_09, 12) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_10, 13) \
-X(a, CALLBACK, OPTIONAL, STRING, str_Data_11, 14) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_01, 4) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_02, 5) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_03, 6) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_04, 7) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_05, 8) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_06, 9) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_07, 10) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_08, 11) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_09, 12) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_10, 13) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_11, 14) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_01, 15) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_02, 16) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_03, 17) \
@@ -196,7 +207,7 @@ X(a, STATIC, OPTIONAL, FLOAT, f_Data_08, 22) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_09, 23) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_10, 24) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_11, 25)
-#define DescriptionMessage_CALLBACK pb_default_field_callback
+#define DescriptionMessage_CALLBACK NULL
 #define DescriptionMessage_DEFAULT NULL
 
 extern const pb_msgdesc_t DataMessage_msg;
@@ -208,7 +219,7 @@ extern const pb_msgdesc_t DescriptionMessage_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define DataMessage_size                         86
-/* DescriptionMessage_size depends on runtime parameters */
+#define DescriptionMessage_size                  565
 
 #ifdef __cplusplus
 } /* extern "C" */

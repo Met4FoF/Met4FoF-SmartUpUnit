@@ -1,4 +1,5 @@
 syntax = "proto2";
+import "nanopb.proto";
 
 message DataMessage {
   required uint32 id = 1;
@@ -21,7 +22,7 @@ message DataMessage {
 
 message DescriptionMessage {
   required uint32 id = 1;
-  required string Sensor_name = 2;
+  required string Sensor_name = 2 [(nanopb).max_size = 40];
   enum  DESCRIPTION_TYPE{
   PHYSICAL_QUANTITY = 0;
   UINT = 1;
@@ -31,17 +32,17 @@ message DescriptionMessage {
   MAX_SCALE = 5;
   }
   required DESCRIPTION_TYPE Description_Type =3;
-  optional string str_Data_01 =4;
-  optional string str_Data_02 =5;
-  optional string str_Data_03 =6;
-  optional string str_Data_04 =7;
-  optional string str_Data_05 =8;
-  optional string str_Data_06 =9;
-  optional string str_Data_07 =10;
-  optional string str_Data_08 =11;
-  optional string str_Data_09 =12;
-  optional string str_Data_10 =13;
-  optional string str_Data_11 =14;
+  optional string str_Data_01 =4 [(nanopb).max_size = 40];
+  optional string str_Data_02 =5 [(nanopb).max_size = 40];
+  optional string str_Data_03 =6 [(nanopb).max_size = 40];
+  optional string str_Data_04 =7 [(nanopb).max_size = 40];
+  optional string str_Data_05 =8 [(nanopb).max_size = 40];
+  optional string str_Data_06 =9 [(nanopb).max_size = 40];
+  optional string str_Data_07 =10 [(nanopb).max_size = 40];
+  optional string str_Data_08 =11 [(nanopb).max_size = 40];
+  optional string str_Data_09 =12 [(nanopb).max_size = 40];
+  optional string str_Data_10 =13 [(nanopb).max_size = 40];
+  optional string str_Data_11 =14 [(nanopb).max_size = 40];
   optional float f_Data_01 =15;
   optional float f_Data_02 =16;
   optional float f_Data_03 =17;
