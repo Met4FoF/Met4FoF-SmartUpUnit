@@ -67,6 +67,7 @@
 
 #include "rng.h"
 
+#include "MPU9250.h"
 #include <math.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -243,6 +244,19 @@ void MX_FREERTOS_Init(void) {
 
 
 	void StartDataStreamerThread(void const * argument){
+		union Randombytes
+		{
+		    uint32_t asuint;
+		    uint16_t asuint16[sizeof(uint32_t)/sizeof(uint16_t)];
+		    uint8_t asbyt[sizeof(uint32_t)];
+		};
+		Randombytes RandomID;
+		HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *)RandomID.asuint);
+
+		//TODO only for testing! we need a mail Que here
+		MPU9250 IMU(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1,RandomID.asuint16[0]);
+		IMU.begin();
+		IMU.enableDataReadyInterrupt();
 		//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 		osDelay(3000);
 		struct netconn *conn;
@@ -279,60 +293,14 @@ void MX_FREERTOS_Init(void) {
 				//TODO profile this code
 				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
 			}
-			union Randombytes
-			{
-			    uint32_t asuint;
-			    uint8_t asbyt[sizeof(uint32_t)];
-			};
-			Randombytes RandomNoise;
-			HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *)RandomNoise.asuint);
+
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
-			DataMessage PrtotTestdata;
-			PrtotTestdata.id=ID;
-			PrtotTestdata.sample_number=i;
-			PrtotTestdata.unix_time=0x80000000+i/10;
-			PrtotTestdata.unix_time_nsecs=i%10*100000;
-			PrtotTestdata.time_uncertainty=0xFFFFFFFF;
-			PrtotTestdata.Data_01=cos((float)i/10);
-			PrtotTestdata.has_Data_02=true;
-			PrtotTestdata.Data_02=cos((float)i/20);
-			PrtotTestdata.has_Data_03=true;
-			PrtotTestdata.Data_03=cos((float)i/10)+(float)RandomNoise.asbyt[0]/1000;
-			PrtotTestdata.has_Data_04=true;
-			PrtotTestdata.Data_04=cos((float)i/20)+(float)RandomNoise.asuint/4.294e9-0.5;
-			pb_encode_ex(&ProtoStreamData,DataMessage_fields, &PrtotTestdata,PB_ENCODE_DELIMITED);
-			//sending the buffer
-			//netbuf_ref(buf, &ProtoBuffer, ProtoStream.bytes_written);
-			/* send the text */
-			//err_t net_conn_result=netconn_send(conn, buf);
-			//Check_LWIP_RETURN_VAL(net_conn_result);
-			//ProtoStream = pb_ostream_from_buffer(ProtoBuffer, MTU_SIZE);
+			DataMessage IMUData;
+			IMU.getData(&IMUData,(uint32_t)i,(uint32_t)i);
+			pb_encode_ex(&ProtoStreamData,DataMessage_fields,&IMUData,PB_ENCODE_DELIMITED);
 			i++;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
-			osDelay(100);
-			if(i%10==0)
-			{
-				DescriptionMessage ProtoDescriptionMessage;
-				ProtoDescriptionMessage.id=ID;
-				strlcpy(ProtoDescriptionMessage.Sensor_name, "simulated test data",sizeof(ProtoDescriptionMessage.Sensor_name));
-				ProtoDescriptionMessage.Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
-				ProtoDescriptionMessage.has_str_Data_01=true;
-				strlcpy(ProtoDescriptionMessage.str_Data_01,"X Acceleration",sizeof(ProtoDescriptionMessage.str_Data_01));
-				ProtoDescriptionMessage.has_str_Data_02=true;
-				strlcpy(ProtoDescriptionMessage.str_Data_02,"Y Acceleration",sizeof(ProtoDescriptionMessage.str_Data_02));
-				ProtoDescriptionMessage.has_str_Data_03=true;
-				strlcpy(ProtoDescriptionMessage.str_Data_03,"Z Acceleration",sizeof(ProtoDescriptionMessage.str_Data_03));
-				ProtoDescriptionMessage.has_str_Data_04=true;
-				strlcpy(ProtoDescriptionMessage.str_Data_04,"X Rotation",sizeof(ProtoDescriptionMessage.str_Data_04));
-				pb_encode_ex(&ProtoStreamDescription,DescriptionMessage_fields, &ProtoDescriptionMessage,PB_ENCODE_DELIMITED);
-				netbuf_ref(buf, &ProtoBufferDescription, ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result =netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
-			}
+			osDelay(10);
 		}
 		osThreadTerminate(NULL);
 	}

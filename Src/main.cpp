@@ -73,6 +73,11 @@
 
 //Protbuff
 #include "pb.h"
+
+//Sensor
+#include "MPU9250.h"
+
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -169,9 +174,6 @@ int main(void)
   /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
   SEGGER_SYSVIEW_Conf();
-
-  /* Start scheduler */
-
   osKernelStart();
   
   /* We should never get here as control is now taken by the scheduler */

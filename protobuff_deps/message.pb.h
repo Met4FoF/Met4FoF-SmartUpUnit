@@ -33,7 +33,7 @@ typedef struct _DataMessage {
     uint32_t sample_number;
     uint32_t unix_time;
     uint32_t unix_time_nsecs;
-    uint32_t time_uncertainty;
+    uint32_t time_uncertainty; //if this val is 0xFFFFFFFF the time is not valid!! and its a raw time stamp instead
     float Data_01;
     bool has_Data_02;
     float Data_02;
