@@ -71,7 +71,7 @@ void http_server_serve(struct netconn *conn)
 
       /* Is this an HTTP GET command? (only check the first 5 chars, since
       there are other formats for GET, and we're keeping it very simple )*/
-      if ((buflen >=5) && (strncmp(buf, "GET /", 5) == 0))
+      if ((buflen >=5) || (strncmp(buf, "GET /", 5) == 0))
       {
     	  if (strncmp((char const *)buf,"GET /index.html",15)==0) {
     		  netconn_write(conn, (const unsigned char*)index_html, index_html_len, NETCONN_NOCOPY);
@@ -85,6 +85,16 @@ void http_server_serve(struct netconn *conn)
     	  if (strncmp((char const *)buf,"GET /led3", 9) == 0) {
     		  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     	  }
+    	  //************************set ip
+    	  if (strncmp((char const *)buf,"GET /ipv4", 12) == 0) {
+    	      		  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+    	      	  }
+
+    	  if (strncmp((char const *)buf,"GET /sub1", 12) == 0) {
+    	      	      		  HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+    	      	      	  }
+
+    	  //************************
     	  if (strncmp((char const *)buf,"GET /btn1", 9) == 0) {
     		  if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_SET)
     			  netconn_write(conn, (const unsigned char*)"ON", 2, NETCONN_NOCOPY);
