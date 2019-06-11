@@ -37,6 +37,13 @@ MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef
     _MPU9250spi=MPU9250spi;
 }
 
+int MPU9250::setBaseID(uint16_t BaseID)
+{
+	_BaseID=BaseID;
+	_SetingsID=0;
+	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	return 0;
+}
 /* starts communication with the MPU-9250 */
 int MPU9250::begin(){
 	// using SPI for communication

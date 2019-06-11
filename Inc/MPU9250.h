@@ -85,6 +85,7 @@ class MPU9250{
     };
     MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint16_t BaseID);
     int begin();
+    int setBaseID(uint16_t BaseID);
     int setAccelRange(AccelRange range);
     int setGyroRange(GyroRange range);
     int setDlpfBandwidth(DlpfBandwidth bandwidth);

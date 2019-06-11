@@ -96,6 +96,7 @@ osThreadId blinkTID;
 osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
+MPU9250 IMU(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1,0);
 /**
  * @brief  FreeRTOS initialization
  * @param  None
@@ -252,9 +253,8 @@ void MX_FREERTOS_Init(void) {
 		};
 		Randombytes RandomID;
 		HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *)RandomID.asuint);
-
 		//TODO only for testing! we need a mail Que here
-		MPU9250 IMU(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1,RandomID.asuint16[0]);
+		IMU.setBaseID(RandomID.asuint16[1]);
 		IMU.begin();
 		IMU.enableDataReadyInterrupt();
 		//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
