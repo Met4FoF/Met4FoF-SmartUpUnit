@@ -1,4 +1,4 @@
-# Software for the Met4FoF Smartup Unit V2.
+# Software for the Met4FoF Smartup Unit V2
 # Build System.
 The software was and is created with [SW4STM32](http://www.openstm32.org/HomePage) (gcc).
 [SEGGER Systemview](https://www.segger.com/products/development-tools/systemview/) can be used for debugging.
