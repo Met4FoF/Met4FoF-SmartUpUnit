@@ -88,7 +88,7 @@ extern "C" {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DATAMAILBUFFERSIZE 64
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -120,6 +120,13 @@ void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
 
+union RandomData
+{
+    uint32_t asuint;
+    uint16_t asuint16[sizeof(uint32_t)/sizeof(uint16_t)];
+    uint8_t asbyt[sizeof(uint32_t)];
+};
+RandomData getRandomData(RNG_HandleTypeDef *hrng);
 /* (MISRA C 2004 rule 8.1) */
 #ifdef __cplusplus
 }

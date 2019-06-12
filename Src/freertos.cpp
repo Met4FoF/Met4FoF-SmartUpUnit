@@ -70,6 +70,9 @@
 #include "MPU9250.h"
 #include <math.h>
 
+#include "adc.h"
+#include "tim.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -97,6 +100,9 @@ osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
 MPU9250 IMU(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1,0);
+
+osMailQDef(DataMail,DATAMAILBUFFERSIZE ,DataMessage);
+osMailQId DataMail;
 /**
  * @brief  FreeRTOS initialization
  * @param  None
@@ -245,20 +251,13 @@ void MX_FREERTOS_Init(void) {
 
 
 	void StartDataStreamerThread(void const * argument){
-		union Randombytes
-		{
-		    uint32_t asuint;
-		    uint16_t asuint16[sizeof(uint32_t)/sizeof(uint16_t)];
-		    uint8_t asbyt[sizeof(uint32_t)];
-		};
-		Randombytes RandomID;
-		HAL_RNG_GenerateRandomNumber(&hrng,(uint32_t *)RandomID.asuint);
 		//TODO only for testing! we need a mail Que here
+		RandomData RandomID =getRandomData(&hrng);
 		IMU.setBaseID(RandomID.asuint16[1]);
 		IMU.begin();
 		IMU.enableDataReadyInterrupt();
 		//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
-		osDelay(3000);
+		osDelay(4000);
 		struct netconn *conn;
 		struct netbuf *buf;
 		//UDP target ip Adress
@@ -267,7 +266,6 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[3]);
 		/* create a new connection */
 		conn = netconn_new(NETCONN_UDP);
-
 		/* connect the connection to the remote host */
 		err_t net_conn_result=netconn_connect(conn, &targetipaddr, 7000);
 		Check_LWIP_RETURN_VAL(net_conn_result);
@@ -282,25 +280,38 @@ void MX_FREERTOS_Init(void) {
 		pb_ostream_t ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
 		uint8_t ProtoBufferDescription[MTU_SIZE] = { 0 };
 		pb_ostream_t ProtoStreamDescription = pb_ostream_from_buffer(ProtoBufferDescription, MTU_SIZE);
+		DataMail = osMailCreate(osMailQ(DataMail), NULL);
+		//Start timer and arm inputcapture
+		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
+		HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+		__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+	          /* Enable ADC1 external trigger */
+		HAL_ADC_Start_IT(&hadc1);
+
+
 		while (1) {
-			if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
+			DataMessage *Datarptr;
+					//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+			osEvent DataEvent = osMailGet(DataMail,200);
+			struct timespec utc;
+			if (DataEvent.status == osEventMail) {
+				Datarptr = (DataMessage*) DataEvent.value.p;
+				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+				if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
 				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
+					netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
 				/* send the text */
-				err_t net_conn_result =netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
+					err_t net_conn_result =netconn_send(conn, buf);
+					Check_LWIP_RETURN_VAL(net_conn_result);
 				// reallocating buffer this is maybe performance intensive profile this
 				//TODO profile this code
-				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
-			}
-
-			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
-			DataMessage IMUData;
-			IMU.getData(&IMUData,(uint32_t)i,(uint32_t)i);
-			pb_encode_ex(&ProtoStreamData,DataMessage_fields,&IMUData,PB_ENCODE_DELIMITED);
+					ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+				}
+			pb_encode_ex(&ProtoStreamData,DataMessage_fields,Datarptr,PB_ENCODE_DELIMITED);
 			i++;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
-			osDelay(10);
+			}
 		}
 		osThreadTerminate(NULL);
 	}
@@ -329,6 +340,28 @@ void MX_FREERTOS_Init(void) {
 						}
 					}
 	}
+
+	RandomData getRandomData(RNG_HandleTypeDef *hrng){
+		RandomData result={0};
+		HAL_RNG_GenerateRandomNumber(hrng,(uint32_t *)result.asuint);
+		return result;
+	}
+
+	void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		static uint32_t Channel1CaptureCount=0;
+		if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+			DataMessage *mptr;
+			mptr = (DataMessage *) osMailAlloc(DataMail,0);
+			IMU.getData(mptr,HAL_TIM_ReadCapturedValue(&htim2,
+					TIM_CHANNEL_1),Channel1CaptureCount);
+			//mptr->has_Data_11=true;
+			//mptr->Data_11=(float)HAL_ADC_PollForConversion(&hadc1, 1);
+			osStatus result = osMailPut(DataMail, mptr);
+		}
+		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	}
+
 	/* Private application code --------------------------------------------------*/
 	/* USER CODE BEGIN Application */
 
