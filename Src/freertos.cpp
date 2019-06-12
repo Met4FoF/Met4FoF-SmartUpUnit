@@ -291,6 +291,38 @@ void MX_FREERTOS_Init(void) {
 
 
 		while (1) {
+#define SIMULATIONMODE 1
+#if SIMULATIONMODE
+			static int i=0;
+			RandomData RandomNoise=getRandomData(&hrng);
+			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+			DataMessage PrtotTestdata;
+			PrtotTestdata.id=ID;
+			PrtotTestdata.sample_number=i;
+			PrtotTestdata.unix_time=0x80000000+i/10;
+			PrtotTestdata.unix_time_nsecs=i%10*100000;
+			PrtotTestdata.time_uncertainty=0xFFFFFFFF;
+			PrtotTestdata.Data_01=cos((float)i/10);
+			PrtotTestdata.has_Data_02=true;
+			PrtotTestdata.Data_02=cos((float)i/20);
+			PrtotTestdata.has_Data_03=true;
+			PrtotTestdata.Data_03=cos((float)i/10)+(float)RandomNoise.asbyt[0]/1000;
+			PrtotTestdata.has_Data_04=true;
+			PrtotTestdata.Data_04=cos((float)i/20)+(float)RandomNoise.asuint/4.294e9-0.5;
+			pb_encode(&ProtoStreamData,DataMessage_fields, &PrtotTestdata);
+			//sending the buffer
+			netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
+			/* send the text */
+			err_t net_conn_result =netconn_send(conn, buf);
+			Check_LWIP_RETURN_VAL(net_conn_result);
+			// reallocating buffer this is maybe performance intensive profile this
+			ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+			i++;
+			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+			osDelay(100);
+			#endif
+
+#if !SIMULATIONMODE
 			DataMessage *Datarptr;
 					//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 			osEvent DataEvent = osMailGet(DataMail,200);
@@ -298,6 +330,7 @@ void MX_FREERTOS_Init(void) {
 			if (DataEvent.status == osEventMail) {
 				Datarptr = (DataMessage*) DataEvent.value.p;
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+#endif
 #if NULL
 				if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
 				//sending the buffer
@@ -312,6 +345,7 @@ void MX_FREERTOS_Init(void) {
 
 			pb_encode_ex(&ProtoStreamData,DataMessage_fields,Datarptr,PB_ENCODE_DELIMITED);
 #endif
+#if !SIMULATIONMODE
 			pb_encode(&ProtoStreamData,DataMessage_fields,Datarptr);
 			//sending the buffer
 			netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
@@ -325,6 +359,7 @@ void MX_FREERTOS_Init(void) {
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 			}
+#endif
 		}
 		osThreadTerminate(NULL);
 	}
