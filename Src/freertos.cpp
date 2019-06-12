@@ -172,7 +172,7 @@ void MX_FREERTOS_Init(void) {
 		/* Infinite loop */
 		for(;;)
 		{
-			osDelay(1);
+			osDelay(10000);
 		}
 		/* USER CODE END StartDefaultTask */
 	}
@@ -298,6 +298,7 @@ void MX_FREERTOS_Init(void) {
 			if (DataEvent.status == osEventMail) {
 				Datarptr = (DataMessage*) DataEvent.value.p;
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+#if NULL
 				if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
 				//sending the buffer
 					netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
@@ -308,8 +309,20 @@ void MX_FREERTOS_Init(void) {
 				//TODO profile this code
 					ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
 				}
+
 			pb_encode_ex(&ProtoStreamData,DataMessage_fields,Datarptr,PB_ENCODE_DELIMITED);
+#endif
+			pb_encode(&ProtoStreamData,DataMessage_fields,Datarptr);
+			//sending the buffer
+			netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
+			/* send the text */
+			err_t net_conn_result =netconn_send(conn, buf);
+			Check_LWIP_RETURN_VAL(net_conn_result);
+			// reallocating buffer this is maybe performance intensive profile this
+			//TODO profile this code
+			ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
 			i++;
+			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 			}
 		}
@@ -351,6 +364,7 @@ void MX_FREERTOS_Init(void) {
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 		static uint32_t Channel1CaptureCount=0;
 		if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+			Channel1CaptureCount++;
 			DataMessage *mptr;
 			mptr = (DataMessage *) osMailAlloc(DataMail,0);
 			IMU.getData(mptr,HAL_TIM_ReadCapturedValue(&htim2,
