@@ -38,10 +38,10 @@
  
     $('.IP').mask('999.999.999.999');
 	
-$('#button1').on('click', function() {
+//$('#button1').on('click', function() {
         //alert(tbox1);
 		//$("#result").html($('#first input').serialize());	
-    });
+//    });
    function getUrlVars() {
     var vars = {};
     var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
@@ -55,6 +55,23 @@ $('#button1').on('click', function() {
  
   });
 </script>
+  <script>
+
+        strLine1 = "";
+        strLine2 = "";
+        
+        function SendText()
+        {
+            //nocache = "&nocache=" + Math.random() * 1000000;
+            var request = new XMLHttpRequest();
+            
+            strLine1 = "&L1=" + document.getElementById("txt_form").tbox1.value;
+            strLine2 = "&L2=" + document.getElementById("txt_form").tbox2.value;
+            
+            request.open("GET", "ajax_inputs" + strLine1 + strLine2 , true);
+            request.send(null);
+        }
+        </script>
 <meta name="viewport" content="width=device-width, initial-scale=1 user-scalable=no">
 </head>
 <body>
@@ -81,9 +98,11 @@ $('#button1').on('click', function() {
     <div id="first" style=" ">
 	<div class="panel-heading" style="background-color: #ddd;">Setting IP</div>
 	<div style="padding: 10px;" >
+	                         <form id="txt_form" name="frmText">
     &nbsp;&nbsp;&nbsp;&nbsp; UDP Target IP: <input name="tbox1"  placeholder="---,---,---,---" type="text" class='IP led' id="ipv4" style="width: 110px;">
                              Subnet Max:    <input name="tbox2"  placeholder="---,---,---,---" type="text" class='IP led' id="sub1" style="width: 110px;"> &nbsp;&nbsp;&nbsp;&nbsp;
-                                            <input id="button1" type="submit" value="save">
+							 </form>
+                                            <input id="button1" type="submit" value="save" onclick="SendText()">
       </div> 
      
     </div>

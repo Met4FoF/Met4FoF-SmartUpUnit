@@ -35,6 +35,8 @@
 #include "../webpages/index.h"
 #include "main.h"
 
+#include "SEGGER_RTT.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define WEBSERVER_THREAD_PRIO    ( tskIDLE_PRIORITY + 4 )
@@ -73,6 +75,7 @@ void http_server_serve(struct netconn *conn)
       there are other formats for GET, and we're keeping it very simple )*/
       if ((buflen >=5) || (strncmp(buf, "GET /", 5) == 0))
       {
+    	  SEGGER_RTT_printf(0,"%s.\r\n",buf);
     	  if (strncmp((char const *)buf,"GET /index.html",15)==0) {
     		  netconn_write(conn, (const unsigned char*)index_html, index_html_len, NETCONN_NOCOPY);
     	  }
