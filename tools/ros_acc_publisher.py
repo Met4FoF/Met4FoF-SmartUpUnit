@@ -66,6 +66,7 @@ def imu_publisher():
             while not rospy.is_shutdown():
                 data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
                 if(data.startswith("ACC3")):
+                    print(data)
                     unpackeddata=unpack('IIIIIIHffff',data)
                     imu_msg = Imu()
                     imu_msg.linear_acceleration.x=unpackeddata[6]

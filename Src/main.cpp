@@ -68,9 +68,9 @@
 #include "httpserver-netconn.h"
 #include "math.h"
 
-#define USE_MPU9250 1
+#define USE_MPU9250 0
 #define USE_L3GD20 0
-#define USE_BMA280 0
+#define USE_BMA280 1
 // Sensors
 //#include "ADXL345.h"
 #include "bma280.h"
@@ -514,12 +514,11 @@ void StartDataStreamingThread(void const * argument) {
 			rptr->NanoSecs=(uint32_t)(utc.tv_nsec);
 			osMutexRelease(GPS_ref_mutex_id);
 			porcessedCount++;
-			uint8_t MSGBuffer[sizeof(ACCData)+4]= {0};
-			MSGBuffer[0]=0x41;
-			MSGBuffer[1]=0x43;
-			MSGBuffer[2]=0x43;
-			MSGBuffer[3]=0x33;
-			memcpy(&MSGBuffer[4],&*rptr, sizeof(ACCData));
+			uint8_t MSGBuffer[256]= {0};
+			AccelDataStamped tmp = *rptr;
+						float timeval=(tmp.RawTimerCount/100000000.0);
+			sprintf((char *) MSGBuffer, "ACC3,%d,%llu,%d,%f,%f,%f,%f\n",
+					tmp.CaptureCount, tmp.RawTimerCount, tmp.ADCValue,tmp.Data.x,tmp.Data.y,tmp.Data.z,tmp.Data.temperature);
 			/* reference the data into the netbuf */
 			netbuf_ref(buf, &MSGBuffer, sizeof(MSGBuffer));
 
@@ -732,9 +731,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				*mptr = Acc.GetStampedData(0x00000000,
 						tim2_upper_bits_mask+(uint64_t)HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1),
 						captureCount,ADCValue);
-				//put dater pointer into MSGQ
-				osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,
-					}
+			}
 					else {
 						uint32_t timestamp_raw=HAL_TIM_ReadCapturedValue(&htim2, TIM_CHANNEL_1);
 						uint64_t timestamp;
@@ -755,8 +752,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 									captureCount,ADCValue);
 						}
 					}
-					osWaitForever);
-		} else {
+			//put dater pointer into MSGQ
+			osStatus result = osMessagePut(ACCMsgBuffer, (uint32_t) mptr,0);
+		}
+		else
+		{
 			MissedCount++;
 		}
 #endif
