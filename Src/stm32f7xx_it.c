@@ -263,12 +263,9 @@ void ETH_IRQHandler(void)
   SEGGER_SYSVIEW_RecordExitISR();
 }
 
-/**
-  * @brief This function handles UART7 global interrupt.
-  */
 void UART7_IRQHandler(void)
 {
-	SEGGER_SYSVIEW_RecordEnterISR();
+  SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN UART7_IRQn 0 */
 
   /* USER CODE END UART7_IRQn 0 */
@@ -278,7 +275,6 @@ void UART7_IRQHandler(void)
   /* USER CODE END UART7_IRQn 1 */
   SEGGER_SYSVIEW_RecordExitISR();
 }
-
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */

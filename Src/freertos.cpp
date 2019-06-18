@@ -65,14 +65,16 @@
 #include "message.pb.h"
 #include "pb_encode.h"
 
-#include "rng.h"
+
 
 #include "MPU9250.h"
 #include <math.h>
 
 #include "adc.h"
 #include "tim.h"
-
+#include "rng.h"
+#include "usart.h"
+#include "dma.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -144,6 +146,8 @@ void MX_FREERTOS_Init(void) {
 	osThreadDef(DataStreamerThread, StartDataStreamerThread, osPriorityNormal, 0, 1024);
 
 	DataStreamerTID = osThreadCreate(osThread(DataStreamerThread), NULL);
+
+	initGPSTimesny();
 		/* USER CODE BEGIN RTOS_THREADS */
 		/* add threads, ... */
 		/* USER CODE END RTOS_THREADS */
@@ -408,6 +412,45 @@ void MX_FREERTOS_Init(void) {
 			//mptr->Data_11=(float)HAL_ADC_PollForConversion(&hadc1, 1);
 			osStatus result = osMailPut(DataMail, mptr);
 		}
+		if (htim->Instance == TIM2
+					&& htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+				//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
+				static NMEASTamped *mptr = NULL;
+				static uint32_t GPScaptureCount = 0;
+				static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN]={0};
+					if (GPScaptureCount > 0) {
+		                                //HAL_UART_RxCpltCallback(&huart7);
+		                                if(HAL_UART_DMAStop(&huart7)!=HAL_OK)
+		                                {
+		                                SEGGER_RTT_printf(0,"HAL_UART_DMAStop returned not ok");
+		                                }
+		                                if(HAL_DMA_Abort(&hdma_uart7_rx)!=HAL_OK)
+		                                {
+		                                SEGGER_RTT_printf(0,"HAL_UART_DMAStop returned not ok");
+		                                }
+						mptr = (NMEASTamped *) osMailAlloc(NMEAMail,0);//The parameter millisec must be 0 for using this function in an ISR.
+						if (mptr != NULL) {
+							mptr->RawTimerCount = HAL_TIM_ReadCapturedValue(&htim2,TIM_CHANNEL_4);
+							mptr->CaptureCount = GPScaptureCount;
+							memcpy(&(mptr->NMEAMessage[0]),&(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
+		                                        osStatus result = osMailPut(NMEAMail, mptr);
+						}
+		                                //SEGGER_RTT_printf(0,"DMA BUFFER:=%s\n",DMA_NMEABUFFER);
+		                                memset(DMA_NMEABUFFER, 0, sizeof(DMA_NMEABUFFER));
+						HAL_StatusTypeDef DMA_START_result=HAL_UART_Receive_DMA(&huart7,
+								DMA_NMEABUFFER,
+								NMEBUFFERLEN - 1);
+						GPScaptureCount++;
+		                                if(DMA_START_result!=HAL_OK)
+		                                {
+		                                 SEGGER_RTT_printf(0,"DMA start ERROR");
+		                                }
+					}
+					else if (GPScaptureCount == 0) {
+						HAL_UART_Receive_DMA(&huart7,&(DMA_NMEABUFFER[0]),NMEBUFFERLEN - 1);
+							GPScaptureCount++;
+						}
+			}
 		HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 	}
 

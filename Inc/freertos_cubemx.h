@@ -7,6 +7,7 @@
 
 #ifndef FREERTOS_CUBEMX_H_
 #define FREERTOS_CUBEMX_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,7 +76,7 @@ extern "C" {
 #include "lwip.h"
 #include "httpserver-netconn.h"
 #include "SEGGER_RTT.h"
-
+#include <GPSTimesyn.hpp>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
