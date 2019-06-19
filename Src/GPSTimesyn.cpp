@@ -83,11 +83,9 @@ void StartNemaParserThread(void const * argument) {
 					DollarIndexs[i] = 0;
 				}
 			}
-			for (int i = 0; i < MAXNEMASENTENCECOUNT; i++) {
-				if (DollarIndexs[i] != 0||i==0) {
+			for (int i = 0; i <= DollarCount; i++) {
 					//lgw_parse_nmea(const char *serial_buff, int buff_size)
 					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
-				}
 			}
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
 			//osMutexWait(GPS_ref_mutex_id, osWaitForever);

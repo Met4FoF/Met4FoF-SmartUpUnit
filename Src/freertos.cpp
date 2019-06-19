@@ -234,8 +234,18 @@ void MX_FREERTOS_Init(void) {
 				UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
 				UDP_TARGET_IP_ADDRESS[3]);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
+		static int lcdupdatecnt=0;
 		while (1) {
-			osDelay(10000);
+			osDelay(1000);
+			lcdupdatecnt++;
+			timespec utc;
+			timespec gps_time;
+			lgw_gps_get(&utc, &gps_time, NULL, NULL);
+			tm* current_time = localtime(&(utc.tv_sec));
+			strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
+			if(lcdupdatecnt==10){
+			lcdupdatecnt=0;
 			ip4addr_ntoa_r(&(gnetif.ip_addr),iPadressBuffer,sizeof(iPadressBuffer));
 			iPadressBuffer[17]= {};
 			sprintf(Temp_Buffer_text, "IP %s    ",iPadressBuffer);
@@ -243,12 +253,7 @@ void MX_FREERTOS_Init(void) {
 			sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
 					UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
 					UDP_TARGET_IP_ADDRESS[3]);
-			//timespec utc;
-			//timespec gps_time;
-			//lgw_gps_get(&utc, &gps_time, NULL, NULL);
-			//tm* current_time = localtime(&(utc.tv_sec));
-			//strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
-			//ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
+			}
 		}
 		osThreadTerminate(NULL);
 	}
