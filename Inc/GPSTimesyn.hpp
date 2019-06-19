@@ -45,6 +45,9 @@ typedef struct {
 
 
 extern osMailQId NMEAMail;
+
+//TODO maybe (quite shure) needs mutex check that
+extern struct tref GPS_ref;
 #ifdef __cplusplus
 }
 #endif

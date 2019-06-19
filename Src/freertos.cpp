@@ -300,7 +300,7 @@ void MX_FREERTOS_Init(void) {
 
 
 		while (1) {
-#define SIMULATIONMODE 1
+#define SIMULATIONMODE 0
 #if SIMULATIONMODE
 			static int i=0;
 			RandomData RandomNoise=getRandomData(&hrng);
@@ -335,10 +335,14 @@ void MX_FREERTOS_Init(void) {
 			DataMessage *Datarptr;
 					//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 			osEvent DataEvent = osMailGet(DataMail,200);
-			struct timespec utc;
+
+			struct timespec SampelPointUtc;
 			if (DataEvent.status == osEventMail) {
 				Datarptr = (DataMessage*) DataEvent.value.p;
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+				lgw_cnt2utc(GPS_ref,Datarptr->unix_time_nsecs,&SampelPointUtc);
+				Datarptr->unix_time=(uint32_t)(SampelPointUtc.tv_sec);
+				Datarptr->unix_time_nsecs=(uint32_t)(SampelPointUtc.tv_nsec);
 #endif
 #if NULL
 				if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){

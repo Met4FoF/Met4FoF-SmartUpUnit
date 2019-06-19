@@ -25,7 +25,10 @@ cp ../protobuff_deps/messages.proto messages/
 cp generator/proto/nanopb.proto ./
 protoc -omessage.pb messages/messages.proto
 python generator/nanopb_generator.py message.pb
-cp message.* ../protobuff_deps/```
+cp message.* ../protobuff_deps/
+cd ./generator/proto
+make
+```
 
 ## python
 https://developers.google.com/protocol-buffers/docs/pythontutorial
