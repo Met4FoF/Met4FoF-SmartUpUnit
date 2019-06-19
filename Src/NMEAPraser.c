@@ -532,8 +532,8 @@ int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struc
     CHECK_NULL(ref);
 
     /* calculate the slope */
-
-    cnt_diff = (double)(count_us - ref->count_us) / (double)(TS_CPS); /* uncorrected by xtal_err */
+    uint32_t cnt_diff_uint32=count_us - ref->count_us;
+    cnt_diff = (double)(cnt_diff_uint32) / (double)(TS_CPS); /* uncorrected by xtal_err */
     utc_diff = (double)(utc.tv_sec - (ref->utc).tv_sec) + (1E-9 * (double)(utc.tv_nsec - (ref->utc).tv_nsec));
 
     /* detect aberrant points by measuring if slope limits are exceeded */

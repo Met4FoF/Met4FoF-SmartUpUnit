@@ -29,8 +29,8 @@ cp message.* ../protobuff_deps/
 cd ./generator/proto
 make
 ```
-
 ## python
+
 https://developers.google.com/protocol-buffers/docs/pythontutorial
 ```
 cd protobuff_deps
@@ -45,6 +45,7 @@ protoc --python_out=python messages.proto
 https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/
 
 https://mcuoneclipse.com/2015/07/07/using-segger-real-time-terminal-rtt-with-eclipse/
+
 
 #### Telnet Config for RTT dumping
 

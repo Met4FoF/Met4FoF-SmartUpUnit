@@ -340,7 +340,9 @@ void MX_FREERTOS_Init(void) {
 			if (DataEvent.status == osEventMail) {
 				Datarptr = (DataMessage*) DataEvent.value.p;
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+				//osMutexWait(GPS_ref_mutex_id, osWaitForever);
 				lgw_cnt2utc(GPS_ref,Datarptr->unix_time_nsecs,&SampelPointUtc);
+				//osMutexRelease(GPS_ref_mutex_id);
 				Datarptr->unix_time=(uint32_t)(SampelPointUtc.tv_sec);
 				Datarptr->unix_time_nsecs=(uint32_t)(SampelPointUtc.tv_nsec);
 #endif

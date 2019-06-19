@@ -27,7 +27,7 @@ osMailQId NMEAMail;
 osThreadId NemaParserTID;
 
 osMutexDef (GPS_ref_mutex);    // Declare mutex
-osMutexId  (GPS_ref_mutex_id); // Mutex ID
+osMutexId  GPS_ref_mutex_id; // Mutex ID
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 		256);
