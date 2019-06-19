@@ -23,10 +23,6 @@ struct tref GPS_ref;
 osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
 osMailQId NMEAMail;
 
-//Mail for timestamp output over ethernet
-osMailQDef (GPSDebugMail, NMEABUFFERSIZE , GPSDebugMsg);
-osMailQId GPSDebugMail;
-
 
 osThreadId NemaParserTID;
 
@@ -38,10 +34,6 @@ osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 
 int initGPSTimesny() {
 	int retval = 1;
-	GPSDebugMail = osMailCreate(osMailQ(GPSDebugMail), NULL);
-	if (GPSDebugMail != NULL) {
-		retval = 0;
-	}
 	NMEAMail = osMailCreate(osMailQ(NMEAMail), NULL);
 	if (NMEAMail != NULL) {
 		retval = 0;
@@ -92,23 +84,12 @@ void StartNemaParserThread(void const * argument) {
 				}
 			}
 			for (int i = 0; i < MAXNEMASENTENCECOUNT; i++) {
-				if (DollarIndexs[i] != 0) {
+				if (DollarIndexs[i] != 0||i==0) {
 					//lgw_parse_nmea(const char *serial_buff, int buff_size)
 					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
 				}
 			}
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
-
-			GPSDebugMsg *mailptr;
-			mailptr =(GPSDebugMsg*) osMailAlloc( GPSDebugMail, osWaitForever);
-			if (mailptr != NULL) {
-				mailptr->RawTimerCount = rptr->RawTimerCount;
-				mailptr->CaptureCount = rptr->CaptureCount;
-				mailptr->utc = utc;
-				mailptr->gps_time = gps_time;
-				osStatus result = osMailPut(GPSDebugMail, (GPSDebugMsg*) mailptr);
-			}
-
 			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
 			//osMutexRelease(GPS_ref_mutex_id);

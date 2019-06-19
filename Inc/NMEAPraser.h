@@ -36,7 +36,7 @@ Maintainer: Michael Coracin
 */
 struct tref {
     time_t          systime;    /*!> system time when solution was calculated */
-    uint64_t        count_us;   /*!> reference concentrator internal timestamp */
+    uint32_t        count_us;   /*!> reference concentrator internal timestamp */
     struct timespec utc;        /*!> reference UTC time (from GPS/NMEA) */
     struct timespec gps;        /*!> reference GPS time (since 01.Jan.1980) */
     double          xtal_err;   /*!> raw clock error (eg. <1 'slow' XTAL) */
