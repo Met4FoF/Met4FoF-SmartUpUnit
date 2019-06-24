@@ -270,7 +270,6 @@ void StartDataStreamerThread(void const * argument) {
 	RandomID = getRandomData(&hrng);
 	IMU.setBaseID(RandomID.asuint16[1]);
 	IMU.begin();
-	IMU.setSrd(2);
 	IMU.enableDataReadyInterrupt();
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
