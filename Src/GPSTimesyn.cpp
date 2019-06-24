@@ -58,7 +58,9 @@ void StartNemaParserThread(void const * argument) {
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int DollarCount = 0;
 			int NewLineCount = 0;
+#if DEBUG_GPS == 1
                         SEGGER_RTT_printf(0,"Parsing: NMEA Message\n\r %s\n\r",(rptr->NMEAMessage));
+#endif
 			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
 				if (rptr->NMEAMessage[i]
 						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
@@ -82,13 +84,13 @@ void StartNemaParserThread(void const * argument) {
 					//lgw_parse_nmea(const char *serial_buff, int buff_size)
 					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
 			}
-			lgw_gps_get(&utc, &gps_time, NULL, NULL);
 		    if( xSemaphoreGPS_REF != NULL )
 		    {
 		        /* See if we can obtain the semaphore.  If the semaphore is not
 		        available wait 10 ticks to see if it becomes free. */
 		        if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
 		        {
+			lgw_gps_get(&utc, &gps_time, NULL, NULL);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
             xSemaphoreGive(xSemaphoreGPS_REF);
 		        }
@@ -96,7 +98,9 @@ void StartNemaParserThread(void const * argument) {
 		        {
 		            /* We could not obtain the semaphore and can therefore not access
 		            the shared resource safely. */
+#if DEBUG_GPS == 1
 		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+#endif
 		        }
 		    }
 			osMailFree(NMEAMail, rptr);

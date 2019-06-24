@@ -1097,12 +1097,12 @@ int MPU9250::whoAmIAK8963(){
   return _buffer[0];
 }
 
-int MPU9250::getData(DataMessage * Message,uint32_t RawTimeStamp,uint32_t CaptureCount){
+int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount){
 	int result=0;
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
-	Message->time_uncertainty=RawTimeStamp;
-	Message->unix_time_nsecs=RawTimeStamp;
+	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
+	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=CaptureCount;
 	result=MPU9250::readSensor();
 	/*

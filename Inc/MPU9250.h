@@ -131,7 +131,7 @@ class MPU9250{
     void setMagCalX(float bias,float scaleFactor);
     void setMagCalY(float bias,float scaleFactor);
     void setMagCalZ(float bias,float scaleFactor);
-    int getData(DataMessage * Message,uint32_t RawTimeStamp,uint32_t CaptureCount);
+    int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   protected:
     // spi

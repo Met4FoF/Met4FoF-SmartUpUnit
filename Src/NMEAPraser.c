@@ -40,11 +40,11 @@ Maintainer: Michael Coracin
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #if DEBUG_GPS == 1
-    #define DEBUG_MSG(args...)  fprintf(stderr, args)
-    #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) fprintf(stderr,"%x.",c[a]);fprintf(stderr,"end\n")
-    #define CHECK_NULL(a)       if(a==NULL){fprintf(stderr,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
+    #define DEBUG_MSG(args...)  SEGGER_RTT_printf(0, args)
+    #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) SEGGER_RTT_printf(0,"%x.",c[a]);SEGGER_RTT_printf(0,"end\n")
+    #define CHECK_NULL(a)       if(a==NULL){SEGGER_RTT_printf(0,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
 #else
-    #define DEBUG_MSG(args...) SEGGER_RTT_printf(0,args)
+    #define DEBUG_MSG(args...)
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a!=0;){}
     #define CHECK_NULL(a)       if(a==NULL){return LGW_GPS_ERROR;}
 #endif
@@ -75,7 +75,7 @@ static short gps_sec = 0; /* seconds (0-60)(60 is for leap second) */
 static float gps_fra = 0.0; /* fractions of seconds (<1) */
 static bool gps_time_ok = false;
 static int16_t gps_week = 0; /* GPS week number of the navigation epoch */
-static uint32_t gps_iTOW = 0; /* GPS time of week in milliseconds */
+static uint64_t gps_iTOW = 0; /* GPS time of week in milliseconds */
 static int32_t gps_fTOW = 0; /* Fractional part of iTOW (+/-500000) in nanosec */
 
 static short gps_dla = 0; /* degrees of latitude */
@@ -520,7 +520,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struct timespec gps_time) {
+int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struct timespec gps_time) {
     double cnt_diff; /* internal concentrator time difference (in seconds) */
     double utc_diff; /* UTC time difference (in seconds) */
     double slope; /* time slope between new reference and old reference (for sanity check) */
@@ -530,10 +530,9 @@ int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struc
     static bool aber_min2 = false; /* keep track of whether value at sync N-2 was aberrant or not  */
 
     CHECK_NULL(ref);
-
+    int64_t cntdiff64=count_us - ref->count_us;
     /* calculate the slope */
-    uint32_t cnt_diff_uint32=count_us - ref->count_us;
-    cnt_diff = (double)(cnt_diff_uint32) / (double)(TS_CPS); /* uncorrected by xtal_err */
+    cnt_diff = (double)(cntdiff64) / (double)(TS_CPS); /* uncorrected by xtal_err */
     utc_diff = (double)(utc.tv_sec - (ref->utc).tv_sec) + (1E-9 * (double)(utc.tv_nsec - (ref->utc).tv_nsec));
 
     /* detect aberrant points by measuring if slope limits are exceeded */
@@ -591,7 +590,7 @@ int lgw_gps_sync(struct tref *ref, uint32_t count_us, struct timespec utc, struc
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
+int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc) {
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -603,7 +602,8 @@ int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
     }
 
     /* calculate delta in seconds between reference count_us and target count_us */
-    delta_sec = (double)(count_us - ref.count_us) / (TS_CPS * ref.xtal_err);
+    int64_t cntdiff64=(count_us - ref.count_us);
+    delta_sec = (double)(cntdiff64) / (TS_CPS * ref.xtal_err);
 
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);
@@ -621,7 +621,7 @@ int lgw_cnt2utc(struct tref ref, uint32_t count_us, struct timespec *utc) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_utc2cnt(struct tref ref, struct timespec utc, uint32_t *count_us) {
+int lgw_utc2cnt(struct tref ref, struct timespec utc, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
@@ -631,18 +631,20 @@ int lgw_utc2cnt(struct tref ref, struct timespec utc, uint32_t *count_us) {
     }
 
     /* calculate delta in seconds between reference utc and target utc */
-    delta_sec = (double)(utc.tv_sec - ref.utc.tv_sec);
-    delta_sec += 1E-9 * (double)(utc.tv_nsec - ref.utc.tv_nsec);
+    uint64_t time_diff=utc.tv_sec - ref.utc.tv_sec;
+    delta_sec = (double)(time_diff);
+    uint64_t reff_div=utc.tv_nsec - ref.utc.tv_nsec;
+    delta_sec += 1E-9 * (double)(reff_div);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint32_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
 
     return LGW_GPS_SUCCESS;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_cnt2gps(struct tref ref, uint32_t count_us, struct timespec *gps_time) {
+int lgw_cnt2gps(struct tref ref, uint64_t count_us, struct timespec *gps_time) {
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -672,7 +674,7 @@ int lgw_cnt2gps(struct tref ref, uint32_t count_us, struct timespec *gps_time) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint32_t *count_us) {
+int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
@@ -686,7 +688,7 @@ int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint32_t *count_us) {
     delta_sec += 1E-9 * (double)(gps_time.tv_nsec - ref.gps.tv_nsec);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint32_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
 
     return LGW_GPS_SUCCESS;
 }
