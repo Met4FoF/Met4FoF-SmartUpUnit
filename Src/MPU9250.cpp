@@ -1101,7 +1101,7 @@ int MPU9250::getData(DataMessage * Message,uint32_t RawTimeStamp,uint32_t Captur
 	int result=0;
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
-	Message->time_uncertainty=0XFFFFFFFF;
+	Message->time_uncertainty=RawTimeStamp;
 	Message->unix_time_nsecs=RawTimeStamp;
 	Message->sample_number=CaptureCount;
 	result=MPU9250::readSensor();

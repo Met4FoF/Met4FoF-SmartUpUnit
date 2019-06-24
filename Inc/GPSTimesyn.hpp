@@ -46,7 +46,7 @@ typedef struct {
 
 extern osMailQId NMEAMail;
 
-extern osMutexId  GPS_ref_mutex_id; // Mutex ID
+extern SemaphoreHandle_t xSemaphoreGPS_REF;
 //TODO maybe (quite shure) needs mutex check that
 extern struct tref GPS_ref;
 #ifdef __cplusplus

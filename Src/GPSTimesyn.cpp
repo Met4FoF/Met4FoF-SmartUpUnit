@@ -26,8 +26,7 @@ osMailQId NMEAMail;
 
 osThreadId NemaParserTID;
 
-osMutexDef (GPS_ref_mutex);    // Declare mutex
-osMutexId  GPS_ref_mutex_id; // Mutex ID
+SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 		256);
@@ -38,16 +37,12 @@ int initGPSTimesny() {
 	if (NMEAMail != NULL) {
 		retval = 0;
 	}
-	GPS_ref_mutex_id = osMutexCreate(osMutex(GPS_ref_mutex));
-	if (GPS_ref_mutex_id != NULL) {
-		retval = 0;
-	}
 	NemaParserTID = osThreadCreate(osThread(NemaParserThread), NULL);
 	return retval;
 }
 
 void StartNemaParserThread(void const * argument) {
-
+	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
 	uint32_t porcessedCount = 0;
 	osEvent evt;
 	enum gps_msg latest_msg;
@@ -88,9 +83,22 @@ void StartNemaParserThread(void const * argument) {
 					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
 			}
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
-			//osMutexWait(GPS_ref_mutex_id, osWaitForever);
+		    if( xSemaphoreGPS_REF != NULL )
+		    {
+		        /* See if we can obtain the semaphore.  If the semaphore is not
+		        available wait 10 ticks to see if it becomes free. */
+		        if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
+		        {
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
-			//osMutexRelease(GPS_ref_mutex_id);
+            xSemaphoreGive(xSemaphoreGPS_REF);
+		        }
+		        else
+		        {
+		            /* We could not obtain the semaphore and can therefore not access
+		            the shared resource safely. */
+		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+		        }
+		    }
 			osMailFree(NMEAMail, rptr);
 			porcessedCount++;
 		}

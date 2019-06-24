@@ -340,9 +340,23 @@ void MX_FREERTOS_Init(void) {
 			if (DataEvent.status == osEventMail) {
 				Datarptr = (DataMessage*) DataEvent.value.p;
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
-				//osMutexWait(GPS_ref_mutex_id, osWaitForever);
-				lgw_cnt2utc(GPS_ref,Datarptr->unix_time_nsecs,&SampelPointUtc);
-				//osMutexRelease(GPS_ref_mutex_id);
+			    if( xSemaphoreGPS_REF != NULL )
+			    {
+			        /* See if we can obtain the semaphore.  If the semaphore is not
+			        available wait 10 ticks to see if it becomes free. */
+			        if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
+			        {
+						lgw_cnt2utc(GPS_ref,Datarptr->unix_time_nsecs,&SampelPointUtc);
+			        xSemaphoreGive(xSemaphoreGPS_REF);
+			        }
+			        else
+			        {
+			            /* We could not obtain the semaphore and can therefore not access
+			            the shared resource safely. */
+			        	SEGGER_RTT_printf(0,"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+			        	taskYIELD();
+			        }
+			    }
 				Datarptr->unix_time=(uint32_t)(SampelPointUtc.tv_sec);
 				Datarptr->unix_time_nsecs=(uint32_t)(SampelPointUtc.tv_nsec);
 #endif
