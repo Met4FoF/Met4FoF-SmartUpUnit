@@ -367,7 +367,9 @@ void StartDataStreamerThread(void const * argument) {
 
 							 //TODO remove
 							 debugTimestamp=timestamp;
-					lgw_cnt2utc(GPS_ref,timestamp,&SampelPointUtc);
+							 uint32_t tmp_time_uncertainty=0;
+					lgw_cnt2utc(GPS_ref,timestamp,&SampelPointUtc,&tmp_time_uncertainty);
+					Datarptr->time_uncertainty=tmp_time_uncertainty;
 			        xSemaphoreGive(xSemaphoreGPS_REF);
 			        }
 			        else

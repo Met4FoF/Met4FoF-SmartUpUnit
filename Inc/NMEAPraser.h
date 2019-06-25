@@ -40,6 +40,10 @@ struct tref {
     struct timespec utc;        /*!> reference UTC time (from GPS/NMEA) */
     struct timespec gps;        /*!> reference GPS time (since 01.Jan.1980) */
     double          xtal_err;   /*!> raw clock error (eg. <1 'slow' XTAL) */
+    double xtal_err_deviation;  /*! deviation of the xtal error*/
+    double xtal_err_array[60];  /*! xtal error values for mean and std calculation*/
+    uint8_t array_update_pointer; /*! Array index of last updatet value*/
+    uint8_t array_valid_data_count; /*! number of valid datapoints*/
 };
 
 /**
@@ -155,7 +159,7 @@ This function is typically used when a packet is received to transform the
 internal counter-based timestamp in an absolute timestamp with an accuracy in
 the order of a couple microseconds (ns resolution).
 */
-int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec* utc);
+int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec* utc,uint32_t * time_uncertainty);
 
 /**
 @brief Convert UTC time to concentrator timestamp counter value

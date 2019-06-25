@@ -18,7 +18,7 @@
 #include <time.h>       /* struct timespec */
 #include <sys/timespec.h>
 
-struct tref GPS_ref;
+struct tref GPS_ref={0};
 //MemPool For the data
 osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
 osMailQId NMEAMail;

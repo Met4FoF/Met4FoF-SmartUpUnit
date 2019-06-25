@@ -56,8 +56,8 @@ Maintainer: Michael Coracin
 //TODO Replace with calculated Sysclock freq
 #define TS_CPS              100E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
 
-#define PLUS_10PPM          1.00001
-#define MINUS_10PPM         0.99999
+#define PLUS_10PPM          1.00001*(double)(TS_CPS)
+#define MINUS_10PPM         0.99999*(double)(TS_CPS)
 
 #define UBX_MSG_NAVTIMEGPS_LEN  16
 
@@ -532,7 +532,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     CHECK_NULL(ref);
     int64_t cntdiff64=count_us - ref->count_us;
     /* calculate the slope */
-    cnt_diff = (double)(cntdiff64) / (double)(TS_CPS); /* uncorrected by xtal_err */
+    cnt_diff = (double)(cntdiff64); /* uncorrected by xtal_err  / (double)(TS_CPS)*/
     utc_diff = (double)(utc.tv_sec - (ref->utc).tv_sec) + (1E-9 * (double)(utc.tv_nsec - (ref->utc).tv_nsec));
 
     /* detect aberrant points by measuring if slope limits are exceeded */
@@ -543,11 +543,42 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
             aber_n0 = true;
         } else {
             aber_n0 = false;
+            ref->xtal_err_array[ref->array_update_pointer]=slope;
+            if(ref->array_update_pointer<(sizeof(ref->xtal_err_array)/sizeof(ref->xtal_err_array[0]))-1)
+            {
+            ref->array_update_pointer++;
+            }
+            else
+            {
+            	ref->array_update_pointer=0;
+            }
+            if(ref->array_valid_data_count<(sizeof(ref->xtal_err_array)/sizeof(ref->xtal_err_array[0])))
+            {
+            ref->array_valid_data_count++; // count up to array size than stop counting until array flush since from now on ever value in the array is valide
+            }
         }
     } else {
         DEBUG_MSG("Warning: aberrant UTC value for synchronization\n\r");
         aber_n0 = true;
     }
+
+    double mean_tmp=0;
+    double std_tmp=0;
+    for (int i=0;i<ref->array_valid_data_count;i++)
+    {
+    	mean_tmp=mean_tmp+ref->xtal_err_array[i];
+    }
+    mean_tmp/=ref->array_valid_data_count;
+
+    SEGGER_RTT_printf(0,"GPS Slope Mean val is:%d\n\r",mean_tmp);
+
+
+    for(int i=0;i<ref->array_valid_data_count;i++)
+    	std_tmp += pow((ref->xtal_err_array[i] - mean_tmp), 2);
+    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
+    std_tmp=sqrt(std_tmp/ref->array_valid_data_count);
+
+    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
 
     /* watch if the 3 latest sync point were aberrant or not */
     if (aber_n0 == false) {
@@ -558,7 +589,9 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
         ref->utc.tv_nsec = utc.tv_nsec;
         ref->gps.tv_sec = gps_time.tv_sec;
         ref->gps.tv_nsec = gps_time.tv_nsec;
-        ref->xtal_err = slope;
+        ref->xtal_err_deviation=std_tmp;
+        //ref->xtal_err = slope;
+        ref->xtal_err=mean_tmp;
         aber_min2 = aber_min1;
         aber_min1 = aber_n0;
         return LGW_GPS_SUCCESS;
@@ -590,7 +623,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc) {
+int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_t * time_uncertainty) {
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -609,8 +642,16 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc) {
     	SEGGER_RTT_printf(0,"DELTA TICKS<0\n\r");
     }
 #endif
-    delta_sec = (double)(cntdiff64) / (TS_CPS * ref.xtal_err);
+    delta_sec = (double)(cntdiff64) / (ref.xtal_err);//TS_CPS *
+    double time_uncertainty_tmp=pow(1*2*ref.xtal_err_deviation,2)+pow(2*ref.xtal_err_deviation*delta_sec,2);
+#define NANOSECONDSTOTICKSSCALEFACKTOR 1E9/TS_CPS
+    time_uncertainty_tmp=sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
+    time_uncertainty_tmp=round(time_uncertainty_tmp);
+    uint32_t time_uncertainty_int32=(uint32_t)time_uncertainty_tmp;
 
+    SEGGER_RTT_printf(0,"unsicherheit= %f , %lu\r\n",time_uncertainty_tmp,time_uncertainty_int32);
+
+    memcpy(time_uncertainty,&time_uncertainty_int32,sizeof(time_uncertainty_int32));
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);
     tmp = ref.utc.tv_nsec + (long)(fractpart * 1E9);
@@ -647,7 +688,7 @@ int lgw_utc2cnt(struct tref ref, struct timespec utc, uint64_t *count_us) {
     delta_sec += 1E-9 * (double)(reff_div);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec * ref.xtal_err);//* TS_CPS
 
     return LGW_GPS_SUCCESS;
 }
@@ -666,7 +707,7 @@ int lgw_cnt2gps(struct tref ref, uint64_t count_us, struct timespec *gps_time) {
     }
 
     /* calculate delta in milliseconds between reference count_us and target count_us */
-    delta_sec = (double)(count_us - ref.count_us) / (TS_CPS * ref.xtal_err);
+    delta_sec = (double)(count_us - ref.count_us) / ( ref.xtal_err);//TS_CPS *
 
     /* now add that delta to reference GPS time */
     fractpart = modf (delta_sec , &intpart);
@@ -698,7 +739,7 @@ int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint64_t *count_us) {
     delta_sec += 1E-9 * (double)(gps_time.tv_nsec - ref.gps.tv_nsec);
 
     /* now convert that to internal counter tics and add that to reference counter value */
-    *count_us = ref.count_us + (uint64_t)(delta_sec * TS_CPS * ref.xtal_err);
+    *count_us = ref.count_us + (uint64_t)(delta_sec  * ref.xtal_err);//* TS_CPS
 
     return LGW_GPS_SUCCESS;
 }
