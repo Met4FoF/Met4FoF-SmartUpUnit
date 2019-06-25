@@ -120,7 +120,7 @@
 								<option id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script.1483728899" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.script" useByScannerDiscovery="false" value="../STM32F767ZITx_FLASH.ld" valueType="string"/>
 								<option id="gnu.cpp.link.option.libs.724056805" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false"/>
 								<option id="gnu.cpp.link.option.paths.1698579259" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false"/>
-								<option id="gnu.cpp.link.option.flags.1739978134" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-specs=nosys.specs -specs=nano.specs -u _printf_float" valueType="string"/>
+								<option id="gnu.cpp.link.option.flags.1739978134" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-specs=nosys.specs -specs=nano.specs -u _printf_float -u _scanf_float" valueType="string"/>
 								<option id="gnu.cpp.link.option.other.360507292" name="Other options (-Xlinker [option])" superClass="gnu.cpp.link.option.other" useByScannerDiscovery="false"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.103148779" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -239,7 +239,7 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/LwIP/system/arch"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.symbols.2087415020" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols"/>
+								<option id="gnu.cpp.compiler.option.preprocessor.def.symbols.2087415020" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false"/>
 								<option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other.1661014076" name="Other flags" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.misc.other" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.97527966" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))"/>
@@ -295,28 +295,30 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="met4FOF_SSU_V2.fr.ac6.managedbuild.target.gnu.cross.exe.1911249124" name="Executable" projectType="fr.ac6.managedbuild.target.gnu.cross.exe"/>
+		<project id="Netwok_test.fr.ac6.managedbuild.target.gnu.cross.exe.642386052" name="Executable" projectType="fr.ac6.managedbuild.target.gnu.cross.exe"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
-		<configuration artifactName="${ProjName}" configurationName="Debug">
-			<resource resourceType="PROJECT" workspacePath="met4FOF_SSU_V2"/>
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/Netwok_test"/>
 		</configuration>
+		<configuration configurationName="Release"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1437777959;fr.ac6.managedbuild.config.gnu.cross.exe.debug.1437777959.;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.694769434;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1454677955">
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.1846986581;fr.ac6.managedbuild.config.gnu.cross.exe.release.1846986581.;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.2100371309;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1021999782">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.2131891208;fr.ac6.managedbuild.config.gnu.cross.exe.release.2131891208.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1928018381;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1370655305">
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.1846986581;fr.ac6.managedbuild.config.gnu.cross.exe.release.1846986581.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.221291362;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1949416522">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1437777959;fr.ac6.managedbuild.config.gnu.cross.exe.debug.1437777959.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1928018381;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1370655305">
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.830569649;fr.ac6.managedbuild.config.gnu.cross.exe.debug.830569649.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.221291362;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1949416522">
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.2131891208;fr.ac6.managedbuild.config.gnu.cross.exe.release.2131891208.;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.694769434;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1454677955">
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.830569649;fr.ac6.managedbuild.config.gnu.cross.exe.debug.830569649.;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.2100371309;fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1021999782">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

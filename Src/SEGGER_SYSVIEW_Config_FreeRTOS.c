@@ -96,6 +96,7 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 */
 static void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",O=FreeRTOS");
+  /*
 SEGGER_SYSVIEW_SendSysDesc("I#0=_estack");
 SEGGER_SYSVIEW_SendSysDesc("I#1=Reset_Handler");
 SEGGER_SYSVIEW_SendSysDesc("I#2=NMI_Handler");
@@ -118,6 +119,7 @@ SEGGER_SYSVIEW_SendSysDesc("I#18=TAMP_STAMP_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#19=RTC_WKUP_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#20=FLASH_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#21=RCC_IRQHandler");
+*/
 SEGGER_SYSVIEW_SendSysDesc("I#22=EXTI0_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#23=EXTI1_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#24=EXTI2_IRQHandler");
@@ -141,6 +143,7 @@ SEGGER_SYSVIEW_SendSysDesc("I#41=TIM1_UP_TIM10_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#42=TIM1_TRG_COM_TIM11_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#43=TIM1_CC_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#44=TIM2_IRQHandler");
+/*
 SEGGER_SYSVIEW_SendSysDesc("I#45=TIM3_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#46=TIM4_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#47=I2C1_EV_IRQHandler");
@@ -163,6 +166,7 @@ SEGGER_SYSVIEW_SendSysDesc("I#63=DMA1_Stream7_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#64=FMC_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#65=SDMMC1_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#66=TIM5_IRQHandler");
+*/
 SEGGER_SYSVIEW_SendSysDesc("I#67=SPI3_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#68=UART4_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#69=UART5_IRQHandler");
@@ -175,17 +179,20 @@ SEGGER_SYSVIEW_SendSysDesc("I#75=DMA2_Stream3_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#76=DMA2_Stream4_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#77=ETH_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#78=ETH_WKUP_IRQHandler");
+/*
 SEGGER_SYSVIEW_SendSysDesc("I#79=CAN2_TX_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#80=CAN2_RX0_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#81=CAN2_RX1_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#82=CAN2_SCE_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#83=OTG_FS_IRQHandler");
+*/
 SEGGER_SYSVIEW_SendSysDesc("I#84=DMA2_Stream5_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#85=DMA2_Stream6_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#86=DMA2_Stream7_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#87=USART6_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#88=I2C3_EV_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#89=I2C3_ER_IRQHandler");
+/*
 SEGGER_SYSVIEW_SendSysDesc("I#90=OTG_HS_EP1_OUT_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#91=OTG_HS_EP1_IN_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#92=OTG_HS_WKUP_IRQHandler");
@@ -194,7 +201,9 @@ SEGGER_SYSVIEW_SendSysDesc("I#94=DCMI_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#95=0");
 SEGGER_SYSVIEW_SendSysDesc("I#96=RNG_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#97=FPU_IRQHandler");
+*/
 SEGGER_SYSVIEW_SendSysDesc("I#98=UART7_IRQHandler");
+/*
 SEGGER_SYSVIEW_SendSysDesc("I#99=UART8_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#100=SPI4_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#101=SPI5_IRQHandler");
@@ -222,6 +231,7 @@ SEGGER_SYSVIEW_SendSysDesc("I#122=CAN3_RX1_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#123=CAN3_SCE_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#124=JPEG_IRQHandler");
 SEGGER_SYSVIEW_SendSysDesc("I#125=MDIOS_IRQHandler");
+*/
 }
 
 /*********************************************************************

@@ -12,6 +12,7 @@ The software was and is created with [SW4STM32](http://www.openstm32.org/HomePag
 |Data serialization|nanopb|a2db482...|https://github.com/nanopb/nanopb|
 
 # using nanopb to genreate Code
+## C
 see also https://jpa.kapsi.fi/nanopb/docs/
 and https://github.com/nanopb/nanopb/blob/master/docs/concepts.rst
 
@@ -24,7 +25,18 @@ cp ../protobuff_deps/messages.proto messages/
 cp generator/proto/nanopb.proto ./
 protoc -omessage.pb messages/messages.proto
 python generator/nanopb_generator.py message.pb
-cp message.* ../protobuff_deps/```
+cp message.* ../protobuff_deps/
+cd ./generator/proto
+make
+```
+## python
+
+https://developers.google.com/protocol-buffers/docs/pythontutorial
+```
+cd protobuff_deps
+mkdir python
+protoc --python_out=python messages.proto
+```
 
 # Debug Output
 
@@ -33,3 +45,12 @@ cp message.* ../protobuff_deps/```
 https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/
 
 https://mcuoneclipse.com/2015/07/07/using-segger-real-time-terminal-rtt-with-eclipse/
+
+
+#### Telnet Config for RTT dumping
+
+| Param | Value|
+|:-------------|:-------------|
+|Host|127.0.0.1|
+|Timeout| 20 sec|
+|Port|19021|
