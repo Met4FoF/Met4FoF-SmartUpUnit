@@ -248,6 +248,10 @@ void StartLCDThread(void const * argument) {
 		tm* current_time = localtime(&(utc.tv_sec));
 		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
+		sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ",GPS_ref.xtal_err);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 120, WHITE, 1, BLUE);
+		sprintf(Temp_Buffer_text, "F std.: %lf Hz      ",GPS_ref.xtal_err_deviation);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 140, WHITE, 1, BLUE);
 		if (lcdupdatecnt == 10) {
 			lcdupdatecnt = 0;
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
@@ -367,7 +371,9 @@ void StartDataStreamerThread(void const * argument) {
 
 							 //TODO remove
 							 debugTimestamp=timestamp;
-					lgw_cnt2utc(GPS_ref,timestamp,&SampelPointUtc);
+							 uint32_t tmp_time_uncertainty=0;
+					lgw_cnt2utc(GPS_ref,timestamp,&SampelPointUtc,&tmp_time_uncertainty);
+					Datarptr->time_uncertainty=tmp_time_uncertainty;
 			        xSemaphoreGive(xSemaphoreGPS_REF);
 			        }
 			        else
