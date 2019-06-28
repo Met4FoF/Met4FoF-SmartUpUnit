@@ -77,7 +77,8 @@
 //Sensor
 #include "MPU9250.h"
 
-
+//BACKUP SRAM
+#include "backupsram.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -167,6 +168,7 @@ int main(void)
   MX_RTC_Init();
   MX_DAC_Init();
   MX_RNG_Init();
+  BKPSRAM_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -276,6 +278,20 @@ void Error_Handler(void)
   /* User can add his own implementation to report the HAL error return state */
 
   /* USER CODE END Error_Handler_Debug */
+}
+
+/**
+ * Initialize backup SRAM peripheral
+ *
+ * This function initializes and enable backup SRAM domain.
+ * With this settings you have access to save/get from locations where SRAM is.
+ *
+ * No return
+ */
+void BKPSRAM_Init(void) {
+	RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
+	PWR->CSR1 |= PWR_CSR1_BRE;
+	while ((PWR->CSR1 & PWR_CSR1_BRR) == 0);
 }
 
 #ifdef  USE_FULL_ASSERT
