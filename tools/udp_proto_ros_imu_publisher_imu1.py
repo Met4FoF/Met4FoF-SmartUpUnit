@@ -28,8 +28,9 @@ sock.bind((UDP_IP, UDP_PORT))
 
 
 def imu_publisher():
-    pub_imu = rospy.Publisher("IMU", Imu, queue_size=20)
-    rospy.init_node('imu_publisher', anonymous=True)
+    pub_imu0 = rospy.Publisher("IMU0", Imu, queue_size=20)
+    pub_imu1 = rospy.Publisher("IMU1", Imu, queue_size=20)
+    rospy.init_node('imu_publisher1', anonymous=True)
     while not rospy.is_shutdown():    
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         ProtoData = messages_pb2.DataMessage()
@@ -44,10 +45,13 @@ def imu_publisher():
         imu_msg.angular_velocity.x=ProtoData.Data_04
         imu_msg.angular_velocity.y=ProtoData.Data_05
         imu_msg.angular_velocity.z=ProtoData.Data_06
-        if(int(ProtoData.id/65536)==13616):
-            imu_msg.header.frame_id = "Imu1"
+        if(int(ProtoData.id/65536)==303):
+            imu_msg.header.frame_id = "Imu0"
+            pub_imu0.publish(imu_msg)
         if(int(ProtoData.id/65536)== 14128):
-            pub_imu.publish(imu_msg) 
+            imu_msg.header.frame_id = "Imu0"
+            pub_imu1.publish(imu_msg)
+            
         
 if __name__ == '__main__':
     try:

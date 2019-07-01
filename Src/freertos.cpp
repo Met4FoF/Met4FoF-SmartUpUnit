@@ -143,7 +143,7 @@ void MX_FREERTOS_Init(void) {
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
-			1024);
+			256);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
 	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
