@@ -569,17 +569,9 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     	mean_tmp=mean_tmp+ref->xtal_err_array[i];
     }
     mean_tmp/=ref->array_valid_data_count;
-
-    SEGGER_RTT_printf(0,"GPS Slope Mean val is:%d\n\r",mean_tmp);
-
-
     for(int i=0;i<ref->array_valid_data_count;i++)
     	std_tmp += pow((ref->xtal_err_array[i] - mean_tmp), 2);
-    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
     std_tmp=sqrt(std_tmp/ref->array_valid_data_count);
-
-    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
-
     /* watch if the 3 latest sync point were aberrant or not */
     if (aber_n0 == false) {
         /* value no aberrant -> sync with smoothed slope */
@@ -648,9 +640,9 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     time_uncertainty_tmp=sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
     time_uncertainty_tmp=round(time_uncertainty_tmp);
     uint32_t time_uncertainty_int32=(uint32_t)time_uncertainty_tmp;
-
+#if DEBUG_GPS == 1
     SEGGER_RTT_printf(0,"unsicherheit= %f , %lu\r\n",time_uncertainty_tmp,time_uncertainty_int32);
-
+#endif
     memcpy(time_uncertainty,&time_uncertainty_int32,sizeof(time_uncertainty_int32));
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);

@@ -136,17 +136,17 @@ void MX_FREERTOS_Init(void) {
 
 	/* Create the thread(s) */
 	/* definition and creation of defaultTask */
-	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
+	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
 	IOTID = osThreadCreate(osThread(defaultTask), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 512);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 256);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
-			512);
+			1024);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 512);
+	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
 
 	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 
@@ -414,7 +414,9 @@ void StartDataStreamerThread(void const * argument) {
 			//TODO profile this code
 			ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
 			i++;
+#if TIMESTAMPDEBUGOUTPUT
 			SEGGER_RTT_printf(0,"%lu,%lu,%lu,%lu,%lu\n\r",Datarptr->sample_number,(uint32_t)(debugTimestamp>>32),(uint32_t)debugTimestamp,Datarptr->unix_time,Datarptr->unix_time_nsecs);
+#endif
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 		}

@@ -4800,6 +4800,14 @@ const TickType_t xConstTickCount = xTickCount;
 	#endif /* INCLUDE_vTaskSuspend */
 }
 
+void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
+{
+TaskHandle_t bad_task_handle = xTask;     // this seems to give me the crashed task handle
+char * bad_task_name = pcTaskName;     // this seems to give me a pointer to the name of the crashed task
+SEGGER_RTT_printf(0,"!!!EROR STACKOVERFLOW in task %s !!!\n\r",bad_task_name);
+
+for( ;; );
+}
 
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"

@@ -29,7 +29,7 @@ osThreadId NemaParserTID;
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
-		256);
+		1024);
 
 int initGPSTimesny() {
 	int retval = 1;

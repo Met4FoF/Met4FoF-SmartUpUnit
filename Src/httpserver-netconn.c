@@ -140,15 +140,18 @@ static void http_server_netconn_thread()
 {
   struct netconn *conn, *newconn;
   err_t err, accept_err;
-
+  SEGGER_RTT_printf(0,"Starting http_server_netconn_thread()\n\r");
   /* Create a new TCP connection handle */
   conn = netconn_new(NETCONN_TCP);
 
   if (conn!= NULL)
   {
-    /* Bind to port 80 (HTTP) with default IP address */
-    err = netconn_bind(conn, NULL, 80);
+	  SEGGER_RTT_printf(0,"netconn_new(NETCONN_TCP) != NULL\n\r");
 
+    /* Bind to port 80 (HTTP) with default IP address */
+	SEGGER_RTT_printf(0,"err = netconn_bind(conn, NULL, 80);\n\r");
+    err = netconn_bind(conn, NULL, 80);
+    Check_LWIP_RETURN_VAL(err);
     if (err == ERR_OK)
     {
       /* Put the connection into LISTEN state */
@@ -158,7 +161,9 @@ static void http_server_netconn_thread()
       {
     	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
         /* accept any icoming connection */
+    	SEGGER_RTT_printf(0,"accept_err = netconn_accept(conn, &newconn);\n\r");
         accept_err = netconn_accept(conn, &newconn);
+        Check_LWIP_RETURN_VAL(accept_err);
         if(accept_err == ERR_OK)
         {
           /* serve connection */
@@ -179,6 +184,7 @@ static void http_server_netconn_thread()
   */
 void http_server_netconn_init()
 {
+	SEGGER_RTT_printf(0,"sys_thread_new(HTTP, http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);\n\r");
   sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
 }
 
