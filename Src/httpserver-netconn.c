@@ -143,7 +143,7 @@ static void http_server_netconn_thread()
   SEGGER_RTT_printf(0,"Starting http_server_netconn_thread()\n\r");
   /* Create a new TCP connection handle */
   conn = netconn_new(NETCONN_TCP);
-
+  SEGGER_RTT_printf(0,"Web Server TCP Connection\r\n");
   if (conn!= NULL)
   {
 	  SEGGER_RTT_printf(0,"netconn_new(NETCONN_TCP) != NULL\n\r");
@@ -159,6 +159,7 @@ static void http_server_netconn_thread()
 
       while(1)
       {
+          SEGGER_RTT_printf(0,"Web Server TCP Connection up and running \r\n");
     	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
         /* accept any icoming connection */
     	SEGGER_RTT_printf(0,"accept_err = netconn_accept(conn, &newconn);\n\r");

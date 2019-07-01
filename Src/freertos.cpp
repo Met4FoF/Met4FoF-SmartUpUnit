@@ -189,7 +189,8 @@ void StartDefaultTask(void const * argument) {
 
 void StartWebserverThread(void const * argument) {
 	// wait until LWIP is inited
-	osDelay(5000);
+	osDelay(7000);
+	SEGGER_RTT_printf(0,"Starting Web Server\r\n");
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {
@@ -271,11 +272,12 @@ void StartLCDThread(void const * argument) {
 
 void StartDataStreamerThread(void const * argument) {
 	uint64_t debugTimestamp=0;
-	uint16_t tmp16=((uint16_t)UDID_Read8(10)<<16)+255+UDID_Read8(11);
+	uint16_t tmp16=((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11);
 	IMU.setBaseID(tmp16);
 	IMU.begin();
 	IMU.enableDataReadyInterrupt();
-	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
+	SEGGER_RTT_printf(0,"ID=0x%04x\n\r",tmp16);
+	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
 	struct netconn *conn;

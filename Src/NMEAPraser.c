@@ -571,7 +571,13 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     mean_tmp/=ref->array_valid_data_count;
     for(int i=0;i<ref->array_valid_data_count;i++)
     	std_tmp += pow((ref->xtal_err_array[i] - mean_tmp), 2);
+#if DEBUG_GPS == 1
+    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
+#endif
     std_tmp=sqrt(std_tmp/ref->array_valid_data_count);
+#if DEBUG_GPS == 1
+    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
+#endif
     /* watch if the 3 latest sync point were aberrant or not */
     if (aber_n0 == false) {
         /* value no aberrant -> sync with smoothed slope */
