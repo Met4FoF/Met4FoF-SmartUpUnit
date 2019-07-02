@@ -155,7 +155,6 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_ADC3_Init();
   MX_SPI3_Init();
   MX_SPI1_Init();
   MX_I2C1_Init();
@@ -163,6 +162,7 @@ int main(void)
   MX_CAN1_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
+  MX_ADC3_Init();
   MX_UART7_Init();
   MX_SDMMC2_SD_Init();
   MX_RTC_Init();

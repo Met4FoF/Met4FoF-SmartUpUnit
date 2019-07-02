@@ -101,7 +101,7 @@ osThreadId blinkTID;
 osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
-MPU9250 IMU(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -273,9 +273,10 @@ void StartLCDThread(void const * argument) {
 void StartDataStreamerThread(void const * argument) {
 	uint64_t debugTimestamp=0;
 	uint16_t tmp16=((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11);
-	IMU.setBaseID(tmp16);
-	IMU.begin();
-	IMU.enableDataReadyInterrupt();
+	Sensor2.setBaseID(tmp16);
+	Sensor2.begin();
+	Sensor2.setSrd(20);
+	Sensor2.enableDataReadyInterrupt();
 	SEGGER_RTT_printf(0,"ID=0x%04x\n\r",tmp16);
 	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
@@ -596,13 +597,44 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 						+ (uint64_t) timestamp_raw;
 			}
 		}
-
+/*
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		IMU.getData(mptr, timestamp, Channel1Tim2CaptureCount);
+		Sensor1.getData(mptr, timestamp, Channel1Tim2CaptureCount);
 		//mptr->has_Data_11 = true;
 		//mptr->Data_11 = (float) HAL_ADC_PollForConversion(&hadc1, 1);
 		osStatus result = osMailPut(DataMail, mptr);
+		*/
+	}
+	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		Channel1Tim2CaptureCount++;
+		if (tim2_race_condition_up_date == false) {
+			//this is the nromal case
+			timestamp = tim2_upper_bits_mask
+					+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+							TIM_CHANNEL_3);
+		} else {
+			uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+			TIM_CHANNEL_3);
+			if (timestamp_raw < TIM32OLDTIMERVALMIN)
+			//the timer has overflowen tak the updateted bitmask
+			{
+				timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+			} else {
+				//this is an old value using the old bitmask
+				timestamp = tim2_upper_bits_mask_race_condition
+						+ (uint64_t) timestamp_raw;
+			}
+		}
+
+		DataMessage *mptr;
+		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		Sensor2.getData(mptr, timestamp, Channel1Tim2CaptureCount);
+		mptr->has_Data_11 = true;
+		HAL_ADC_PollForConversion(&hadc1, 1);
+		mptr->Data_11=(float) HAL_ADC_GetValue(&hadc1);
+		osStatus result = osMailPut(DataMail, mptr);
+
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		if (tim2_race_condition_up_date == false) {
@@ -653,6 +685,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			GPScaptureCount++;
 		}
 	}
+
+
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		if (tim1_race_condition_up_date == false) {

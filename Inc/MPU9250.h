@@ -142,9 +142,9 @@ class MPU9250{
     uint16_t _BaseID;
     uint16_t _SetingsID;
     // the sensor can not handle fullspeed spi communication for setup registers we have to read the prescaler register and change it acordingly
-    bool _useSPI;
-    bool _useSPIHS;
-    bool _useSPIHSOLD;
+    bool _useSPI=true;
+    bool _useSPIHS=false;
+    bool _useSPILSOLD=false;
     uint32_t _SPIHSBOUDRATEPRESCALER;
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U
