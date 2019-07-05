@@ -18,6 +18,11 @@ message DataMessage {
   optional float Data_09 =14;
   optional float Data_10 =15;
   optional float Data_11 =16;
+  optional float Data_12 =17;
+  optional float Data_13 =18;
+  optional float Data_14 =19;
+  optional float Data_15 =20;
+  optional float Data_16 =21;
 }
 
 message DescriptionMessage {
@@ -43,15 +48,25 @@ message DescriptionMessage {
   optional string str_Data_09 =12 [(nanopb).max_size = 40];
   optional string str_Data_10 =13 [(nanopb).max_size = 40];
   optional string str_Data_11 =14 [(nanopb).max_size = 40];
-  optional float f_Data_01 =15;
-  optional float f_Data_02 =16;
-  optional float f_Data_03 =17;
-  optional float f_Data_04 =18;
-  optional float f_Data_05 =19;
-  optional float f_Data_06 =20;
-  optional float f_Data_07 =21;
-  optional float f_Data_08 =22;
-  optional float f_Data_09 =23;
-  optional float f_Data_10 =24;
-  optional float f_Data_11 =25;
+  optional string str_Data_12 =15 [(nanopb).max_size = 40];
+  optional string str_Data_13 =16 [(nanopb).max_size = 40];
+  optional string str_Data_14 =17 [(nanopb).max_size = 40];
+  optional string str_Data_15 =18 [(nanopb).max_size = 40];
+  optional string str_Data_16 =19 [(nanopb).max_size = 40];
+  optional float f_Data_01 =20;
+  optional float f_Data_02 =21;
+  optional float f_Data_03 =22;
+  optional float f_Data_04 =23;
+  optional float f_Data_05 =24;
+  optional float f_Data_06 =25;
+  optional float f_Data_07 =26;
+  optional float f_Data_08 =27;
+  optional float f_Data_09 =28;
+  optional float f_Data_10 =29;
+  optional float f_Data_11 =30;
+  optional float f_Data_12 =31;
+  optional float f_Data_13 =32;
+  optional float f_Data_14 =33;
+  optional float f_Data_15 =34;
+  optional float f_Data_16 =35;
 }

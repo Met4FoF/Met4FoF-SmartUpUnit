@@ -33,7 +33,7 @@ typedef struct _DataMessage {
     uint32_t sample_number;
     uint32_t unix_time;
     uint32_t unix_time_nsecs;
-    uint32_t time_uncertainty; //if this val is 0xFFFFFFFF the time is not valid!! and its a raw time stamp instead
+    uint32_t time_uncertainty;
     float Data_01;
     bool has_Data_02;
     float Data_02;
@@ -55,6 +55,16 @@ typedef struct _DataMessage {
     float Data_10;
     bool has_Data_11;
     float Data_11;
+    bool has_Data_12;
+    float Data_12;
+    bool has_Data_13;
+    float Data_13;
+    bool has_Data_14;
+    float Data_14;
+    bool has_Data_15;
+    float Data_15;
+    bool has_Data_16;
+    float Data_16;
 /* @@protoc_insertion_point(struct:DataMessage) */
 } DataMessage;
 
@@ -85,6 +95,16 @@ typedef struct _DescriptionMessage {
     char str_Data_10[40];
     bool has_str_Data_11;
     char str_Data_11[40];
+    bool has_str_Data_12;
+    char str_Data_12[40];
+    bool has_str_Data_13;
+    char str_Data_13[40];
+    bool has_str_Data_14;
+    char str_Data_14[40];
+    bool has_str_Data_15;
+    char str_Data_15[40];
+    bool has_str_Data_16;
+    char str_Data_16[40];
     bool has_f_Data_01;
     float f_Data_01;
     bool has_f_Data_02;
@@ -107,15 +127,25 @@ typedef struct _DescriptionMessage {
     float f_Data_10;
     bool has_f_Data_11;
     float f_Data_11;
+    bool has_f_Data_12;
+    float f_Data_12;
+    bool has_f_Data_13;
+    float f_Data_13;
+    bool has_f_Data_14;
+    float f_Data_14;
+    bool has_f_Data_15;
+    float f_Data_15;
+    bool has_f_Data_16;
+    float f_Data_16;
 /* @@protoc_insertion_point(struct:DescriptionMessage) */
 } DescriptionMessage;
 
 
 /* Initializer values for message structs */
-#define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define DataMessage_id_tag                       1
@@ -134,6 +164,11 @@ typedef struct _DescriptionMessage {
 #define DataMessage_Data_09_tag                  14
 #define DataMessage_Data_10_tag                  15
 #define DataMessage_Data_11_tag                  16
+#define DataMessage_Data_12_tag                  17
+#define DataMessage_Data_13_tag                  18
+#define DataMessage_Data_14_tag                  19
+#define DataMessage_Data_15_tag                  20
+#define DataMessage_Data_16_tag                  21
 #define DescriptionMessage_id_tag                1
 #define DescriptionMessage_Sensor_name_tag       2
 #define DescriptionMessage_Description_Type_tag  3
@@ -148,17 +183,27 @@ typedef struct _DescriptionMessage {
 #define DescriptionMessage_str_Data_09_tag       12
 #define DescriptionMessage_str_Data_10_tag       13
 #define DescriptionMessage_str_Data_11_tag       14
-#define DescriptionMessage_f_Data_01_tag         15
-#define DescriptionMessage_f_Data_02_tag         16
-#define DescriptionMessage_f_Data_03_tag         17
-#define DescriptionMessage_f_Data_04_tag         18
-#define DescriptionMessage_f_Data_05_tag         19
-#define DescriptionMessage_f_Data_06_tag         20
-#define DescriptionMessage_f_Data_07_tag         21
-#define DescriptionMessage_f_Data_08_tag         22
-#define DescriptionMessage_f_Data_09_tag         23
-#define DescriptionMessage_f_Data_10_tag         24
-#define DescriptionMessage_f_Data_11_tag         25
+#define DescriptionMessage_str_Data_12_tag       15
+#define DescriptionMessage_str_Data_13_tag       16
+#define DescriptionMessage_str_Data_14_tag       17
+#define DescriptionMessage_str_Data_15_tag       18
+#define DescriptionMessage_str_Data_16_tag       19
+#define DescriptionMessage_f_Data_01_tag         20
+#define DescriptionMessage_f_Data_02_tag         21
+#define DescriptionMessage_f_Data_03_tag         22
+#define DescriptionMessage_f_Data_04_tag         23
+#define DescriptionMessage_f_Data_05_tag         24
+#define DescriptionMessage_f_Data_06_tag         25
+#define DescriptionMessage_f_Data_07_tag         26
+#define DescriptionMessage_f_Data_08_tag         27
+#define DescriptionMessage_f_Data_09_tag         28
+#define DescriptionMessage_f_Data_10_tag         29
+#define DescriptionMessage_f_Data_11_tag         30
+#define DescriptionMessage_f_Data_12_tag         31
+#define DescriptionMessage_f_Data_13_tag         32
+#define DescriptionMessage_f_Data_14_tag         33
+#define DescriptionMessage_f_Data_15_tag         34
+#define DescriptionMessage_f_Data_16_tag         35
 
 /* Struct field encoding specification for nanopb */
 #define DataMessage_FIELDLIST(X, a) \
@@ -177,7 +222,12 @@ X(a, STATIC, OPTIONAL, FLOAT, Data_07, 12) \
 X(a, STATIC, OPTIONAL, FLOAT, Data_08, 13) \
 X(a, STATIC, OPTIONAL, FLOAT, Data_09, 14) \
 X(a, STATIC, OPTIONAL, FLOAT, Data_10, 15) \
-X(a, STATIC, OPTIONAL, FLOAT, Data_11, 16)
+X(a, STATIC, OPTIONAL, FLOAT, Data_11, 16) \
+X(a, STATIC, OPTIONAL, FLOAT, Data_12, 17) \
+X(a, STATIC, OPTIONAL, FLOAT, Data_13, 18) \
+X(a, STATIC, OPTIONAL, FLOAT, Data_14, 19) \
+X(a, STATIC, OPTIONAL, FLOAT, Data_15, 20) \
+X(a, STATIC, OPTIONAL, FLOAT, Data_16, 21)
 #define DataMessage_CALLBACK NULL
 #define DataMessage_DEFAULT NULL
 
@@ -196,17 +246,27 @@ X(a, STATIC, OPTIONAL, STRING, str_Data_08, 11) \
 X(a, STATIC, OPTIONAL, STRING, str_Data_09, 12) \
 X(a, STATIC, OPTIONAL, STRING, str_Data_10, 13) \
 X(a, STATIC, OPTIONAL, STRING, str_Data_11, 14) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_01, 15) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_02, 16) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_03, 17) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_04, 18) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_05, 19) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_06, 20) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_07, 21) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_08, 22) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_09, 23) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_10, 24) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_11, 25)
+X(a, STATIC, OPTIONAL, STRING, str_Data_12, 15) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_13, 16) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_14, 17) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_15, 18) \
+X(a, STATIC, OPTIONAL, STRING, str_Data_16, 19) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_01, 20) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_02, 21) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_03, 22) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_04, 23) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_05, 24) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_06, 25) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_07, 26) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_08, 27) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_09, 28) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_10, 29) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_11, 30) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_12, 31) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_13, 32) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_14, 33) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_15, 34) \
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_16, 35)
 #define DescriptionMessage_CALLBACK NULL
 #define DescriptionMessage_DEFAULT NULL
 
@@ -218,8 +278,8 @@ extern const pb_msgdesc_t DescriptionMessage_msg;
 #define DescriptionMessage_fields &DescriptionMessage_msg
 
 /* Maximum encoded size of messages (where known) */
-#define DataMessage_size                         86
-#define DescriptionMessage_size                  565
+#define DataMessage_size                         116
+#define DescriptionMessage_size                  805
 
 #ifdef __cplusplus
 } /* extern "C" */

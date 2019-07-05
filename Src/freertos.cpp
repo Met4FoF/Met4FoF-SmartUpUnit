@@ -275,7 +275,7 @@ void StartDataStreamerThread(void const * argument) {
 	uint16_t tmp16=((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11);
 	Sensor2.setBaseID(tmp16);
 	Sensor2.begin();
-	Sensor2.setSrd(20);
+	//Sensor2.setSrd(20);
 	Sensor2.enableDataReadyInterrupt();
 	SEGGER_RTT_printf(0,"ID=0x%04x\n\r",tmp16);
 	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
@@ -633,6 +633,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr->has_Data_11 = true;
 		HAL_ADC_PollForConversion(&hadc1, 1);
 		mptr->Data_11=(float) HAL_ADC_GetValue(&hadc1);
+		mptr->has_Data_12 = true;
+		HAL_ADC_PollForConversion(&hadc2, 1);
+		mptr->Data_12=(float) HAL_ADC_GetValue(&hadc2);
+		mptr->has_Data_13 = true;
+		HAL_ADC_PollForConversion(&hadc3, 1);
+		mptr->Data_13=(float) HAL_ADC_GetValue(&hadc3);
 		osStatus result = osMailPut(DataMail, mptr);
 
 	}
