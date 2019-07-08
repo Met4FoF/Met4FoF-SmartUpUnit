@@ -26,7 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "MPU9250.h"
 
-
 /* MPU9250 object, input the SPI bus and chip select pin */
 MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint16_t BaseID){
 	_BaseID=BaseID;

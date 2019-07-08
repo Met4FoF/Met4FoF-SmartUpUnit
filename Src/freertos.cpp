@@ -75,6 +75,8 @@
 #include "dma.h"
 
 #include "backupsram.h"
+
+#include "configmanager.hpp"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -207,12 +209,13 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartLCDThread(void const * argument) {
+	osDelay(10);
+	ConfigManager& configMan = ConfigManager::instance();
 	//osDelay(3000);
 	/* USER CODE BEGIN Variables */
 	//TODO use real ip adress
 	//uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
 	// Target IP for udp straming
-	//uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
@@ -233,14 +236,14 @@ void StartLCDThread(void const * argument) {
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
+	ip_addr_t UDPTargetIP=configMan.getUDPTargetIP();
 	char iPadressBuffer[17] = { };
+	ip4addr_ntoa_r(&(UDPTargetIP), iPadressBuffer,sizeof(iPadressBuffer));
+	sprintf(Temp_Buffer_text, "UPD Targ:%s",iPadressBuffer );
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
 	sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d", UDP_TARGET_IP_ADDRESS[0],
-			UDP_TARGET_IP_ADDRESS[1], UDP_TARGET_IP_ADDRESS[2],
-			UDP_TARGET_IP_ADDRESS[3]);
-	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	static int lcdupdatecnt = 0;
 	while (1) {
 		osDelay(1000);
@@ -257,36 +260,47 @@ void StartLCDThread(void const * argument) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 140, WHITE, 1, BLUE);
 		if (lcdupdatecnt == 10) {
 			lcdupdatecnt = 0;
+			iPadressBuffer[17]= {};
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
 					sizeof(iPadressBuffer));
-			iPadressBuffer[17]= {};
 			sprintf(Temp_Buffer_text, "IP %s    ", iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
-			sprintf(Temp_Buffer_text, "UPD Targ:%d.%d.%d.%d",
-					UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
-					UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+			ip_addr_t UDPTargetIP=configMan.getUDPTargetIP();
+			ip4addr_ntoa_r(&(UDPTargetIP), iPadressBuffer,sizeof(iPadressBuffer));
+			iPadressBuffer[17]= {};
+			sprintf(Temp_Buffer_text, "UPD Targ:%s",iPadressBuffer );
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		}
 	}
 	osThreadTerminate(NULL);
 }
 
 void StartDataStreamerThread(void const * argument) {
-	uint64_t debugTimestamp=0;
-	uint16_t tmp16=((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11);
-	Sensor2.setBaseID(tmp16);
+	ConfigManager& configMan = ConfigManager::instance();
+	Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
 	Sensor2.begin();
 	//Sensor2.setSrd(20);
 	Sensor2.enableDataReadyInterrupt();
-	SEGGER_RTT_printf(0,"ID=0x%04x\n\r",tmp16);
 	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
+	uint32_t StartCount=configMan.getStartcount();
+	SEGGER_RTT_printf(0,"StartCount is= %d",StartCount);
 	struct netconn *conn;
 	struct netbuf *buf;
-	//UDP target ip Adress
+	//TODO REMOVE THIS AND INTEGRATE IT in web interface
+	configMan.setUDPPort(7000);
 	ip_addr_t targetipaddr;
+	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
 	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
 			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+	configMan.setUDPTargetIP(targetipaddr);
+
+
+
+
+
+	//targetipaddr=configMan.getUDPTargetIP();
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 	/* connect the connection to the remote host */
@@ -372,9 +386,6 @@ void StartDataStreamerThread(void const * argument) {
 			        	//Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 			        uint64_t timestamp=(uint64_t)(Datarptr->time_uncertainty)<<32;
 							 timestamp+=(uint64_t)(Datarptr->unix_time_nsecs);
-
-							 //TODO remove
-							 debugTimestamp=timestamp;
 							 uint32_t tmp_time_uncertainty=0;
 					lgw_cnt2utc(GPS_ref,timestamp,&SampelPointUtc,&tmp_time_uncertainty);
 					Datarptr->time_uncertainty=tmp_time_uncertainty;

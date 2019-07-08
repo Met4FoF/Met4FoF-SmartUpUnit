@@ -1,3 +1,7 @@
 /Debug/
 
 tools/log_files/
+
+*.dump
+
+*.testdump

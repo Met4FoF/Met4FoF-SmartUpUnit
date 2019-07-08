@@ -10,7 +10,18 @@
 #include "stm32f7xx_hal.h"
 #include "main.h"
 
-#define IDADRRS 0
+#define SIZEOFSRAMSTRINGS 40
+
+#define STARTUPCOUNTADRESS 0
+#define SUBNETMASKDEVICEIPADRESS 4
+#define DEVICEIPADRESS 8
+#define	UDPTARGETIPADRESS 12
+#define	UDPSUBNETMASKADRESS 16
+#define	UDPPORTADRESS 20
+#define USEDHCPADRESS 24
+#define DEVICENAMEADRESS 28
+#define DEVICEOWNERADRESS 68
+
 
 /**
  * Get memory size for internal backup SRAM
@@ -19,17 +30,6 @@
  */
 
 #define TM_BKPSRAM_GetMemorySize()            (0x00001000)
-
-/**
- * Initialize backup SRAM peripheral
- *
- * This function initializes and enable backup SRAM domain.
- * With this settings you have access to save/get from locations where SRAM is.
- *
- * No return
- */
-extern void BKPSRAM_Init(void);
-
 /**
  * Write 8-bit value to backup SRAM at desired location
  *
@@ -179,8 +179,6 @@ extern void BKPSRAM_Init(void);
  * Defined as macro
  */
 #define BKPSRAM_ReadDouble(address)            (*(__IO double *) (BKPSRAM_BASE + address))
-
-
 /**
  * Read 8-bit value from Unique device ID register (96 bits)
  *

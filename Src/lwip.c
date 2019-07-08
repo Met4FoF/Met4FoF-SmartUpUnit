@@ -76,8 +76,6 @@ uint8_t NETMASK_ADDRESS[4];
 uint8_t GATEWAY_ADDRESS[4];
 /* USER CODE BEGIN Variables */
 uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 2, 10 };
-// Target IP for udp straming
-uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 2, 100};
 
 /* USER CODE BEGIN 2 */
 
