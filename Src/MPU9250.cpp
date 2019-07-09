@@ -1146,7 +1146,7 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	int retVal=0;
-	Message->Sensor_name="MPU 9250/0";
+	strncpy(Message->Sensor_name,"MPU 9250",sizeof(Message->Sensor_name));
 	Message->id=_ID;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
@@ -1161,16 +1161,16 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_str_Data_08=true;
 		Message->has_str_Data_09=true;
 		Message->has_str_Data_10=true;
-		Message->str_Data_01="X Acceleration";
-		Message->str_Data_02="Y Acceleration";
-		Message->str_Data_03="Z Acceleration";
-		Message->str_Data_04="X Angular velocity";
-		Message->str_Data_05="Y Angular velocity";
-		Message->str_Data_06="Z Angular velocity";
-		Message->str_Data_07="X Magnetic flux density";
-		Message->str_Data_08="Y Magnetic flux density";
-		Message->str_Data_09="Z Magnetic flux density";
-		Message->str_Data_10="Temperature";
+		strncpy(Message->str_Data_01,"X Acceleration",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Y Acceleration",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"Z Acceleration",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_04,"X Angular velocity",sizeof(Message->str_Data_04));
+		strncpy(Message->str_Data_05,"Y Angular velocity",sizeof(Message->str_Data_05));
+		strncpy(Message->str_Data_06,"Z Angular velocity",sizeof(Message->str_Data_06));
+		strncpy(Message->str_Data_07,"X Magnetic flux density",sizeof(Message->str_Data_07));
+		strncpy(Message->str_Data_08,"Y Magnetic flux density",sizeof(Message->str_Data_08));
+		strncpy(Message->str_Data_09,"Z Magnetic flux density",sizeof(Message->str_Data_09));
+		strncpy(Message->str_Data_10,"Temperature",sizeof(Message->str_Data_10));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
 	{
@@ -1185,16 +1185,16 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_str_Data_08=true;
 		Message->has_str_Data_09=true;
 		Message->has_str_Data_10=true;
-		Message->str_Data_01="";
-		Message->str_Data_02="Y Acceleration";
-		Message->str_Data_03="Z Acceleration";
-		Message->str_Data_04="X Angular velocity";
-		Message->str_Data_05="Y Angular velocity";
-		Message->str_Data_06="Z Angular velocity";
-		Message->str_Data_07="X Magnetic flux density";
-		Message->str_Data_08="Y Magnetic flux density";
-		Message->str_Data_09="Z Magnetic flux density";
-		Message->str_Data_10="Temperature";
+		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_04,"\\degree\\second\\tothe{-1}",sizeof(Message->str_Data_04));
+		strncpy(Message->str_Data_05,"\\degree\\second\\tothe{-1}",sizeof(Message->str_Data_05));
+		strncpy(Message->str_Data_06,"\\degree\\second\\tothe{-1}",sizeof(Message->str_Data_06));
+		strncpy(Message->str_Data_07,"\\micro\\tesla",sizeof(Message->str_Data_07));
+		strncpy(Message->str_Data_08,"\\micro\\tesla",sizeof(Message->str_Data_08));
+		strncpy(Message->str_Data_09,"\\micro\\tesla",sizeof(Message->str_Data_09));
+		strncpy(Message->str_Data_10,"\\degree\\second\\tothe{-1}",sizeof(Message->str_Data_10));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
@@ -1209,6 +1209,16 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_f_Data_08=true;
 		Message->has_f_Data_09=true;
 		Message->has_f_Data_10=true;
+		Message->f_Data_01=65536;
+		Message->f_Data_02=65536;
+		Message->f_Data_03=65536;
+		Message->f_Data_04=65536;
+		Message->f_Data_05=65536;
+		Message->f_Data_06=65536;
+		Message->f_Data_07=16384;
+		Message->f_Data_08=16384;
+		Message->f_Data_09=16384;
+		Message->f_Data_09=65536; // TODO check this
 	}
 	return retVal;
 }
