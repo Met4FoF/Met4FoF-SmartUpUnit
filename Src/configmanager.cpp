@@ -91,3 +91,44 @@ uint32_t ConfigManager::getStartcount(){
 	return _Startcounts;
 }
 
+bool ConfigManager::setADCCalCoevs(uint8_t ADCNumber,float slope,float xAxisCrossPoint,float RMSNoise){
+	if(ADCNumber>2)
+	{
+		return false;
+	}
+	bool retVal = false;
+_ADCCalCoevs[ADCNumber].slope=slope;
+_ADCCalCoevs[ADCNumber].xAxisCrossPoint=xAxisCrossPoint;
+_ADCCalCoevs[ADCNumber].RMSNoise=RMSNoise;
+BKPSRAM_WriteFloat(ADCCOEVSADRESS+ADCNumber*12,slope);
+BKPSRAM_WriteFloat(ADCCOEVSADRESS+ADCNumber*12+4,xAxisCrossPoint);
+BKPSRAM_WriteFloat(ADCCOEVSADRESS+ADCNumber*12+8,RMSNoise);
+if(BKPSRAM_ReadFloat(ADCCOEVSADRESS+ADCNumber*12) == slope &&
+		BKPSRAM_ReadFloat(ADCCOEVSADRESS+ADCNumber*12+4) == xAxisCrossPoint &&
+		BKPSRAM_ReadFloat(ADCCOEVSADRESS+ADCNumber*12+8) == RMSNoise)
+		{
+			retVal=true;
+		}
+return retVal;
+}
+
+float ConfigManager::getADCVoltage(uint8_t ADCNumber,uint32_t ADCVal){
+	float retVal = NAN;
+	if(ADCNumber>2)
+	{
+		return retVal;
+	}
+	retVal=(float)ADCVal*_ADCCalCoevs[ADCNumber].slope+_ADCCalCoevs[ADCNumber].xAxisCrossPoint;
+	return retVal;
+}
+
+float ConfigManager::getADCRMSNoise(uint8_t ADCNumber){
+	float retVal = NAN;
+	if(ADCNumber>2)
+	{
+		return retVal;
+	}
+	retVal=_ADCCalCoevs[ADCNumber].RMSNoise;
+	return retVal;
+}
+

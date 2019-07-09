@@ -10,6 +10,8 @@
 
 #include "backupsram.h"
 #include "lwip/ip_addr.h"
+#include "main.h"
+#include "math.h"
 //https://en.wikibooks.org/wiki/C%2B%2B_Programming/Code/Design_Patterns#Singleton
 
 /*
@@ -55,6 +57,9 @@ public:
 	int16_t getUDPPort();
 	bool setUDPPort(uint16_t UDPPort);
 	uint32_t getStartcount();
+	bool setADCCalCoevs(uint8_t ADCNumber,float slope,float xAxisCrossPoint,float RMSNoise);
+	float getADCVoltage(uint8_t ADCNumber,uint32_t ADCVal);
+	float getADCRMSNoise(uint8_t ADCNumber);
 	/*
 	int pushData(double timeStamp, std::string info, double val);
 	int writeDataToCsv(std::string fileName);
@@ -66,6 +71,14 @@ public:
 private:
 	//Variables
 	uint32_t _Startcounts;
+
+	typedef struct {
+		float slope;
+		float xAxisCrossPoint;
+		float RMSNoise;
+	}ADCCalCoevs;
+
+	ADCCalCoevs _ADCCalCoevs[3];
 	/*
 	const int maxFifoSize = 10000;
 	std::vector<double> timeStampVec;
@@ -84,6 +97,13 @@ private:
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);//dummy read
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);
 		_Startcounts++;
+		for (int i=0;i<3;i++)
+		{
+			_ADCCalCoevs[i].slope=BKPSRAM_ReadFloat(ADCCOEVSADRESS+i*12);
+			_ADCCalCoevs[i].xAxisCrossPoint=BKPSRAM_ReadFloat(ADCCOEVSADRESS+i*12+4);
+			_ADCCalCoevs[i].RMSNoise=BKPSRAM_ReadFloat(ADCCOEVSADRESS+i*12+8);
+		}
+
 		//memcpy(&_DeviceName,reinterpret_cast<unsigned char*>( (BKPSRAM_BASE + DEVICENAMEADRESS)),SIZEOFSRAMSTRINGS);
 		//memcpy(&_DeviceOwner,reinterpret_cast<unsigned char*>( (BKPSRAM_BASE + DEVICEOWNERADRESS)),SIZEOFSRAMSTRINGS);
 		/*

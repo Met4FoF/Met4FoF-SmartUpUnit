@@ -54,7 +54,7 @@ Maintainer: Michael Coracin
 /* --- PRIVATE CONSTANTS ---------------------------------------------------- */
 
 //TODO Replace with calculated Sysclock freq
-#define TS_CPS              100E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
+#define TS_CPS              108E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
 
 #define PLUS_10PPM          1.00001*(double)(TS_CPS)
 #define MINUS_10PPM         0.99999*(double)(TS_CPS)

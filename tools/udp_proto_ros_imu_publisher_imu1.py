@@ -36,7 +36,7 @@ def imu_publisher():
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         ProtoData = messages_pb2.DataMessage()
         ProtoData.ParseFromString(data)
-        #print(ProtoData)
+        print(ProtoData)
         imu_msg = Imu()
         imu_msg.header.seq=ProtoData.sample_number
         imu_msg.header.stamp = rospy.Time(ProtoData.unix_time,ProtoData.unix_time_nsecs)

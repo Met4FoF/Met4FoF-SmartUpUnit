@@ -1143,3 +1143,72 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 	Message->Data_10=_t;
 	return result;
 }
+
+int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	int retVal=0;
+	Message->Sensor_name="MPU 9250/0";
+	Message->id=_ID;
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		Message->has_str_Data_03=true;
+		Message->has_str_Data_04=true;
+		Message->has_str_Data_05=true;
+		Message->has_str_Data_06=true;
+		Message->has_str_Data_07=true;
+		Message->has_str_Data_08=true;
+		Message->has_str_Data_09=true;
+		Message->has_str_Data_10=true;
+		Message->str_Data_01="X Acceleration";
+		Message->str_Data_02="Y Acceleration";
+		Message->str_Data_03="Z Acceleration";
+		Message->str_Data_04="X Angular velocity";
+		Message->str_Data_05="Y Angular velocity";
+		Message->str_Data_06="Z Angular velocity";
+		Message->str_Data_07="X Magnetic flux density";
+		Message->str_Data_08="Y Magnetic flux density";
+		Message->str_Data_09="Z Magnetic flux density";
+		Message->str_Data_10="Temperature";
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UINT;
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		Message->has_str_Data_03=true;
+		Message->has_str_Data_04=true;
+		Message->has_str_Data_05=true;
+		Message->has_str_Data_06=true;
+		Message->has_str_Data_07=true;
+		Message->has_str_Data_08=true;
+		Message->has_str_Data_09=true;
+		Message->has_str_Data_10=true;
+		Message->str_Data_01="";
+		Message->str_Data_02="Y Acceleration";
+		Message->str_Data_03="Z Acceleration";
+		Message->str_Data_04="X Angular velocity";
+		Message->str_Data_05="Y Angular velocity";
+		Message->str_Data_06="Z Angular velocity";
+		Message->str_Data_07="X Magnetic flux density";
+		Message->str_Data_08="Y Magnetic flux density";
+		Message->str_Data_09="Z Magnetic flux density";
+		Message->str_Data_10="Temperature";
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_03=true;
+		Message->has_f_Data_04=true;
+		Message->has_f_Data_05=true;
+		Message->has_f_Data_06=true;
+		Message->has_f_Data_07=true;
+		Message->has_f_Data_08=true;
+		Message->has_f_Data_09=true;
+		Message->has_f_Data_10=true;
+	}
+	return retVal;
+}

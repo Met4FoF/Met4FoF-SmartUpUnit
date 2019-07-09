@@ -277,6 +277,9 @@ void StartLCDThread(void const * argument) {
 
 void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
+	//configMan.setADCCalCoevs(0,0.00488040211169927,-10.029208660668372,4.6824163159348675e-3);
+	//configMan.setADCCalCoevs(1,0.004864769104581888,-9.911472983085314,13.68572038605262e-3);
+	//configMan.setADCCalCoevs(2,0.004884955868836948,-10.031544601902738,4.721804326558252e-3);
 	Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
 	Sensor2.begin();
 	//Sensor2.setSrd(20);
@@ -291,7 +294,7 @@ void StartDataStreamerThread(void const * argument) {
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
 	configMan.setUDPPort(7000);
 	ip_addr_t targetipaddr;
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 1 };
+	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 2, 100 };
 	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
 			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
 	configMan.setUDPTargetIP(targetipaddr);
@@ -537,6 +540,7 @@ RandomData getRandomData(RNG_HandleTypeDef *hrng) {
 }
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+	ConfigManager& configMan = ConfigManager::instance();
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 	static uint32_t Channel1Tim1CaptureCount = 0;
 	static uint32_t Channel1Tim2CaptureCount = 0;
@@ -643,13 +647,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Sensor2.getData(mptr, timestamp, Channel1Tim2CaptureCount);
 		mptr->has_Data_11 = true;
 		HAL_ADC_PollForConversion(&hadc1, 1);
-		mptr->Data_11=(float) HAL_ADC_GetValue(&hadc1);
+		float adcVal=(float) HAL_ADC_GetValue(&hadc1);
+		mptr->Data_11=configMan.getADCVoltage(0,adcVal);
 		mptr->has_Data_12 = true;
 		HAL_ADC_PollForConversion(&hadc2, 1);
-		mptr->Data_12=(float) HAL_ADC_GetValue(&hadc2);
+		adcVal=(float) HAL_ADC_GetValue(&hadc2);
+		mptr->Data_12=configMan.getADCVoltage(1,adcVal);
 		mptr->has_Data_13 = true;
 		HAL_ADC_PollForConversion(&hadc3, 1);
-		mptr->Data_13=(float) HAL_ADC_GetValue(&hadc3);
+		adcVal=(float) HAL_ADC_GetValue(&hadc3);
+		mptr->Data_13=configMan.getADCVoltage(2,adcVal);
 		osStatus result = osMailPut(DataMail, mptr);
 
 	}
