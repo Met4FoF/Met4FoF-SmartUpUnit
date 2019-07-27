@@ -1146,7 +1146,9 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	int retVal=0;
+	/*
 	Message->Sensor_name="MPU 9250/0";
+	*/
 	Message->id=_ID;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
@@ -1161,6 +1163,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_str_Data_08=true;
 		Message->has_str_Data_09=true;
 		Message->has_str_Data_10=true;
+		/*
 		Message->str_Data_01="X Acceleration";
 		Message->str_Data_02="Y Acceleration";
 		Message->str_Data_03="Z Acceleration";
@@ -1171,6 +1174,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->str_Data_08="Y Magnetic flux density";
 		Message->str_Data_09="Z Magnetic flux density";
 		Message->str_Data_10="Temperature";
+		*/
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
 	{
@@ -1185,6 +1189,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_str_Data_08=true;
 		Message->has_str_Data_09=true;
 		Message->has_str_Data_10=true;
+		/*
 		Message->str_Data_01="";
 		Message->str_Data_02="Y Acceleration";
 		Message->str_Data_03="Z Acceleration";
@@ -1195,6 +1200,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->str_Data_08="Y Magnetic flux density";
 		Message->str_Data_09="Z Magnetic flux density";
 		Message->str_Data_10="Temperature";
+		*/
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
