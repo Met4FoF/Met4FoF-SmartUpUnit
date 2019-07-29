@@ -253,7 +253,7 @@
  * a lot of data that needs to be copied, this should be set high.
  */
 #if !defined MEM_SIZE || defined __DOXYGEN__
-#define MEM_SIZE                        3200
+#define MEM_SIZE                        1600
 #endif
 
 /**
@@ -266,7 +266,7 @@
  *      memp_malloc() or memp_free() is called (useful but slow!)
  */
 #if !defined MEMP_OVERFLOW_CHECK || defined __DOXYGEN__
-#define MEMP_OVERFLOW_CHECK             1
+#define MEMP_OVERFLOW_CHECK             0
 #endif
 
 /**
