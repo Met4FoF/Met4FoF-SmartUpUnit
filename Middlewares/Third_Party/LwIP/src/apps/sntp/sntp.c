@@ -63,7 +63,9 @@
 #include <string.h>
 #include <time.h>
 
+#include "GPSTimesyn.hpp"
 #if LWIP_UDP
+
 
 /* Handle support for more than one server via SNTP_MAX_SERVERS */
 #if SNTP_MAX_SERVERS > 1
@@ -155,9 +157,6 @@ PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #  include "arch/epstruct.h"
 #endif
-
-/* function prototypes */
-static void sntp_request(void *arg);
 
 /** The operating mode */
 static u8_t sntp_opmode;
@@ -487,8 +486,7 @@ sntp_dns_found(const char* hostname, const ip_addr_t *ipaddr, void *arg)
  *
  * @param arg is unused (only necessary to conform to sys_timeout)
  */
-static void
-sntp_request(void *arg)
+void sntp_request(void *arg)
 {
   ip_addr_t sntp_server_address;
   err_t err;

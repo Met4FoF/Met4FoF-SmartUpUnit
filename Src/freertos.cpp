@@ -77,6 +77,8 @@
 #include "backupsram.h"
 
 #include "configmanager.hpp"
+
+#include "lwip/apps/sntp.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -107,13 +109,14 @@ MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
-
+/*
 //Top 32 bit for timer2 inputcapture values
 static uint64_t tim2_update_counts;
 static uint64_t tim2_upper_bits_mask;
 //Top 48 bit for timer2 inputcapture values
 static uint64_t tim1_update_counts;
 static uint64_t tim1_upper_bits_mask;
+*/
 /**
  * @brief  FreeRTOS initialization
  * @param  None
@@ -175,6 +178,7 @@ void MX_FREERTOS_Init(void) {
  */
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument) {
+	ConfigManager& configMan = ConfigManager::instance();
 	/* init code for LWIP */
 	MX_LWIP_Init();
 
@@ -182,9 +186,16 @@ void StartDefaultTask(void const * argument) {
 	MX_FATFS_Init();
 
 	/* USER CODE BEGIN StartDefaultTask */
+
+	//TODO implent NPTP ip array
+	ip_addr_t NTPIP=configMan.getUDPTargetIP();
+	osDelay(5000);
+	sntp_setserver(0,&NTPIP);
+	sntp_init();
 	/* Infinite loop */
 	for (;;) {
 		osDelay(10000);
+		sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
 }
@@ -254,10 +265,19 @@ void StartLCDThread(void const * argument) {
 		tm* current_time = localtime(&(utc.tv_sec));
 		strftime(Temp_Buffer_text, 20, "%Y-%m-%d %H:%M:%S", current_time);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
+
+		//TODO fix nanospecs printf bug to reactivate --specs=nano.specs -u _printf_float -u _scanf_float to save 50 kb Code size
 		sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ",GPS_ref.xtal_err);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 120, WHITE, 1, BLUE);
 		sprintf(Temp_Buffer_text, "F std.: %lf Hz      ",GPS_ref.xtal_err_deviation);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 140, WHITE, 1, BLUE);
+		sprintf(Temp_Buffer_text, "NTP Counter Freq.: %lf Hz   ",NTP_ref.xtal_err);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 160, WHITE, 1, BLUE);
+		sprintf(Temp_Buffer_text, "NTP F std.: %lf Hz      ",NTP_ref.xtal_err_deviation);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 180, WHITE, 1, BLUE);
+		tm* ntp_update_time = localtime(&(NTP_ref.utc.tv_sec));
+		strftime(Temp_Buffer_text, 40, "NTP Updte: %Y-%m-%d %H:%M:%S", ntp_update_time);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 200, WHITE, 1, BLUE);
 		if (lcdupdatecnt == 10) {
 			lcdupdatecnt = 0;
 			iPadressBuffer[17]= {};
@@ -646,15 +666,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp, Channel1Tim2CaptureCount);
 		mptr->has_Data_11 = true;
-		HAL_ADC_PollForConversion(&hadc1, 1);
+		HAL_ADC_PollForConversion(&hadc1, 0);
 		float adcVal=(float) HAL_ADC_GetValue(&hadc1);
 		mptr->Data_11=configMan.getADCVoltage(0,adcVal);
 		mptr->has_Data_12 = true;
-		HAL_ADC_PollForConversion(&hadc2, 1);
+		HAL_ADC_PollForConversion(&hadc2, 0);
 		adcVal=(float) HAL_ADC_GetValue(&hadc2);
 		mptr->Data_12=configMan.getADCVoltage(1,adcVal);
 		mptr->has_Data_13 = true;
-		HAL_ADC_PollForConversion(&hadc3, 1);
+		HAL_ADC_PollForConversion(&hadc3, 0);
 		adcVal=(float) HAL_ADC_GetValue(&hadc3);
 		mptr->Data_13=configMan.getADCVoltage(2,adcVal);
 		osStatus result = osMailPut(DataMail, mptr);

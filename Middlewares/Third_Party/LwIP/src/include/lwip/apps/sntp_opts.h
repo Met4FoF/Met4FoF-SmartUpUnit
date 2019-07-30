@@ -38,12 +38,14 @@
 #define LWIP_HDR_APPS_SNTP_OPTS_H
 
 #include "lwip/opt.h"
-
+#include "GPSTimesyn.hpp"
 /**
  * @defgroup sntp_opts Options
  * @ingroup sntp
  * @{
  */
+
+#define SNTP_SET_SYSTEM_TIME_US NTP_time_CNT_update
 
 /** SNTP macro to change system time in seconds
  * Define SNTP_SET_SYSTEM_TIME_US(sec, us) to set the time in microseconds instead of this one

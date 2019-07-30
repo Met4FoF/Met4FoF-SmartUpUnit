@@ -23,12 +23,16 @@
 #include <time.h>       /* struct timespec */
 #include "SEGGER_RTT.h"
 
+#include "lwip/apps/sntp.h"
+
+
 #define NMEABUFFERSIZE 3
 #define NMEBUFFERLEN 1200
 #define NMEAMINLEN 9
 #define MAXNEMASENTENCECOUNT NMEBUFFERLEN/NMEAMINLEN
 int initGPSTimesny();
 void StartNemaParserThread(void const * argument);
+void NTP_time_CNT_update(time_t t,uint32_t us);
 
 typedef struct {
 	uint64_t RawTimerCount;
@@ -49,6 +53,12 @@ extern osMailQId NMEAMail;
 extern SemaphoreHandle_t xSemaphoreGPS_REF;
 //TODO maybe (quite shure) needs mutex check that
 extern struct tref GPS_ref;
+
+extern SemaphoreHandle_t xSemaphoreNTP_REF;
+//TODO maybe (quite shure) needs mutex check that
+extern struct tref NTP_ref;
+
+
 #ifdef __cplusplus
 }
 #endif

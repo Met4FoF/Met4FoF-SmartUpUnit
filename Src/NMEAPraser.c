@@ -56,8 +56,8 @@ Maintainer: Michael Coracin
 //TODO Replace with calculated Sysclock freq
 #define TS_CPS              108E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
 
-#define PLUS_10PPM          1.00001*(double)(TS_CPS)
-#define MINUS_10PPM         0.99999*(double)(TS_CPS)
+#define PLUS_1PERCENT          1.00*(double)(TS_CPS)
+#define MINUS_1PERCENT         0.99*(double)(TS_CPS)
 
 #define UBX_MSG_NAVTIMEGPS_LEN  16
 
@@ -525,7 +525,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     double utc_diff; /* UTC time difference (in seconds) */
     double slope; /* time slope between new reference and old reference (for sanity check) */
 
-    bool aber_n0; /* is the update value for synchronization aberrant or not ? */
+    bool aber_n0=false; /* is the update value for synchronization aberrant or not ? */
     static bool aber_min1 = false; /* keep track of whether value at sync N-1 was aberrant or not  */
     static bool aber_min2 = false; /* keep track of whether value at sync N-2 was aberrant or not  */
 
@@ -538,9 +538,9 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     /* detect aberrant points by measuring if slope limits are exceeded */
     if (utc_diff != 0) { // prevent divide by zero
         slope = cnt_diff/utc_diff;
-        if ((slope > PLUS_10PPM) || (slope < MINUS_10PPM)) {
+        if ((slope > PLUS_1PERCENT) || (slope < MINUS_1PERCENT)) {
             DEBUG_MSG("Warning: correction range exceeded\n\r");
-            aber_n0 = true;
+            aber_n0 = false;
         } else {
             aber_n0 = false;
             ref->xtal_err_array[ref->array_update_pointer]=slope;
@@ -602,7 +602,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
         ref->gps.tv_sec = gps_time.tv_sec;
         ref->gps.tv_nsec = gps_time.tv_nsec;
         /* reset xtal_err only if the present value is out of range */
-        if ((ref->xtal_err > PLUS_10PPM) || (ref->xtal_err < MINUS_10PPM)) {
+        if ((ref->xtal_err > PLUS_1PERCENT) || (ref->xtal_err < MINUS_1PERCENT)) {
             ref->xtal_err = 1.0;
         }
         DEBUG_MSG("Warning: 3 successive aberrant sync attempts, sync reset\n\r");
@@ -627,7 +627,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     long tmp;
 
     CHECK_NULL(utc);
-    if ((ref.systime == 0) || (ref.xtal_err > PLUS_10PPM) || (ref.xtal_err < MINUS_10PPM)) {
+    if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
         DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> UTC CONVERSION\n\r");
         return LGW_GPS_ERROR;
     }
@@ -674,7 +674,7 @@ int lgw_utc2cnt(struct tref ref, struct timespec utc, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
-    if ((ref.systime == 0) || (ref.xtal_err > PLUS_10PPM) || (ref.xtal_err < MINUS_10PPM)) {
+    if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
         DEBUG_MSG("ERROR: INVALID REFERENCE FOR UTC -> CNT CONVERSION\n\r");
         return LGW_GPS_ERROR;
     }
@@ -699,7 +699,7 @@ int lgw_cnt2gps(struct tref ref, uint64_t count_us, struct timespec *gps_time) {
     long tmp;
 
     CHECK_NULL(gps_time);
-    if ((ref.systime == 0) || (ref.xtal_err > PLUS_10PPM) || (ref.xtal_err < MINUS_10PPM)) {
+    if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
         DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> GPS CONVERSION\n\r");
         return LGW_GPS_ERROR;
     }
@@ -727,7 +727,7 @@ int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint64_t *count_us) {
     double delta_sec;
 
     CHECK_NULL(count_us);
-    if ((ref.systime == 0) || (ref.xtal_err > PLUS_10PPM) || (ref.xtal_err < MINUS_10PPM)) {
+    if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
         DEBUG_MSG("ERROR: INVALID REFERENCE FOR GPS -> CNT CONVERSION\n\r");
         return LGW_GPS_ERROR;
     }

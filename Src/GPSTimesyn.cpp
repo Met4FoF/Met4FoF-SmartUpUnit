@@ -18,7 +18,12 @@
 #include <time.h>       /* struct timespec */
 #include <sys/timespec.h>
 
+//for ntp snchronisation
+#include "tim.h"
+#include "freertos_cubemx.h"
 struct tref GPS_ref={0};
+struct tref NTP_ref={0};
+
 //MemPool For the data
 osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
 osMailQId NMEAMail;
@@ -27,6 +32,7 @@ osMailQId NMEAMail;
 osThreadId NemaParserTID;
 
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
+SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
 osThreadDef(NemaParserThread, StartNemaParserThread,osPriorityHigh , 0,
 		1024);
@@ -43,6 +49,7 @@ int initGPSTimesny() {
 
 void StartNemaParserThread(void const * argument) {
 	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
+	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
 	uint32_t porcessedCount = 0;
 	osEvent evt;
 	enum gps_msg latest_msg;
@@ -90,6 +97,7 @@ void StartNemaParserThread(void const * argument) {
 		        available wait 10 ticks to see if it becomes free. */
 		        if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
 		        {
+		    //TODO COMPARE WITH NTP may be a second diference !!
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
             xSemaphoreGive(xSemaphoreGPS_REF);
@@ -111,3 +119,46 @@ void StartNemaParserThread(void const * argument) {
 
 osThreadTerminate(NULL);
 }
+
+void NTP_time_CNT_update(time_t t,uint32_t us){
+	uint32_t counterVal=__HAL_TIM_GetCounter(&htim2);
+	//TODO 64 bit timestamping not working !!
+	uint64_t counterval64=tim2_upper_bits_mask+(uint64_t)counterVal&0x00000000FFFFFFFF;
+
+	timespec dummy={0};
+	timespec TmpUtc;
+	TmpUtc.tv_sec=t;
+	TmpUtc.tv_nsec=1000*us;
+    if( xSemaphoreNTP_REF != NULL )
+    {
+        if( xSemaphoreTake(xSemaphoreNTP_REF, ( TickType_t ) 10 ) == pdTRUE )
+        {
+        	lgw_gps_sync(&NTP_ref, counterval64, TmpUtc,dummy);
+        	xSemaphoreGive(xSemaphoreNTP_REF);
+        }
+    }
+
+	timespec GPSUtc;
+	timespec NTPUtc;
+	uint32_t GPS_time_uncertainty=0;
+	uint32_t NTP_time_uncertainty=0;
+    /* See if we can obtain the semaphore.  If the semaphore is not
+    available wait 10 ticks to see if it becomes free. */
+    if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
+    {
+
+	lgw_cnt2utc(GPS_ref,counterval64,&GPSUtc,&GPS_time_uncertainty);
+    xSemaphoreGive(xSemaphoreGPS_REF);
+    }
+
+    if( xSemaphoreTake(xSemaphoreNTP_REF, ( TickType_t ) 10 ) == pdTRUE )
+    {
+	uint32_t GPS_time_uncertainty=0;
+	lgw_cnt2utc(NTP_ref,counterval64,&NTPUtc,&NTP_time_uncertainty);
+    xSemaphoreGive(xSemaphoreNTP_REF);
+    }
+    uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9+NTPUtc.tv_nsec-GPSUtc.tv_nsec;
+    SEGGER_RTT_printf(0,"GPS VS NTP time diff=%d\n\r",deltaTime);
+}
+
+

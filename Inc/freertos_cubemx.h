@@ -105,6 +105,13 @@ extern osThreadId blinkTID;
 extern osThreadId WebServerTID;
 extern osThreadId LCDTID;
 extern osThreadId DataStreamerTID;
+
+//Top 32 bit for timer2 inputcapture values
+static uint64_t tim2_update_counts;
+static uint64_t tim2_upper_bits_mask;
+//Top 48 bit for timer2 inputcapture values
+static uint64_t tim1_update_counts;
+static uint64_t tim1_upper_bits_mask;
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
