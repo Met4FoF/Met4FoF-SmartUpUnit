@@ -35,6 +35,8 @@ Maintainer: Michael Coracin
 
 #include "SEGGER_RTT.h"
 
+
+#define GPS_TIME_OFFSET_FROM_BUFFER_SEC 1
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */
 
@@ -61,6 +63,9 @@ Maintainer: Michael Coracin
 
 #define UBX_MSG_NAVTIMEGPS_LEN  16
 
+#ifndef GPS_TIME_OFFSET_FROM_BUFFER_SEC
+#define GPS_TIME_OFFSET_FROM_BUFFER_SEC 0
+#endif
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE VARIABLES ---------------------------------------------------- */
 
@@ -483,7 +488,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
             DEBUG_MSG("ERROR: FAILED TO CONVERT BROKEN-DOWN TIME\n\r");
             return LGW_GPS_ERROR;
         }
-        utc->tv_sec = y;
+        utc->tv_sec = y+GPS_TIME_OFFSET_FROM_BUFFER_SEC;
         utc->tv_nsec = (int32_t)(gps_fra * 1e9);
     }
     if (gps_time != NULL) {
@@ -496,6 +501,8 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
         gps_time->tv_sec = (time_t)intpart;
         /* Number of seconds since GPS epoch 06.Jan.1980 */
         gps_time->tv_sec += (time_t)gps_week * 604800; /* day*hours*minutes*secondes: 7*24*60*60; */
+
+        gps_time->tv_sec +=GPS_TIME_OFFSET_FROM_BUFFER_SEC;
         /* Fractional part in nanoseconds */
         gps_time->tv_nsec = (long)(fractpart * 1E9);
     }

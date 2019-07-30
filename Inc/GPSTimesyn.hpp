@@ -30,6 +30,13 @@
 #include "SEGGER_RTT.h"
 #include "lwip/apps/sntp.h"
 
+/*
+ * see:
+ * #define GPS_TIME_OFFSET_FROM_BUFFER_SEC 1
+ * in NMEAPraser.c !!
+ */
+
+
 
 #define NMEABUFFERSIZE 3
 #define NMEBUFFERLEN 1200

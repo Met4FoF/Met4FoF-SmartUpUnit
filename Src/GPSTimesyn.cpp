@@ -141,8 +141,9 @@ void NTP_time_CNT_update(time_t t,uint32_t us){
 	lgw_cnt2utc(NTP_ref,timestamp,&NTPUtc,&NTP_time_uncertainty);
     xSemaphoreGive(xSemaphoreNTP_REF);
     }
-    uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9+NTPUtc.tv_nsec-GPSUtc.tv_nsec;
-    SEGGER_RTT_printf(0,"GPS VS NTP time diff=%d\n\r",deltaTime);
+    uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9;
+    		deltaTime+=NTPUtc.tv_nsec-GPSUtc.tv_nsec;
+    SEGGER_RTT_printf(0,"NTP-GPS time diff=%d ns\n\r",deltaTime);
 }
 
 
