@@ -11,7 +11,6 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-
 #include <stdint.h>
 #include "cmsis_os.h"
 #include <time.h>
@@ -20,9 +19,15 @@
 #include <stdbool.h>
 #include "cmsis_os.h"
 #include "NMEAPraser.h"
+#include "GPSTimesyn.hpp"
 #include <time.h>       /* struct timespec */
-#include "SEGGER_RTT.h"
+#include <sys/timespec.h>
 
+//for ntp snchronisation
+#include "tim.h"
+#include "freertos_cubemx.h"
+#include "tim64extender.h"
+#include "SEGGER_RTT.h"
 #include "lwip/apps/sntp.h"
 
 

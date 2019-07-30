@@ -77,6 +77,7 @@ extern "C" {
 #include "httpserver-netconn.h"
 #include "SEGGER_RTT.h"
 #include <GPSTimesyn.hpp>
+#include "tim64extender.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -106,12 +107,7 @@ extern osThreadId WebServerTID;
 extern osThreadId LCDTID;
 extern osThreadId DataStreamerTID;
 
-//Top 32 bit for timer2 inputcapture values
-static uint64_t tim2_update_counts;
-static uint64_t tim2_upper_bits_mask;
-//Top 48 bit for timer2 inputcapture values
-static uint64_t tim1_update_counts;
-static uint64_t tim1_upper_bits_mask;
+
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
@@ -128,13 +124,7 @@ void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
 
-union RandomData
-{
-    uint32_t asuint;
-    uint16_t asuint16[sizeof(uint32_t)/sizeof(uint16_t)];
-    uint8_t asbyt[sizeof(uint32_t)];
-};
-RandomData getRandomData(RNG_HandleTypeDef *hrng);
+
 /* (MISRA C 2004 rule 8.1) */
 #ifdef __cplusplus
 }
