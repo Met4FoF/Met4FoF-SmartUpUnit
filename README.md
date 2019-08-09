@@ -38,6 +38,20 @@ mkdir python
 protoc --python_out=python messages.proto
 ```
 
+# Converting St-Link to Segger J-link
+https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/
+Download software extract and run STLinkReflash.exe
+1. Acept Seeger license
+2. Acept ST license
+3. Choose Upgrade to J-Link [1]
+The device is flashed and reconnectet
+Output looks like 
+```
+Preparing for FW update (can take up to 10 seconds)...O.K.
+Identifying ST-LINK variant...O.K.: ST-LINK/V2-1
+Performing firmware update...O.K.
+```
+now you have an working J-Link at yout STM32-Board
 # Debug Output
 
 ![RTT_pic](https://www.segger.com/fileadmin/_processed_/b/6/csm_J-Link-RTT_800x_21198b3c21.png "from https://www.segger.com")
