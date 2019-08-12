@@ -144,7 +144,7 @@ void MX_FREERTOS_Init(void) {
 			256);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
-	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 256);
+	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 512);
 
 	LCDTID = osThreadCreate(osThread(LCDThread), NULL);
 
@@ -290,12 +290,12 @@ void StartLCDThread(void const * argument) {
 
 void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
-	//configMan.setADCCalCoevs(0,0.00488040211169927,-10.029208660668372,4.6824163159348675e-3);
-	//configMan.setADCCalCoevs(1,0.004864769104581888,-9.911472983085314,13.68572038605262e-3);
-	//configMan.setADCCalCoevs(2,0.004884955868836948,-10.031544601902738,4.721804326558252e-3);
+	configMan.setADCCalCoevs(0,0.00488040211169927,-10.029208660668372,4.6824163159348675e-3);
+	configMan.setADCCalCoevs(1,0.004864769104581888,-9.911472983085314,13.68572038605262e-3);
+	configMan.setADCCalCoevs(2,0.004884955868836948,-10.031544601902738,4.721804326558252e-3);
 	Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
 	Sensor2.begin();
-	//Sensor2.setSrd(20);
+	//Sensor2.setSrd();
 	Sensor2.enableDataReadyInterrupt();
 	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
@@ -572,6 +572,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
+		if(Channel3Tim2CaptureCount%1==0){
 		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
@@ -589,7 +590,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		adcVal=(float) HAL_ADC_GetValue(&hadc3);
 		mptr->Data_13=configMan.getADCVoltage(2,adcVal);
 		osStatus result = osMailPut(DataMail, mptr);
-
+		}
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
@@ -627,12 +628,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		Channel1Tim1CaptureCount++;
-		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
+		//Channel1Tim1CaptureCount++;
+		//timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-		Channel4Tim1CaptureCount++;
-		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
+		//Channel4Tim1CaptureCount++;
+		//timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }

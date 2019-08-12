@@ -84,8 +84,8 @@ int MPU9250::begin(){
 	  if(writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G) < 0){
 	    return -7;
 	  }
-	  _accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-	  _accelRange = ACCEL_RANGE_16G;
+	  _accelScale = G * 16.0f/32767.5f; // setting the accel scale to 4G
+	  _accelRange = ACCEL_RANGE_4G;
 	  // setting the gyro range to 2000DPS as default
 	  if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) < 0){
 	    return -8;
@@ -252,6 +252,15 @@ int MPU9250::setDlpfBandwidth(DlpfBandwidth bandwidth) {
   // use low speed SPI for register setting
   _useSPIHS = false;
   switch(bandwidth) {
+  case DLPF_BANDWIDTH_250HZ: {
+    if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_250) < 0){ // setting accel bandwidth to 184Hz
+      return -1;
+    }
+    if(writeRegister(CONFIG,GYRO_DLPF_250) < 0){ // setting gyro bandwidth to 184Hz
+      return -2;
+    }
+    break;
+  }
     case DLPF_BANDWIDTH_184HZ: {
       if(writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) < 0){ // setting accel bandwidth to 184Hz
         return -1;

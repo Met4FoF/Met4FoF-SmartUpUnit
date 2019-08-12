@@ -61,6 +61,7 @@ class MPU9250{
     };
     enum DlpfBandwidth
     {
+      DLPF_BANDWIDTH_250HZ,
       DLPF_BANDWIDTH_184HZ,
       DLPF_BANDWIDTH_92HZ,
       DLPF_BANDWIDTH_41HZ,
@@ -225,6 +226,7 @@ class MPU9250{
     const uint8_t GYRO_FS_SEL_1000DPS = 0x10;
     const uint8_t GYRO_FS_SEL_2000DPS = 0x18;
     const uint8_t ACCEL_CONFIG2 = 0x1D;
+    const uint8_t ACCEL_DLPF_250 = 0x00;
     const uint8_t ACCEL_DLPF_184 = 0x01;
     const uint8_t ACCEL_DLPF_92 = 0x02;
     const uint8_t ACCEL_DLPF_41 = 0x03;
@@ -232,6 +234,7 @@ class MPU9250{
     const uint8_t ACCEL_DLPF_10 = 0x05;
     const uint8_t ACCEL_DLPF_5 = 0x06;
     const uint8_t CONFIG = 0x1A;
+    const uint8_t GYRO_DLPF_250 = 0x00;
     const uint8_t GYRO_DLPF_184 = 0x01;
     const uint8_t GYRO_DLPF_92 = 0x02;
     const uint8_t GYRO_DLPF_41 = 0x03;
