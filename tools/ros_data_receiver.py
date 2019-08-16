@@ -7,11 +7,24 @@ Created on Wed Aug  7 12:34:21 2019
 """
 
 #!/usr/bin/env python
-import rospy
-from sensor_msgs.msg import Imu
+#import rospy
+#from sensor_msgs.msg import Imu
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas
+from scipy import signal
+
+class CalTimeSeries():
+    def __init__(self,DB):
+        self.Data=np.zeros([DB.INTEGRATIONTIME,4])
+        self.length=0
+    def pushBlock(self,Datablock):
+        if(self.length==0):
+            self.Data=Datablock
+        else:
+            self.Data=np.append(self.Data,Datablock, axis=0)
+        self.length=self.length+Datablock.shape[0]
+
 
 class Databuffer:
     def __init__(self):
@@ -19,9 +32,17 @@ class Databuffer:
         self.DataLoopBuffer=np.zeros([self.INTEGRATIONTIME,4])
         self.i=0
         self.IntegratedPacketsCount=0
-        self.DATAARRYSIZE=1000
+        self.DATAARRYSIZE=900
         self.FFTArray=np.zeros([self.DATAARRYSIZE,self.INTEGRATIONTIME,3])
-        self.STDArray=np.zeros([self.DATAARRYSIZE,4])
+        self.STDArray=np.zeros([self.DATAARRYSIZE,3])
+        self.minRMSforVailid=4.0
+        self.minValidChunksInRow=4
+        self.axixofintest=2
+        self.isValidCalChunk=np.zeros([self.DATAARRYSIZE,3])
+        self.CalData=[]
+
+
+
 
     def pushData(self,x,y,z,t):
         if(self.i<self.INTEGRATIONTIME):
@@ -35,7 +56,7 @@ class Databuffer:
 
     def pushBlock(self,arrayx,arrayy,arrayz,arrayt):
         if not (self.INTEGRATIONTIME==arrayt.size==arrayy.size==arrayy.size==arrayz.size):
-            raise ValueError('Array size must be INTEGRATIONTIME '+str(self.INTEGRATIONTIME))
+            raise ValueError('Array size must be INTEGRATIONTIME '+str(self.INTEGRATIONTIME) +'and not '+str(arrayt.size))
         self.DataLoopBuffer[:,0]=arrayx
         self.DataLoopBuffer[:,1]=arrayy
         self.DataLoopBuffer[:,2]=arrayz
@@ -45,12 +66,21 @@ class Databuffer:
 
     def calc(self):
         if(self.IntegratedPacketsCount<self.DATAARRYSIZE):
-            self.STDArray[self.IntegratedPacketsCount]=np.std(self.DataLoopBuffer,axis=0)
+            self.STDArray[self.IntegratedPacketsCount]=np.std(self.DataLoopBuffer[:,:3],axis=0)
             self.FFTArray[self.IntegratedPacketsCount,:,:]=np.fft.fft(self.DataLoopBuffer[:,:3],axis=0)
-        print("Mean="+str(self.STDArray[self.IntegratedPacketsCount,2]))
-        #print("STD="+str(np.std(self.DataLoopBuffer,axis=0)))
+        #print("Mean="+str(self.STDArray[self.IntegratedPacketsCount,2]))
+        print(str(self.IntegratedPacketsCount) +' STD= '+str(np.std(self.DataLoopBuffer,axis=0)))
         self.IntegratedPacketsCount=self.IntegratedPacketsCount+1
         self.i=0
+        if(self.IntegratedPacketsCount>self.minValidChunksInRow):
+            self.isValidCalChunk[self.IntegratedPacketsCount]=np.all(np.greater(self.STDArray[self.IntegratedPacketsCount-self.minValidChunksInRow:self.IntegratedPacketsCount,self.axixofintest],self.minRMSforVailid))
+            #check if we have an new valid data Chunk
+            if(self.isValidCalChunk[self.IntegratedPacketsCount-1,self.axixofintest]==False and self.isValidCalChunk[self.IntegratedPacketsCount,self.axixofintest]==True):
+                print(self.IntegratedPacketsCount)
+                self.CalData.append(CalTimeSeries(self))
+                self.CalData[-1].pushBlock(self.DataLoopBuffer)
+            if(self.isValidCalChunk[self.IntegratedPacketsCount-1,self.axixofintest]==True and self.isValidCalChunk[self.IntegratedPacketsCount,self.axixofintest]==True):
+                self.CalData[-1].pushBlock(self.DataLoopBuffer)
 
 
 #DB0=Databuffer()
@@ -99,7 +129,8 @@ def DataReader(RosCSVFilename):
     sdf=pandas.read_csv(RosCSVFilename)
     print(sdf.columns.values)
     chunkSize=DB1.INTEGRATIONTIME
-    for Index in np.arange(0,len(sdf),chunkSize):
+    Chunkindexes=np.arange(0,len(sdf),chunkSize)
+    for Index in Chunkindexes[:-1]:#cutting out last chung since this this is porpaply not 512 datapoints long 
         DB1.pushBlock(sdf['field.linear_acceleration.x'][Index:Index+chunkSize],sdf['field.linear_acceleration.y'][Index:Index+chunkSize],sdf['field.linear_acceleration.z'][Index:Index+chunkSize],sdf['field.header.stamp'][Index:Index+chunkSize]/1e9)
 
 
@@ -147,4 +178,4 @@ def DataReader(RosCSVFilename):
 #        'field.linear_acceleration_covariance8']
 
 if __name__ == '__main__':
-    DataReader('~/tmp/IMU0.csv')
+    DataReader('C:/temp/IMU0.csv')
