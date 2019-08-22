@@ -5,3 +5,5 @@ tools/log_files/
 *.dump
 
 *.testdump
+
+tools/__pycache__/
