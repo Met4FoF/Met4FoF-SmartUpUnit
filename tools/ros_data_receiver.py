@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import pandas
 from scipy import signal
 from scipy.optimize import curve_fit
+import SineTools as st
 # from termcolor import colored
 
 
@@ -132,33 +133,43 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self,EndCutOut):
+    def SinFit(self,EndCutOut,Methode='SineTools1'):
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
         self.sinFitEndCutOut=EndCutOut
         if not(self.flags['FFTCalculated']):  # recusive calling
             self.CalcFFT()
-        tmpbounds = ([0, -12, self.FFTFreqPeak-0.5, -np.pi],
-                     [20, 12, self.FFTFreqPeak+0.5, np.pi])
+        tmpbounds = ([0, -12, self.FFTFreqPeak-3*self.fftFreqs[1], -np.pi],
+                     [20, 12, self.FFTFreqPeak+3*self.fftFreqs[1], np.pi])
 
         # TODO get bounds from FFT params
-        for i in range(4):
-            tmpp0=[self.FFTAmplitudePeak[i],abs(self.FFTData[0,i]),
-                   self.FFTFreqPeak,self.FFTPhiPeak[i]]
-            try:
-                self.popt[i], self.pcov[i] = curve_fit(self.SinFunc,
-                                                   self.Data[:-EndCutOut, 4],
-                                                   self.Data[:-EndCutOut, i],
-                                                   bounds=tmpbounds,
-                                                   p0=tmpp0)
-                self.flags['SineFitCalculated'][i]=True
-            except RuntimeError as ErrorCode:
-                print("Runtime Error:" +str(ErrorCode))
-                self.flags['SineFitCalculated'][i]=False
+        for i in range(4):#TODO remove this hard coded 4
+            if(Methode=='curve_fit'):
+                tmpp0=[self.FFTAmplitudePeak[i],np.mean(self.Data[i]),
+                       self.FFTFreqPeak,self.FFTPhiPeak[i]]
+                try:
+                    self.popt[i], self.pcov[i] = curve_fit(self.SinFunc,
+                                                       self.Data[:-EndCutOut, 4],
+                                                       self.Data[:-EndCutOut, i],
+                                                       bounds=tmpbounds,
+                                                       p0=tmpp0)
+                    self.flags['SineFitCalculated'][i]=True
+                except RuntimeError as ErrorCode:
+                        print("Runtime Error:" +str(ErrorCode))
+                        self.flags['SineFitCalculated'][i]=False
                 pass
-            print('Fiting at Freq ' + str(self.FFTFreqPeak) +' at Axis' + str(i))
-            print(tmpp0)
-            print(self.popt[i])
+                print('Fiting at Freq ' + str(self.FFTFreqPeak) +' at Axis' + str(i))
+                print(tmpp0)
+            if(Methode=='SineTools1'):
+                print('Fiting at Freq ' + str(self.FFTFreqPeak) +' at Axis' + str(i))
+                tmpparams=st.fourparsinefit1(self.Data[:-EndCutOut, i],self.Data[:-EndCutOut, 4],self.FFTFreqPeak,df_max=None,max_iter=20,eps=1.0e-6)
+                Complex=tmpparams[0]+1j*tmpparams[1]
+                DC=tmpparams[2]
+                Freq=tmpparams[3]
+                print(Complex)
+                self.popt[i]=[abs(Complex),DC,Freq,np.angle(Complex)]
+            print(self.popt)
+
         self.flags['SineFitCalculated'] = True
 
     def PlotSinFit(self, AxisofIntrest):
@@ -315,7 +326,7 @@ class Databuffer:
             item.CalcFFT()
         self.flags['AllFFTCalculated']=True
 
-    def getTransferFunction(self,axisDUT,AxisRef=3,RefScalefactor=10):
+    def getTransferFunction(self,axisDUT,AxisRef=3,RefScalefactor=10,RefPhaseDC=np.pi):
         if not self.flags['AllSinFitCalculated']:
             print("Doing Sin Fit with default  end cut out length " +str(self.params['defaultEndCutOut']))
             self.DoAllSinFit(self.params['defaultEndCutOut'])
@@ -326,8 +337,25 @@ class Databuffer:
         for item in self.CalData:
             self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
             #
-            self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0]*RefScalefactor)/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
+            self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
+            self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
+            self.TransferPhase[i]=self.TransferPhase[i]+RefPhaseDC
             i=i+1
+        self.TransferPhase=np.unwrap(self.TransferPhase)
+
+    def PlotTransferFunction(self):
+        plt.subplot(2, 1, 1)
+        plt.plot(self.TransferFreqs, self.TransferAmpl, 'o-')
+        plt.title('Transfer Funktion ')
+        plt.ylabel('Amplitude')
+
+        plt.subplot(2, 1, 2)
+        plt.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.-')
+        plt.xlabel('Frequency / Hz')
+        plt.ylabel('Phase /°')
+
+        plt.show()
+
 
 
 
@@ -439,7 +467,8 @@ def DataReaderPROTOdump(ProtoCSVFilename):
 
 if __name__ == '__main__':
     DB1 = Databuffer()
-    DataReaderPROTOdump('data/20190823_300Hz_LP.csv')
+    DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
+    #DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     # callculate all the ffts

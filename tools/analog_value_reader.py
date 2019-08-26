@@ -40,6 +40,7 @@ def datadumper_reader(samplecount,stimfreq,stimampl,stimtype,filename):
             ProtoData.ParseFromString(data)
             if(int(ProtoData.id/65536)== 13616):
                 if(i>=BUFFERFLUSHSIZE):
+                    #print(ProtoData)
                     dumpfile.write(str(ProtoData.id)+';'+str(ProtoData.sample_number)+';'+str(ProtoData.unix_time)+';'+
                                    str(ProtoData.unix_time_nsecs)+';'+str(ProtoData.time_uncertainty)+';'+
                                    str(ProtoData.Data_01)+';'+str(ProtoData.Data_02)+';'+str(ProtoData.Data_03)+';'+
