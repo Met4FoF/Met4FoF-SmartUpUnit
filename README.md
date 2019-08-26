@@ -3,15 +3,15 @@
 The software was and is created with [SW4STM32](http://www.openstm32.org/HomePage) (gcc).
 [SEGGER Systemview](https://www.segger.com/products/development-tools/systemview/) can be used for debugging.
 
-# Dependencies and used Libarys
+# Dependencies and used libraries
 
-| Used for   | Libary Name   | Version   | Link   |
-|:-------------|:-------------|:-----| :---|
-|real-time operatingsystem|FreeRTOS|9.0.0|https://www.freertos.org/FreeRTOS-V9.html|
-|Ethernet|LWIP|2.0.3|[ST DM00103685]( https://www.st.com/content/ccc/resource/technical/document/user_manual/65/e8/20/db/16/36/45/f7/DM00103685.pdf/files/DM00103685.pdf/jcr:content/translations/en.DM00103685.pdf)|
-|Data serialization|nanopb|a2db482...|https://github.com/nanopb/nanopb|
+| Used for                   | Library Name | Version    | Link                                                                                                                                                                                           |
+|:---------------------------|:-------------|:-----------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| real-time operating system | FreeRTOS     | 9.0.0      | https://www.freertos.org/FreeRTOS-V9.html                                                                                                                                                      |
+| Ethernet                   | LWIP         | 2.0.3      | [ST DM00103685]( https://www.st.com/content/ccc/resource/technical/document/user_manual/65/e8/20/db/16/36/45/f7/DM00103685.pdf/files/DM00103685.pdf/jcr:content/translations/en.DM00103685.pdf)|
+| Data serialization         | nanopb       | a2db482... | https://github.com/nanopb/nanopb                                                                                                                                                               |
 
-# using nanopb to genreate Code
+# using nanopb to generate Code
 ## C
 see also https://jpa.kapsi.fi/nanopb/docs/
 and https://github.com/nanopb/nanopb/blob/master/docs/concepts.rst
@@ -41,17 +41,17 @@ protoc --python_out=python messages.proto
 # Converting St-Link to Segger J-link
 https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/
 Download software extract and run STLinkReflash.exe
-1. Acept Seeger license
-2. Acept ST license
-3. Choose Upgrade to J-Link [1]
-The device is flashed and reconnectet
-Output looks like 
+1. Accept Segger license
+2. Accept ST license
+3. Choose Upgrade to J-Link [1] The device is flashed and reconnected
+   Output looks like
 ```
 Preparing for FW update (can take up to 10 seconds)...O.K.
 Identifying ST-LINK variant...O.K.: ST-LINK/V2-1
 Performing firmware update...O.K.
 ```
-now you have an working J-Link at yout STM32-Board
+now you have an working J-Link at your STM32-Board.
+
 # Debug Output
 
 ![RTT_pic](https://www.segger.com/fileadmin/_processed_/b/6/csm_J-Link-RTT_800x_21198b3c21.png "from https://www.segger.com")
@@ -63,8 +63,8 @@ https://mcuoneclipse.com/2015/07/07/using-segger-real-time-terminal-rtt-with-ecl
 
 #### Telnet Config for RTT dumping
 
-| Param | Value|
-|:-------------|:-------------|
-|Host|127.0.0.1|
-|Timeout| 20 sec|
-|Port|19021|
+| Param  | Value     |
+|:-------|:----------|
+| Host   | 127.0.0.1 |
+| Timeout| 20 sec    |
+| Port   | 19021     |
