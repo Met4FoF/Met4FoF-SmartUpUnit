@@ -6,34 +6,39 @@ Created on Wed Aug  7 12:34:21 2019
 @author: seeger01
 """
 
-#!/usr/bin/env python
-#import rospy
-#from sensor_msgs.msg import Imu
+# !/usr/bin/env python
+# import rospy
+# from sensor_msgs.msg import Imu
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas
 from scipy import signal
 from scipy.optimize import curve_fit
-#from termcolor import colored
+# from termcolor import colored
 
 
 class CalTimeSeries:
-    def SinFunc(self,x,A,B,f,phi):
+    def SinFunc(self, x, A, B, f, phi):
         return A*np.sin(2*np.pi*f*x+phi)+B
+
     def __init__(self):
         """
-        
+
 
         Returns
         -------
         None.
 
         """
-        self.length=0
-        self.flags={'timeCalculated':False,'FFTCalculated':False,'BlockPushed':0,'SineFitCalculated':False}
-    def pushBlock(self,Datablock):
+        self.length = 0
+        self.flags = {'timeCalculated': False,
+                      'FFTCalculated': False,
+                      'BlockPushed': 0,
+                      'SineFitCalculated': [False,False,False,False]}
+
+    def pushBlock(self, Datablock):
         """
-        
+
 
         Parameters
         ----------
@@ -45,18 +50,19 @@ class CalTimeSeries:
         None.
 
         """
-        if(self.flags['BlockPushed']>0):
-            self.Data=np.append(self.Data,Datablock, axis=0)
-            self.length=self.length+Datablock.shape[0]
-            self.flags['BlockPushed']=self.flags['BlockPushed']+1
-        if(self.flags['BlockPushed']==0):
-            self.Data=np.copy(Datablock)#IMPORTANT copy is nesseary otherwise only a reference is copyid witch cahnges in the next call
-            self.length=self.length+Datablock.shape[0]
-            self.flags['BlockPushed']=self.flags['BlockPushed']+1
+        if(self.flags['BlockPushed'] > 0):
+            self.Data = np.append(self.Data, Datablock, axis=0)
+            self.flags['BlockPushed'] = self.flags['BlockPushed'] + 1
+        if(self.flags['BlockPushed'] == 0):
+            self.Data = np.copy(Datablock)
+            # IMPORTANT copy is nesseary otherwise only a reference is copyid
+            # when pushing the second block the reference is changed
+            # and the second block gets added two times
+            self.flags['BlockPushed'] = self.flags['BlockPushed'] + 1
 
     def CalcTime(self):
         """
-        
+
 
         Returns
         -------
@@ -64,104 +70,143 @@ class CalTimeSeries:
             DESCRIPTION.
 
         """
-        self.Data[:,4]=self.Data[:,4]-self.Data[0,4]#substract timestamp fromfirst timestamp
-        tmpTimeDiffs=self.Data[1:,4]-self.Data[:-1,4]
-        self.MeanDeltaT=np.mean(tmpTimeDiffs)# mean value of Delta T in betwean of two samples to use with numpy.fft.fftfreq
-        self.DeltaTJitter=np.std(tmpTimeDiffs)
-        self.flags['timeCalculated']=True
+        self.Data[:, 4] = self.Data[:, 4]-self.Data[0, 4]
+        # calculate time differences between samples
+        tmpTimeDiffs = self.Data[1:, 4]-self.Data[:-1, 4]
+        self.MeanDeltaT = np.mean(tmpTimeDiffs)  # use with numpy.fft.fftfreq
+        self.DeltaTJitter = np.std(tmpTimeDiffs)
+        self.flags['timeCalculated'] = True
         return tmpTimeDiffs
+
     def CalcFFT(self):
         """
-        
+
 
         Returns
         -------
         None.
 
         """
-        if not(self.flags['timeCalculated']): #recusive calling
-            self.CalcTime() #if time calculation hasent been done do it
-        self.FFTData=np.fft.fft(self.Data[:,:4],axis=0)/(self.Data.shape[0])
-        self.fftFreqs=np.fft.fftfreq(self.Data.shape[0],self.MeanDeltaT)
-        self.flags['FFTCalculated']=True
-        fftPeakindexiposfreq=int(self.Data.shape[0]/2)
-        #TODO axis is hard coded this is not good
-        self.REFFfftPeakIndex=np.argmax(self.FFTData[1:fftPeakindexiposfreq,2])
+        if not(self.flags['timeCalculated']):  # recusive calling
+            self.CalcTime()  # if time calculation hasent been done do it
+        self.FFTData = np.fft.fft(self.Data[:, :4], axis=0)/(self.Data.shape[0])
+        # FFT calculation
+        self.fftFreqs = np.fft.fftfreq(self.Data.shape[0], self.MeanDeltaT)
+        # calculate to fft bins coresponding freqs
+        self.flags['FFTCalculated'] = True
+        fftPeakindexiposfreq = int(self.Data.shape[0]/2)
+        # TODO axis is hard coded this is not good
+        self.REFFfftPeakIndex = np.argmax(abs(self.FFTData[1:fftPeakindexiposfreq,2]),)+1
         print(self.REFFfftPeakIndex)
-        self.FFTFreqPeak=self.fftFreqs[self.REFFfftPeakIndex] # ingnore dc only positive freqs
-        self.FFTAmplitudePeak=abs(self.FFTData[self.REFFfftPeakIndex,:])
-        self.FFTPhiPeak=np.angle(self.FFTData[self.REFFfftPeakIndex,:])
+        # +1 is needed sice we use relative index in the array passed to np.argmax
+        # ingnore dc idx>0 only positive freqs idx<int(length/2)
+        print('Max peak at axis 2 has index '+str(self.REFFfftPeakIndex))
+        self.FFTFreqPeak = self.fftFreqs[self.REFFfftPeakIndex]
+        # für OW der index wird richtig berechnent
+        self.FFTAmplitudePeak = abs(self.FFTData[self.REFFfftPeakIndex, :])
+        self.FFTPhiPeak = np.angle(self.FFTData[self.REFFfftPeakIndex, :])
+        # für OW diese atribute haben ikorrekte werte
         print("Found Peak at "+str(self.FFTFreqPeak)+' Hz')
         print("Amplidues for all channels are"+str(self.FFTAmplitudePeak))
         print("Phase angle for all channels are"+str(self.FFTPhiPeak))
+
     def PlotFFT(self):
         """
-        
+
 
         Returns
         -------
         None.
 
         """
-        if not(self.flags['timeCalculated']): #recusive calling
-            self.CalcFFT() #if fft calculation hasent been done do it
+        if not(self.flags['timeCalculated']):  # recusive calling
+            self.CalcFFT()  # if fft calculation hasent been done do it
         fig, ax = plt.subplots()
-        ax.plot(self.fftFreqs, abs(self.FFTData[:,0]),label='Sensor x')
-        ax.plot(self.fftFreqs, abs(self.FFTData[:,1]),label='Sensor y')
-        ax.plot(self.fftFreqs, abs(self.FFTData[:,2]),label='Sensor z')
-        ax.plot(self.fftFreqs, abs(self.FFTData[:,3]),label='Ref z')
+        ax.plot(self.fftFreqs, abs(self.FFTData[:, 0]), label='Sensor x')
+        ax.plot(self.fftFreqs, abs(self.FFTData[:, 1]), label='Sensor y')
+        ax.plot(self.fftFreqs, abs(self.FFTData[:, 2]), label='Sensor z')
+        ax.plot(self.fftFreqs, abs(self.FFTData[:, 3]), label='Ref z')
         ax.set(xlabel='Frequency f in Hz', ylabel='Abs of fft val in AU',
                title='FFT of CalTimeSeries')
         ax.grid()
         ax.legend()
         fig.show()
 
-    def SinFit(self):
-        self.popt=np.zeros([4,4])
-        self.pcov=np.zeros([4,4,4])
-        if not(self.flags['FFTCalculated']): #recusive calling
+    def SinFit(self,EndCutOut):
+        self.popt = np.zeros([4, 4])
+        self.pcov = np.zeros([4, 4, 4])
+        self.sinFitEndCutOut=EndCutOut
+        if not(self.flags['FFTCalculated']):  # recusive calling
             self.CalcFFT()
-        tmpbounds=([0,-12,self.FFTFreqMax-0.5,-np.pi],[20,12,self.FFTFreqMax+0.5,np.pi])
-        for i in range(4):
-            self.popt[i],self.pcov[i]=curve_fit(self.SinFunc,self.Data[:,4],self.Data[:,i],bounds=tmpbounds)
-        self.flags['SineFitCalculated']=True
+        tmpbounds = ([0, -12, self.FFTFreqPeak-0.5, -np.pi],
+                     [20, 12, self.FFTFreqPeak+0.5, np.pi])
 
-    def plotSinFit(self,AxisofIntrest):
-        plt.plot(self.Data[:,4],self.Data[:,AxisofIntrest],label='Raw Data')
-        plt.plot(self.Data[:,4],self.SinFunc(self.Data[:,4],*self.popt[AxisofIntrest]),label='Fit')
+        # TODO get bounds from FFT params
+        for i in range(4):
+            tmpp0=[self.FFTAmplitudePeak[i],abs(self.FFTData[0,i]),
+                   self.FFTFreqPeak,self.FFTPhiPeak[i]]
+            try:
+                self.popt[i], self.pcov[i] = curve_fit(self.SinFunc,
+                                                   self.Data[:-EndCutOut, 4],
+                                                   self.Data[:-EndCutOut, i],
+                                                   bounds=tmpbounds,
+                                                   p0=tmpp0)
+                self.flags['SineFitCalculated'][i]=True
+            except RuntimeError as ErrorCode:
+                print("Runtime Error:" +str(ErrorCode))
+                self.flags['SineFitCalculated'][i]=False
+                pass
+            print('Fiting at Freq ' + str(self.FFTFreqPeak) +' at Axis' + str(i))
+            print(tmpp0)
+            print(self.popt[i])
+        self.flags['SineFitCalculated'] = True
+
+    def PlotSinFit(self, AxisofIntrest):
+        plt.plot(self.Data[:-self.sinFitEndCutOut, 4], self.Data[:-self.sinFitEndCutOut, AxisofIntrest], label='Raw Data')
+        plt.plot(self.Data[:-self.sinFitEndCutOut, 4], self.SinFunc(self.Data[:-self.sinFitEndCutOut, 4],
+                 *self.popt[AxisofIntrest]), label='Fit')
         plt.show()
 
 
 class Databuffer:
-    #TODO reject packages after i= Dataarraysize
+    # TODO reject packages after i= Dataarraysize
     def __init__(self):
         """
-        
+
 
         Returns
         -------
         None.
 
         """
-        self.INTEGRATIONTIME = 512
-        self.DataLoopBuffer=np.zeros([self.INTEGRATIONTIME,5])
-        self.i=0
-        self.IntegratedPacketsCount=0
-        self.DATAARRYSIZE=900
-        self.FFTArray=np.zeros([self.DATAARRYSIZE,self.INTEGRATIONTIME,4])
-        self.STDArray=np.zeros([self.DATAARRYSIZE,4])
-        self.minRMSforVailid=3.0
-        self.minValidChunksInRow=5
-        self.axixofintest=2
-        self.isValidCalChunk=np.zeros([self.DATAARRYSIZE,3])
-        self.CalData=[]
+        self.params={'IntegrationLength':512,
+                     'MaxChunks': 900,
+                     'axixofintest': 2,
+                     'minValidChunksInRow':3,
+                     'minSTDforVailid':5,
+                     'defaultEndCutOut':750
+                }
+        self.flags={'AllSinFitCalculated':False,
+                    'AllFFTCalculated':False
+                }
+        self.DataLoopBuffer = np.zeros([self.params['IntegrationLength'], 5])
+        self.i = 0
+        self.IntegratedPacketsCount = 0
 
+        self.FFTArray = np.zeros([self.params['MaxChunks'], self.params['IntegrationLength'], 4])
+        self.STDArray = np.zeros([self.params['MaxChunks'], 4])
+        self.params['minSTDforVailid'] = 3
+        # min STD to be an vaild chunk (there is AC-Component in the Signal)
+        self.params['minValidChunksInRow'] = 5
+        # at least this amount of chunks in a row have to be vaild to create an
+        # CalTimeSeries object in CalData
+        self.isValidCalChunk = np.zeros([self.params['MaxChunks'], 3])
+        # bool array for is valid data flag for procesed blocks
+        self.CalData = []  # list for vaild calibration data Chunks as CalTimeSeries
 
-
-
-    def pushData(self,x,y,z,REF,t):
+    def pushData(self, x, y, z, REF, t):
         """
-        
+
 
         Parameters
         ----------
@@ -181,19 +226,19 @@ class Databuffer:
         None.
 
         """
-        if(self.i<self.INTEGRATIONTIME):
-            self.DataLoopBuffer[self.i,0]=x
-            self.DataLoopBuffer[self.i,1]=y
-            self.DataLoopBuffer[self.i,2]=z
-            self.DataLoopBuffer[self.i,3]=REF
-            self.DataLoopBuffer[self.i,4]=t
-            self.i=self.i+1
-            if(self.i==self.INTEGRATIONTIME):
-                self.dalc()
+        if(self.i < self.params['IntegrationLength']):
+            self.DataLoopBuffer[self.i, 0] = x
+            self.DataLoopBuffer[self.i, 1] = y
+            self.DataLoopBuffer[self.i, 2] = z
+            self.DataLoopBuffer[self.i, 3] = REF
+            self.DataLoopBuffer[self.i, 4] = t
+            self.i = self.i+1
+            if(self.i == self.params['IntegrationLength']):
+                self.calc()
 
-    def pushBlock(self,arrayx,arrayy,arrayz,arrayREF,arrayt):
+    def pushBlock(self, arrayx, arrayy, arrayz, arrayREF, arrayt):
         """
-        
+
 
         Parameters
         ----------
@@ -218,108 +263,102 @@ class Databuffer:
         None.
 
         """
-        if not (self.INTEGRATIONTIME==arrayt.size==arrayy.size==arrayy.size==arrayz.size):
-            raise ValueError('Array size must be INTEGRATIONTIME '+str(self.INTEGRATIONTIME) +'and not '+str(arrayt.size))
-        self.DataLoopBuffer[:,0]=arrayx
-        self.DataLoopBuffer[:,1]=arrayy
-        self.DataLoopBuffer[:,2]=arrayz
-        self.DataLoopBuffer[:,3]=arrayREF
-        self.DataLoopBuffer[:,4]=arrayt
-        self.i=self.INTEGRATIONTIME
+        if not (self.params['IntegrationLength'] == arrayt.size == arrayy.size == arrayy.size == arrayz.size):
+            raise ValueError('Array size must be INTEGRATIONTIME '
+                             + str(self.params['IntegrationLength']) + 'and not '
+                             + str(arrayt.size))
+        self.DataLoopBuffer[:, 0] = arrayx
+        self.DataLoopBuffer[:, 1] = arrayy
+        self.DataLoopBuffer[:, 2] = arrayz
+        self.DataLoopBuffer[:, 3] = arrayREF
+        self.DataLoopBuffer[:, 4] = arrayt
+        self.i = self.params['IntegrationLength']
         self.calc()
 
     def calc(self):
         """
-        
+
 
         Returns
         -------
         None.
 
         """
-        if(self.IntegratedPacketsCount<self.DATAARRYSIZE):
-            self.STDArray[self.IntegratedPacketsCount]=np.std(self.DataLoopBuffer[:,:4],axis=0)
-            self.FFTArray[self.IntegratedPacketsCount,:,:]=np.fft.fft(self.DataLoopBuffer[:,:4],axis=0)#maybe disable this fft calculation
-        #print("Mean="+str(self.STDArray[self.IntegratedPacketsCount,2]))
-        #print(str(self.IntegratedPacketsCount) +' STD= '+str(np.std(self.DataLoopBuffer,axis=0)))
-        if(self.IntegratedPacketsCount>self.minValidChunksInRow):
-        #check if we had sufficent at at least self.minValidChunksInRow blocks befor so we do not produce an segvault
-            self.isValidCalChunk[self.IntegratedPacketsCount]=np.all(np.greater(self.STDArray[self.IntegratedPacketsCount-self.minValidChunksInRow:self.IntegratedPacketsCount,self.axixofintest],self.minRMSforVailid))
-            #check if we have an new valid data Chunk
-            if(self.isValidCalChunk[self.IntegratedPacketsCount,self.axixofintest]):
-            #ok this are valid data
-                if(self.isValidCalChunk[self.IntegratedPacketsCount-1,self.axixofintest]==False):
-                    #we don't had an vaild data set befor this one so create a new CalTimeSeries Objec
-                    self.CalData.append(CalTimeSeries())
-                self.CalData[-1].pushBlock(self.DataLoopBuffer)
-                #push data to CalTimeSeries Object
-        self.IntegratedPacketsCount=self.IntegratedPacketsCount+1
-        self.i=0
+        if(self.IntegratedPacketsCount < self.params['MaxChunks']):
+            self.STDArray[self.IntegratedPacketsCount] = np.std(self.DataLoopBuffer[:, :4], axis=0)
+            if(self.IntegratedPacketsCount > self.params['minValidChunksInRow']):
+                # check if we had sufficent at at least self.params['minValidChunksInRow']
+                # blocks befor so we do not produce an segvault
+                IPC = self.IntegratedPacketsCount
+                VCIR = self.params['minValidChunksInRow']
+                isVaild = np.all(np.greater(self.STDArray[IPC-VCIR:IPC, self.params['axixofintest']], self.params['minSTDforVailid']))
+                self.isValidCalChunk[self.IntegratedPacketsCount] = isVaild
+                # check if we have an new valid data Chunk
+                if(self.isValidCalChunk[IPC, self.params['axixofintest']]):
+                    # ok this are valid data
+                    if not (self.isValidCalChunk[IPC-1, self.params['axixofintest']]):
+                        # we don't had an vaild data set befor this one so
+                        # create a new CalTimeSeries Objec
+                        self.CalData.append(CalTimeSeries())
+                    self.CalData[-1].pushBlock(self.DataLoopBuffer)
+                    # push data to CalTimeSeries Object
+            self.IntegratedPacketsCount = self.IntegratedPacketsCount+1
+            self.i = 0
+
+    def DoAllSinFit(self,EndCutOut):
+        for item in self.CalData:
+            item.SinFit(EndCutOut)
+        self.flags['AllSinFitCalculated']=True
+
+    def DoAllFFT(self):
+        for item in self.CalData:
+            item.CalcFFT()
+        self.flags['AllFFTCalculated']=True
+
+    def getTransferFunction(self,axisDUT,AxisRef=3,RefScalefactor=10):
+        if not self.flags['AllSinFitCalculated']:
+            print("Doing Sin Fit with default  end cut out length " +str(self.params['defaultEndCutOut']))
+            self.DoAllSinFit(self.params['defaultEndCutOut'])
+        self.TransferFreqs=np.zeros(len(self.CalData))
+        self.TransferAmpl=np.zeros(len(self.CalData))
+        self.TransferPhase=np.zeros(len(self.CalData))
+        i=0
+        for item in self.CalData:
+            self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
+            #
+            self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0]*RefScalefactor)/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
+            i=i+1
+
+
 
 def callback(data):
-    """
-    
-
-    Parameters
-    ----------
-    data : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    """
-    """
-    
-    Parameters
-    ----------
-    data : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
-    """
     print(data)
     DB1.pushData(data.linear_acceleration.x,data.linear_acceleration.y,data.linear_acceleration.z,0,data.header.stamp/1e9)
     return
 
-def listener():
-    """
-    
-
-    Returns
-    -------
-    None.
-
-    """
-
+# def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
     # name are launched, the previous one is kicked off. The
     # anonymous=True flag means that rospy will choose a unique
     # name for our 'listener' node so that multiple listeners can
     # run simultaneously.
-    #rospy.init_node('listener', anonymous=True)
+    # rospy.init_node('listener', anonymous=True)
 
-    #rospy.Subscriber("IMU0", Imu, callback)
-    #rospy.Subscriber("IMU1", Imu, callback)
+    # rospy.Subscriber("IMU0", Imu, callback)
+    # rospy.Subscriber("IMU1", Imu, callback)
     # spin() simply keeps python from exiting until this node is stopped
-    #rospy.spin()
+    # rospy.spin()
 
 def DataReaderROS(RosCSVFilename):
-    sdf=pandas.read_csv(RosCSVFilename)
+    sdf = pandas.read_csv(RosCSVFilename)
     print(sdf.columns.values)
-    chunkSize=DB1.INTEGRATIONTIME
-    for Index in np.arange(0,len(sdf),chunkSize):
+    chunkSize = DB1.params['IntegrationLength']
+    for Index in np.arange(0, len(sdf), chunkSize):
         DB1.pushBlock(sdf['field.linear_acceleration.x'][Index:Index+chunkSize],
                       sdf['field.linear_acceleration.y'][Index:Index+chunkSize],
                       sdf['field.linear_acceleration.z'][Index:Index+chunkSize],
                       0,
                       sdf['field.header.stamp'][Index:Index+chunkSize]/1e9)
-
-
 # Column Names
 #        'time',
 #        'field.header.seq',
@@ -366,7 +405,7 @@ def DataReaderROS(RosCSVFilename):
 def DataReaderPROTOdump(ProtoCSVFilename):
     sdf=pandas.read_csv(ProtoCSVFilename,delimiter=';')
     print(sdf.columns.values)
-    chunkSize=DB1.INTEGRATIONTIME
+    chunkSize=DB1.params['IntegrationLength']
     for Index in np.arange(0,len(sdf),chunkSize)[:-1]:#don't use last chuck since this will propably not have chnukSize elements
         DB1.pushBlock(sdf['Data_01'][Index:Index+chunkSize],
                       sdf['Data_02'][Index:Index+chunkSize],
@@ -398,14 +437,11 @@ def DataReaderPROTOdump(ProtoCSVFilename):
 # 'stimampl'
 # 'stimtype'
 
-def doAllFFT(DB):
-    for item in DB.CalData:
-        item.CalcFFT()
-
-def doAllSinFit(DB):
-    for item in DB.CalData:
-        item.SinFit()
-
 if __name__ == '__main__':
-    DB1=Databuffer()
-    DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
+    DB1 = Databuffer()
+    DataReaderPROTOdump('data/20190823_300Hz_LP.csv')
+    # reading data from file and proces all Data
+    DB1.DoAllFFT()
+    # callculate all the ffts
+
+
