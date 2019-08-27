@@ -191,7 +191,7 @@ class Databuffer:
 
         """
         self.params={'IntegrationLength':512,
-                     'MaxChunks': 900,
+                     'MaxChunks': 64000,
                      'axixofintest': 2,
                      'minValidChunksInRow':3,
                      'minSTDforVailid':5,
@@ -343,17 +343,22 @@ class Databuffer:
             i=i+1
         self.TransferPhase=np.unwrap(self.TransferPhase)
 
-    def PlotTransferFunction(self):
-        plt.subplot(2, 1, 1)
-        plt.plot(self.TransferFreqs, self.TransferAmpl, 'o-')
-        plt.title('Transfer Funktion ')
-        plt.ylabel('Amplitude')
-
-        plt.subplot(2, 1, 2)
-        plt.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.-')
-        plt.xlabel('Frequency / Hz')
-        plt.ylabel('Phase /°')
-
+    def PlotTransferFunction(self,PlotType='lin'):
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        if(PlotType=='lin'):
+            ax1.plot(self.TransferFreqs, self.TransferAmpl, '.')
+        if(PlotType=='logx'):
+            ax1.semilogx(self.TransferFreqs, self.TransferAmpl, '.')
+        fig.suptitle('Transfer Funktion ')
+        ax1.set_ylabel('Relative amplitude')
+        ax1.grid(True)
+        if(PlotType=='lin'):
+            ax2.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.')
+        if(PlotType=='logx'):
+            ax2.semilogx(self.TransferFreqs, self.TransferPhase/np.pi*180, '.')
+        ax2.set_xlabel('Frequency / Hz')
+        ax2.set_ylabel('Phase /°')
+        ax2.grid(True)
         plt.show()
 
 
@@ -467,8 +472,9 @@ def DataReaderPROTOdump(ProtoCSVFilename):
 
 if __name__ == '__main__':
     DB1 = Databuffer()
-    DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
+    #DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     #DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
+    DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     # callculate all the ffts
