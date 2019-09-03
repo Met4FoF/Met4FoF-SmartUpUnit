@@ -79,6 +79,7 @@
 #include "configmanager.hpp"
 
 #include "lwip/apps/sntp.h"
+#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -105,6 +106,7 @@ osThreadId blinkTID;
 osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
+osThreadId SDFileReaderTID;
 MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -153,6 +155,11 @@ void MX_FREERTOS_Init(void) {
 
 	DataStreamerTID = osThreadCreate(osThread(DataStreamerThread), NULL);
 
+	osThreadDef(SDFileReaderThread, StartSDFileReaderThread, osPriorityNormal,
+			0, 8192);
+
+	SDFileReaderTID = osThreadCreate(osThread(SDFileReaderThread), NULL);
+
 	initGPSTimesny();
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -174,7 +181,6 @@ void StartDefaultTask(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	/* init code for LWIP */
 	MX_LWIP_Init();
-
 	/* init code for FATFS */
 	MX_FATFS_Init();
 
@@ -190,6 +196,7 @@ void StartDefaultTask(void const * argument) {
 		osDelay(10000);
 		sntp_request(NULL);
 	}
+	osThreadTerminate(NULL);
 	/* USER CODE END StartDefaultTask */
 }
 
@@ -200,8 +207,8 @@ void StartWebserverThread(void const * argument) {
 	http_server_netconn_init();
 	/* Infinite loop */
 	for (;;) {
-		osThreadTerminate(NULL);
 	}
+	osThreadTerminate(NULL);
 }
 
 void StartBlinkThread(void const * argument) {
@@ -288,6 +295,20 @@ void StartLCDThread(void const * argument) {
 	osThreadTerminate(NULL);
 }
 
+void StartSDFileReaderThread(void const * argument)
+{
+	osDelay(11000);
+	SEGGER_RTT_printf(0,"Scaning files at %s",SDPath);
+	//scan_files(SDPath);
+	uint32_t pData[128];
+	for(;;)
+	{
+		//BSP_SD_ReadBlocks(pData, 0, 128, 0);
+
+		osDelay(1000);
+	}
+	osThreadTerminate(NULL);
+}
 void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	configMan.setADCCalCoevs(0,0.00488040211169927,-10.029208660668372,4.6824163159348675e-3);
@@ -638,10 +659,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
 
-
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

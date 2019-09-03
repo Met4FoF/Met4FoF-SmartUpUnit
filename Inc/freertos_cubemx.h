@@ -106,7 +106,7 @@ extern osThreadId blinkTID;
 extern osThreadId WebServerTID;
 extern osThreadId LCDTID;
 extern osThreadId DataStreamerTID;
-
+extern osThreadId SDFileReaderTID;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -118,6 +118,7 @@ void StartWebserverThread(void const * argument);
 extern void StartBlinkThread(void const * argument);
 void StartLCDThread(void const * argument);
 void StartDataStreamerThread(void const * argument);
+void StartSDFileReaderThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
 void Check_LWIP_RETURN_VAL(err_t);
