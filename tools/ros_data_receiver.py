@@ -11,8 +11,8 @@ Created on Wed Aug  7 12:34:21 2019
 # from sensor_msgs.msg import Imu
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas
-from scipy import signal
+import pandas as pd
+import scipy as scp
 from scipy.optimize import curve_fit
 import SineTools as st
 # from termcolor import colored
@@ -127,13 +127,28 @@ class CalTimeSeries:
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 1]), label='Sensor y')
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 2]), label='Sensor z')
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 3]), label='Ref z')
-        ax.set(xlabel='Frequency f in Hz', ylabel='Abs of fft val in AU',
+        ax.set(xlabel='Frequency /Hz', ylabel='|fft| / AU',
                title='FFT of CalTimeSeries')
         ax.grid()
         ax.legend()
         fig.show()
 
     def SinFit(self,EndCutOut,Methode='SineTools1'):
+        """
+        
+
+        Parameters
+        ----------
+        EndCutOut : TYPE
+            DESCRIPTION.
+        Methode : TYPE, optional
+            DESCRIPTION. The default is 'SineTools1'.
+
+        Returns
+        -------
+        None.
+
+        """
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
         self.sinFitEndCutOut=EndCutOut
@@ -157,7 +172,6 @@ class CalTimeSeries:
                 except RuntimeError as ErrorCode:
                         print("Runtime Error:" +str(ErrorCode))
                         self.flags['SineFitCalculated'][i]=False
-                pass
                 print('Fiting at Freq ' + str(self.FFTFreqPeak) +' at Axis' + str(i))
                 print(tmpp0)
             if(Methode=='SineTools1'):
@@ -173,10 +187,32 @@ class CalTimeSeries:
         self.flags['SineFitCalculated'] = True
 
     def PlotSinFit(self, AxisofIntrest):
-        plt.plot(self.Data[:-self.sinFitEndCutOut, 4], self.Data[:-self.sinFitEndCutOut, AxisofIntrest], label='Raw Data')
-        plt.plot(self.Data[:-self.sinFitEndCutOut, 4], self.SinFunc(self.Data[:-self.sinFitEndCutOut, 4],
+        fig, ax = plt.subplots()
+        ax.plot(self.Data[:-self.sinFitEndCutOut, 4], self.Data[:-self.sinFitEndCutOut, AxisofIntrest],'.-', label='Raw Data')
+        ax.plot(self.Data[:-self.sinFitEndCutOut, 4], self.SinFunc(self.Data[:-self.sinFitEndCutOut, 4],
                  *self.popt[AxisofIntrest]), label='Fit')
-        plt.show()
+        ax.set(xlabel='Time /s', ylabel='Amplitude /AU',
+               title='Rawdata and IEEE 1075 4 Param sine fit')
+        ax.legend()
+        fig.show()
+
+    def PlotRaw(self,startIDX=0,stopIDX=0):
+        fig, ax = plt.subplots()
+        if(startIDX==0 and stopIDX==0):
+            ax.plot(self.Data[:,4], self.Data[:, 0], label='Sensor x')
+            ax.plot(self.Data[:,4], self.Data[:, 1], label='Sensor y')
+            ax.plot(self.Data[:,4], self.Data[:, 2], label='Sensor z')
+            ax.plot(self.Data[:,4], self.Data[:, 3], label='Ref z')
+        else:
+            ax.plot(self.Data[startIDX:stopIDX,4], self.Data[startIDX:stopIDX, 0], label='Sensor x')
+            ax.plot(self.Data[startIDX:stopIDX,4], self.Data[startIDX:stopIDX, 1], label='Sensor y')
+            ax.plot(self.Data[startIDX:stopIDX,4], self.Data[startIDX:stopIDX, 2], label='Sensor z')
+            ax.plot(self.Data[startIDX:stopIDX,4], self.Data[startIDX:stopIDX, 3], label='Ref z')
+        ax.set(xlabel='Time /s', ylabel='Amplitude /AU',
+               title='Rawdata CalTimeSeries')
+        ax.grid()
+        ax.legend()
+        fig.show()
 
 
 class Databuffer:
@@ -191,14 +227,15 @@ class Databuffer:
 
         """
         self.params={'IntegrationLength':512,
-                     'MaxChunks': 64000,
+                     'MaxChunks': 7500,
                      'axixofintest': 2,
                      'minValidChunksInRow':3,
                      'minSTDforVailid':5,
                      'defaultEndCutOut':750
                 }
         self.flags={'AllSinFitCalculated':False,
-                    'AllFFTCalculated':False
+                    'AllFFTCalculated':False,
+                    'RefTrnaferFunctionSet':False
                 }
         self.DataLoopBuffer = np.zeros([self.params['IntegrationLength'], 5])
         self.i = 0
@@ -326,7 +363,20 @@ class Databuffer:
             item.CalcFFT()
         self.flags['AllFFTCalculated']=True
 
-    def getTransferFunction(self,axisDUT,AxisRef=3,RefScalefactor=10,RefPhaseDC=np.pi):
+    def setRefTransferFunction(self,transferCSV):
+        #'STM32Toolchain/projects/Met4FoF-SmartUpUnit/tools/data/messkette_cal.csv'
+        self.RefTransferFunction=pd.read_csv(transferCSV,sep='\t',skiprows=[1,2,3],decimal=',')
+        self.flags['RefTrnaferFunctionSet']=True
+
+    def getNearestReFTPoint(self,freq):
+        if(self.flags['RefTrnaferFunctionSet']==True):
+            tmp=abs(self.RefTransferFunction['Frequenz']-freq)
+            IDX=np.where(tmp == np.amin(tmp))[0]
+            return self.RefTransferFunction['Spannungs-ÜTK'][IDX]/100,self.RefTransferFunction['Phasenverschiebung'][IDX]/180*np.pi
+        else:
+            raise RuntimeError("REFTransferFunction NOT SET RETURNING 0,0")
+
+    def getTransferFunction(self,axisDUT,AxisRef=3,RefScalefactor=10,RefPhaseDC=-np.pi):
         if not self.flags['AllSinFitCalculated']:
             print("Doing Sin Fit with default  end cut out length " +str(self.params['defaultEndCutOut']))
             self.DoAllSinFit(self.params['defaultEndCutOut'])
@@ -334,14 +384,27 @@ class Databuffer:
         self.TransferAmpl=np.zeros(len(self.CalData))
         self.TransferPhase=np.zeros(len(self.CalData))
         i=0
-        for item in self.CalData:
-            self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
-            #
-            self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
-            self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
-            self.TransferPhase[i]=self.TransferPhase[i]+RefPhaseDC
-            i=i+1
+        if(self.flags['RefTrnaferFunctionSet']==False):
+            for item in self.CalData:
+                print("WARING REFTransferFunction NOT SET USE THIS RESULTS JUST FOR DEBUGGING!!!")
+                self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
+                #
+                self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
+                self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
+                self.TransferPhase[i]=self.TransferPhase[i]+RefPhaseDC
+                i=i+1
+        if(self.flags['RefTrnaferFunctionSet']==True):
+            for item in self.CalData:
+                self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
+                #
+                AmplTF=self.getNearestReFTPoint(self.TransferFreqs[i])[0]
+                PhaseTF=self.getNearestReFTPoint(self.TransferFreqs[i])[1]
+                self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/((self.CalData[i].popt[AxisRef,0]*RefScalefactor)/AmplTF)
+                self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
+                self.TransferPhase[i]=self.TransferPhase[i]+PhaseTF
+                i=i+1
         self.TransferPhase=np.unwrap(self.TransferPhase)
+
 
     def PlotTransferFunction(self,PlotType='lin'):
         fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -349,7 +412,7 @@ class Databuffer:
             ax1.plot(self.TransferFreqs, self.TransferAmpl, '.')
         if(PlotType=='logx'):
             ax1.semilogx(self.TransferFreqs, self.TransferAmpl, '.')
-        fig.suptitle('Transfer Funktion ')
+        fig.suptitle('Transfer function ')
         ax1.set_ylabel('Relative amplitude')
         ax1.grid(True)
         if(PlotType=='lin'):
@@ -360,6 +423,37 @@ class Databuffer:
         ax2.set_ylabel('Phase /°')
         ax2.grid(True)
         plt.show()
+
+    def PlotSTDandValid(self,startIDX=0,stopIDX=0):
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        self.Chunktimes=np.arange(self.STDArray.shape[0])
+        tmpdeltaT=DB1.DataLoopBuffer[self.params['IntegrationLength']-1,4]-DB1.DataLoopBuffer[0,4]
+        self.Chunktimes=self.Chunktimes*tmpdeltaT
+        #calculationg delta time from last vaild chunk
+        if(startIDX==0 and stopIDX==0):
+            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label='Sensor x')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label='Sensor y')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label='Sensor z')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label='Ref z')
+        else:
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 0], label='Sensor x')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 1], label='Sensor y')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 2], label='Sensor z')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 3], label='Ref z')
+        ax1.title.set_text('Short term standard deviation (w= '+str(self.params['IntegrationLength'])+') of signal amplitude')
+        ax1.set_ylabel('STD / AU')
+        ax1.legend()
+        ax1.grid(True)
+        if(startIDX==0 and stopIDX==0):
+            ax2.plot(self.Chunktimes, self.isValidCalChunk)
+        else:
+            ax2.plot(self.Chunktimes[startIDX:stopIDX], self.isValidCalChunk[startIDX:stopIDX])
+        ax2.title.set_text('Data used for calibration')
+        ax2.set_xlabel('Time /s')
+        ax2.set_ylabel('Is Valid =1')
+        ax2.grid(True)
+        plt.show()
+
 
 
 
@@ -383,7 +477,7 @@ def callback(data):
     # rospy.spin()
 
 def DataReaderROS(RosCSVFilename):
-    sdf = pandas.read_csv(RosCSVFilename)
+    sdf = pd.read_csv(RosCSVFilename)
     print(sdf.columns.values)
     chunkSize = DB1.params['IntegrationLength']
     for Index in np.arange(0, len(sdf), chunkSize):
@@ -435,8 +529,9 @@ def DataReaderROS(RosCSVFilename):
 #        'field.linear_acceleration_covariance7',
 #        'field.linear_acceleration_covariance8'
 
+
 def DataReaderPROTOdump(ProtoCSVFilename):
-    sdf=pandas.read_csv(ProtoCSVFilename,delimiter=';')
+    sdf=pd.read_csv(ProtoCSVFilename,delimiter=';')
     print(sdf.columns.values)
     chunkSize=DB1.params['IntegrationLength']
     for Index in np.arange(0,len(sdf),chunkSize)[:-1]:#don't use last chuck since this will propably not have chnukSize elements
