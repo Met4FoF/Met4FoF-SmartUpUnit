@@ -12,8 +12,9 @@ import socket
 import threading
 import messages_pb2
 from datetime import datetime
-import multiprocessing as mp
-
+import threading
+from multiprocessing import  Queue
+#mp.set_start_method('spawn')
 
 class DataReceiver:
 
@@ -48,16 +49,14 @@ class DataReceiver:
         self.msgcount=0
         self.lastTimestamp=0
         self.Datarate=0
-        self.udpReceiverTask = mp.Process(target=self.SrartUDPReceiverTask, args=())
+        thread = threading.Thread(target=self.run, args=())
+        thread.daemon = True
+        thread.start()
+        #self.udpReceiverTask = Process(target=self.SrartUDPReceiverTask, args=())
 
-    def SrartUDPReceiver(self):
-        self.udpReceiverTask.start()
-
-    def StopUDPReceiver(self):
-        self.udpReceiverTask.do_run = False
-
-    def SrartUDPReceiverTask(self):
-        while getattr(self.udpReceiverTask, "run", True):
+    def run(self):
+        #implement stop routine
+        while True:
             data, addr = self.socket.recvfrom(1024) # buffer size is 1024 bytes
             wasValidData=False
             wasValidDescription=False
@@ -72,14 +71,15 @@ class DataReceiver:
                 SensorID=ProtoData.id
                 message=ProtoData
             except:
-                pass #ok no data message maybe description?
-            try:
-                ProtoDescription.ParseFromString(data)
-                wasValidDescription=True
-                SensorID=ProtoDescription.id
-                message=ProtoDescription
-            except:
-                pass
+                pass #? no exception for wrong data type !!
+            #  todo improve parsing
+            #  try:
+            #      ProtoDescription.ParseFromString(data)
+            #      wasValidDescription=True
+            #      SensorID=ProtoDescription.id
+            #      message=ProtoDescription
+            # except:
+            #     pass
 
             if not(wasValidData or wasValidDescription):
                 print("INVALID PROTODATA")
@@ -108,8 +108,10 @@ class DataReceiver:
     def __del__(self):
         self.socket.close()
 
+
 class Sensor:
-    def __init__(self,ID,BufferSize=1000):
-        self.buffer=mp.Queue()
+    #TODO implement multi therading and callbacks
+    def __init__(self,ID,BufferSize=1e7):
+        self.buffer=Queue()
         self.ID=ID
 
