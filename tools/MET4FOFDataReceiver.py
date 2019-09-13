@@ -16,7 +16,7 @@ import google.protobuf as pb
 from datetime import datetime
 import threading
 import time
-from multiprocessing import  Queue
+from multiprocessing import Queue
 
 class DataReceiver:
 
@@ -53,22 +53,18 @@ class DataReceiver:
         self.Datarate=0
         self._stop_event = threading.Event()
         thread = threading.Thread(target=self.run, args=())
-        #thread.daemon = True
         thread.start()
-        #self.udpReceiverTask = Process(target=self.SrartUDPReceiverTask, args=())
 
     def stop(self):
+        print("Stopping DataReceiver")
         self._stop_event.set()
-        #wait 1 second to ensure that all ques are emty before closing them
+        # wait 1 second to ensure that all ques are empty before closing them
         # other wise SIGPIPE is raised by os
         # IMPORVEMNT use signals for this
         time.sleep(1)
         for key in self.AllSensors:
             self.AllSensors[key].stop()
-
-    def join(self, *args, **kwargs):
-        self.stop()
-
+        self.socket.close()
 
     def run(self):
         #implement stop routine
@@ -107,7 +103,7 @@ class DataReceiver:
                     print("packet lost for sensor ID:"+str(SensorID))
             else:
                 self.AllSensors[SensorID]=Sensor(SensorID)
-                print("FOUND NEW SENSOR WITH ID="+str(SensorID))
+                print("FOUND NEW SENSOR WITH ID="+hex(SensorID))
             self.msgcount=self.msgcount+1
 
             if (self.msgcount%self.params['PacketrateUpdateCount']==0):
@@ -126,7 +122,7 @@ class DataReceiver:
 
 class Sensor:
     #TODO implement multi therading and callbacks
-    def __init__(self,ID,BufferSize=1e5):
+    def __init__(self,ID,BufferSize=1e3):
         self.buffer=Queue(int(BufferSize))
         self.flags={'DumpToFile':False,
                     'PrintProcessedCounts':True}
@@ -157,18 +153,32 @@ class Sensor:
 
     def run(self):
         while not self._stop_event.is_set():
-            message=self.buffer.get()
+            # problem when wee are closing the queue this function is waiting for data and raises EOF error if we delet the q
+            # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
+            try:
+                message=self.buffer.get(timeout=0.1)
+            except Exception:
+                break
             self.ProcessedPacekts=self.ProcessedPacekts+1
             if(self.flags['PrintProcessedCounts']):
                 if(self.ProcessedPacekts%1000==0):
-                    print("processed 1000 packets in receiver for Sensor ID:"+str(self.params['ID']))
-                    print(pb.text_format.MessageToString(message))
+                    print("processed 1000 packets in receiver for Sensor ID:"+hex(self.params['ID']))
+            
+
 
     def stop(self):
+        print("Stopping Sensor "+hex(self.params['ID']))
         self._stop_event.set()
-
-    def closeQueue(self):
+        #sleeping until run function is exiting due to timeout
+        time.sleep(0.2)
+        # thrash all data in queue
+        while not self.buffer.empty():
+            try:
+                self.buffer.get(False)
+            except Empty:
+                continue
         self.buffer.close()
+
 
     def join(self, *args, **kwargs):
         self.stop()
