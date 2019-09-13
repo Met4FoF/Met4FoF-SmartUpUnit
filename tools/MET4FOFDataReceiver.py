@@ -8,13 +8,15 @@ Data receiver for Met4FoF Protobuff Data
 """
 
 import sys
+import os
 import socket
 import threading
 import messages_pb2
+import google.protobuf as pb
 from datetime import datetime
 import threading
+import time
 from multiprocessing import  Queue
-#mp.set_start_method('spawn')
 
 class DataReceiver:
 
@@ -49,14 +51,28 @@ class DataReceiver:
         self.msgcount=0
         self.lastTimestamp=0
         self.Datarate=0
+        self._stop_event = threading.Event()
         thread = threading.Thread(target=self.run, args=())
-        thread.daemon = True
+        #thread.daemon = True
         thread.start()
         #self.udpReceiverTask = Process(target=self.SrartUDPReceiverTask, args=())
 
+    def stop(self):
+        self._stop_event.set()
+        #wait 1 second to ensure that all ques are emty before closing them
+        # other wise SIGPIPE is raised by os
+        # IMPORVEMNT use signals for this
+        time.sleep(1)
+        for key in self.AllSensors:
+            self.AllSensors[key].stop()
+
+    def join(self, *args, **kwargs):
+        self.stop()
+
+
     def run(self):
         #implement stop routine
-        while True:
+        while not self._stop_event.is_set():
             data, addr = self.socket.recvfrom(1024) # buffer size is 1024 bytes
             wasValidData=False
             wasValidDescription=False
@@ -85,7 +101,10 @@ class DataReceiver:
                 print("INVALID PROTODATA")
                 pass # invalid data leave parsing routine
             if SensorID in self.AllSensors:
-                self.AllSensors[SensorID].buffer.put(message)
+                try:
+                    self.AllSensors[SensorID].buffer.put_nowait(message)
+                except:
+                    print("packet lost for sensor ID:"+str(SensorID))
             else:
                 self.AllSensors[SensorID]=Sensor(SensorID)
                 print("FOUND NEW SENSOR WITH ID="+str(SensorID))
@@ -102,16 +121,65 @@ class DataReceiver:
                 else:
                     self.lastTimestamp=datetime.now()
 
-
-
-
     def __del__(self):
         self.socket.close()
 
-
 class Sensor:
     #TODO implement multi therading and callbacks
-    def __init__(self,ID,BufferSize=1e7):
-        self.buffer=Queue()
-        self.ID=ID
+    def __init__(self,ID,BufferSize=1e5):
+        self.buffer=Queue(int(BufferSize))
+        self.flags={'DumpToFile':False,
+                    'PrintProcessedCounts':True}
+        self.params={'ID':ID,
+                     'BufferSize':BufferSize,
+                     'DumpFileName':''
+                }
+        self._stop_event = threading.Event()
+        self.thread = threading.Thread(target=self.run, args=())
+        #self.thread.daemon = True
+        self.thread.start()
+        self.ProcessedPacekts=0
+
+    def StartDumpingToFile(self,filename):
+        #check if the path is valid
+       # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
+        self.Dumpfile = open(filename, "a")
+        self.params['DumpFileName']=filename
+        self.flags['DumpToFile']=True
+
+
+    def StopDumpingToFile(self):
+        self.flags['DumpToFile']=False
+        self.params['DumpFileName']=''
+        self.Dumpfile.close()
+
+
+
+    def run(self):
+        while not self._stop_event.is_set():
+            message=self.buffer.get()
+            self.ProcessedPacekts=self.ProcessedPacekts+1
+            if(self.flags['PrintProcessedCounts']):
+                if(self.ProcessedPacekts%1000==0):
+                    print("processed 1000 packets in receiver for Sensor ID:"+str(self.params['ID']))
+                    print(pb.text_format.MessageToString(message))
+
+    def stop(self):
+        self._stop_event.set()
+
+    def closeQueue(self):
+        self.buffer.close()
+
+    def join(self, *args, **kwargs):
+        self.stop()
+
+
+
+
+
+
+
+
+
+
 
