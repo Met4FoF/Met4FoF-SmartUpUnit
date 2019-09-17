@@ -24,7 +24,7 @@ class DataReceiver:
         self.flags={'Networtinited':False}
         self.params={'IP':IP,
                      'Port':Port,
-                     'PacketrateUpdateCount':1000
+                     'PacketrateUpdateCount':10000
                 }
         self.socket=socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -116,25 +116,32 @@ class DataReceiver:
                     self.lastTimestamp=datetime.now()
                 else:
                     self.lastTimestamp=datetime.now()
+    def getsenorIDs(self):
+        return [*self.AllSensors]
 
     def __del__(self):
         self.socket.close()
 
 class Sensor:
     #TODO implement multi therading and callbacks
-    def __init__(self,ID,BufferSize=1e3):
+    def __init__(self,ID,BufferSize=1e4):
         self.buffer=Queue(int(BufferSize))
         self.flags={'DumpToFile':False,
-                    'PrintProcessedCounts':True}
+                    'PrintProcessedCounts':True,
+                    'callbackSet':False}
         self.params={'ID':ID,
                      'BufferSize':BufferSize,
                      'DumpFileName':''
                 }
+
         self._stop_event = threading.Event()
         self.thread = threading.Thread(target=self.run, args=())
         #self.thread.daemon = True
         self.thread.start()
         self.ProcessedPacekts=0
+        self.lastPacketTimestamp=datetime.now()
+        self.deltaT=self.lastPacketTimestamp-datetime.now()#will b 0 but has deltaTime type witch is intended
+        self.datarate=0
 
     def StartDumpingToFile(self,filename):
         #check if the path is valid
@@ -149,8 +156,6 @@ class Sensor:
         self.params['DumpFileName']=''
         self.Dumpfile.close()
 
-
-
     def run(self):
         while not self._stop_event.is_set():
             # problem when wee are closing the queue this function is waiting for data and raises EOF error if we delet the q
@@ -159,12 +164,20 @@ class Sensor:
                 message=self.buffer.get(timeout=0.1)
             except Exception:
                 break
+            tmpTime=datetime.now()
+            self.deltaT=tmpTime-self.lastPacketTimestamp#will b 0 but has deltaTime type witch is intended
+            self.datarate=1/(self.deltaT.seconds+1e-6*self.deltaT.microseconds)
+            self.lastPacketTimestamp=datetime.now()
             self.ProcessedPacekts=self.ProcessedPacekts+1
             if(self.flags['PrintProcessedCounts']):
-                if(self.ProcessedPacekts%1000==0):
-                    print("processed 1000 packets in receiver for Sensor ID:"+hex(self.params['ID']))
-            
+                if(self.ProcessedPacekts%10000==0):
+                    print("processed 10000 packets in receiver for Sensor ID:"+hex(self.params['ID']))
+            if self.flags['callbackSet']:
+                self.callback(message)
 
+    def SetCallback(self,callback):
+        self.flags['callbackSet']=True
+        self.callback=callback
 
     def stop(self):
         print("Stopping Sensor "+hex(self.params['ID']))
@@ -175,8 +188,8 @@ class Sensor:
         while not self.buffer.empty():
             try:
                 self.buffer.get(False)
-            except Empty:
-                continue
+            except:
+                pass
         self.buffer.close()
 
 
