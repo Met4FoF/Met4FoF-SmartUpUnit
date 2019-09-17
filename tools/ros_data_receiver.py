@@ -16,7 +16,7 @@ import scipy as scp
 from scipy.optimize import curve_fit
 import SineTools as st
 # from termcolor import colored
-
+plt.rcParams.update({'font.size': 30})
 
 class CalTimeSeries:
     def SinFunc(self, x, A, B, f, phi):
@@ -127,7 +127,7 @@ class CalTimeSeries:
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 1]), label='Sensor y')
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 2]), label='Sensor z')
         ax.plot(self.fftFreqs, abs(self.FFTData[:, 3]), label='Ref z')
-        ax.set(xlabel='Frequency /Hz', ylabel='|fft| / AU',
+        ax.set(xlabel='Frequency / Hz', ylabel='|fft| / AU',
                title='FFT of CalTimeSeries')
         ax.grid()
         ax.legend()
@@ -227,7 +227,7 @@ class Databuffer:
 
         """
         self.params={'IntegrationLength':512,
-                     'MaxChunks': 7500,
+                     'MaxChunks': 40000,
                      'axixofintest': 2,
                      'minValidChunksInRow':3,
                      'minSTDforVailid':5,
@@ -409,18 +409,18 @@ class Databuffer:
     def PlotTransferFunction(self,PlotType='lin'):
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if(PlotType=='lin'):
-            ax1.plot(self.TransferFreqs, self.TransferAmpl, '.')
+            ax1.plot(self.TransferFreqs, self.TransferAmpl, '.',markersize=20)
         if(PlotType=='logx'):
-            ax1.semilogx(self.TransferFreqs, self.TransferAmpl, '.')
+            ax1.semilogx(self.TransferFreqs, self.TransferAmpl, '.',markersize=20)
         fig.suptitle('Transfer function ')
-        ax1.set_ylabel('Relative amplitude')
+        ax1.set_ylabel('Relative amplitude $|S|$')
         ax1.grid(True)
         if(PlotType=='lin'):
-            ax2.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.')
+            ax2.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.',markersize=20)
         if(PlotType=='logx'):
-            ax2.semilogx(self.TransferFreqs, self.TransferPhase/np.pi*180, '.')
-        ax2.set_xlabel('Frequency / Hz')
-        ax2.set_ylabel('Phase /°')
+            ax2.semilogx(self.TransferFreqs, self.TransferPhase/np.pi*180, '.',markersize=20)
+        ax2.set_xlabel('Frequency $f$ / Hz')
+        ax2.set_ylabel('Phase $\phi$ /°')
         ax2.grid(True)
         plt.show()
 
@@ -440,18 +440,20 @@ class Databuffer:
             ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 1], label='Sensor y')
             ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 2], label='Sensor z')
             ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 3], label='Ref z')
-        ax1.title.set_text('Short term standard deviation (w= '+str(self.params['IntegrationLength'])+') of signal amplitude')
-        ax1.set_ylabel('STD / AU')
+        ax1.title.set_text('Short term standard deviation  $\sigma$ (width of '+str(self.params['IntegrationLength'])+') of signal amplitude')
+        ax1.set_ylabel('STD  $\sigma$ / a.u.')
         ax1.legend()
         ax1.grid(True)
         if(startIDX==0 and stopIDX==0):
             ax2.plot(self.Chunktimes, self.isValidCalChunk)
         else:
-            ax2.plot(self.Chunktimes[startIDX:stopIDX], self.isValidCalChunk[startIDX:stopIDX])
-        ax2.title.set_text('Data used for calibration')
+            ax2.plot(self.Chunktimes[startIDX:stopIDX], self.isValidCalChunk[startIDX:stopIDX],'.')
+            ax2.set_yticks([0,1])
+        ax2.title.set_text('Valid data')
         ax2.set_xlabel('Time /s')
-        ax2.set_ylabel('Is Valid =1')
-        ax2.grid(True)
+        ax2.set_ylabel('Valid = 1')
+        ax2.xaxis.grid() # vertical lines
+        plt.subplots_adjust(hspace=0.3)
         plt.show()
 
 
@@ -569,9 +571,16 @@ if __name__ == '__main__':
     DB1 = Databuffer()
     #DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     #DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
-    DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
+    #DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
+    #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_1_4bar.csv')
+    #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar.csv')
+    #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar_2.csv')
+    DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
+    DB1.setRefTransferFunction('data/messkette_cal.csv')
     # reading data from file and proces all Data
     DB1.DoAllFFT()
+    DB1.getTransferFunction(2)
+    DB1.PlotTransferFunction()
     # callculate all the ffts
 
 
