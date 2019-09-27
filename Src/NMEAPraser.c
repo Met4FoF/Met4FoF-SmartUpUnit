@@ -577,11 +577,11 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     }
     mean_tmp/=ref->array_valid_data_count;
     for(int i=0;i<ref->array_valid_data_count;i++)
-    	std_tmp += pow((ref->xtal_err_array[i] - mean_tmp), 2);
+    	std_tmp += (ref->xtal_err_array[i] - mean_tmp)*(ref->xtal_err_array[i] - mean_tmp);
 #if DEBUG_GPS == 1
     SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
 #endif
-    std_tmp=sqrt(std_tmp/ref->array_valid_data_count);
+    std_tmp=sqrt(std_tmp/(ref->array_valid_data_count-1));
 #if DEBUG_GPS == 1
     SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
 #endif
@@ -648,7 +648,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     }
 #endif
     delta_sec = (double)(cntdiff64) / (ref.xtal_err);//TS_CPS *
-    double time_uncertainty_tmp=pow(1*2*ref.xtal_err_deviation,2)+pow(2*ref.xtal_err_deviation*delta_sec,2);
+    double time_uncertainty_tmp=(2*ref.xtal_err_deviation)*(2*ref.xtal_err_deviation)+(2*ref.xtal_err_deviation*delta_sec)*(2*ref.xtal_err_deviation*delta_sec);
 #define NANOSECONDSTOTICKSSCALEFACKTOR 1E9/TS_CPS
     //TODO implement weightend menad value filter
     time_uncertainty_tmp=2*sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
