@@ -17,7 +17,7 @@ from scipy.optimize import curve_fit
 import SineTools as st
 # from termcolor import colored
 plt.rcParams.update({'font.size': 30})
-
+plt.rc('text', usetex=True)
 class CalTimeSeries:
     def SinFunc(self, x, A, B, f, phi):
         return A*np.sin(2*np.pi*f*x+phi)+B
@@ -395,12 +395,12 @@ class Databuffer:
                 i=i+1
         if(self.flags['RefTrnaferFunctionSet']==True):
             for item in self.CalData:
-                self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
-                #
+                self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]               
                 AmplTF=self.getNearestReFTPoint(self.TransferFreqs[i])[0]
                 PhaseTF=self.getNearestReFTPoint(self.TransferFreqs[i])[1]
+                print(PhaseTF)
                 self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/((self.CalData[i].popt[AxisRef,0]*RefScalefactor)/AmplTF)
-                self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
+                self.TransferPhase[i]=self.CalData[i].popt[axisDUT,3]-self.CalData[i].popt[AxisRef,3]
                 self.TransferPhase[i]=self.TransferPhase[i]+PhaseTF
                 i=i+1
         self.TransferPhase=np.unwrap(self.TransferPhase)
@@ -413,14 +413,14 @@ class Databuffer:
         if(PlotType=='logx'):
             ax1.semilogx(self.TransferFreqs, self.TransferAmpl, '.',markersize=20)
         fig.suptitle('Transfer function ')
-        ax1.set_ylabel('Relative amplitude $|S|$')
+        ax1.set_ylabel('Relative magnitude $|S|$')
         ax1.grid(True)
         if(PlotType=='lin'):
             ax2.plot(self.TransferFreqs,self.TransferPhase/np.pi*180, '.',markersize=20)
         if(PlotType=='logx'):
             ax2.semilogx(self.TransferFreqs, self.TransferPhase/np.pi*180, '.',markersize=20)
-        ax2.set_xlabel('Frequency $f$ / Hz')
-        ax2.set_ylabel('Phase $\phi$ /°')
+        ax2.set_xlabel(r'Frequency $f$ in Hz')
+        ax2.set_ylabel(r'Phase $\Delta\varphi$ in °')
         ax2.grid(True)
         plt.show()
 
@@ -441,7 +441,7 @@ class Databuffer:
             ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 2], label='Sensor z')
             ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 3], label='Ref z')
         ax1.title.set_text('Short term standard deviation  $\sigma$ (width of '+str(self.params['IntegrationLength'])+') of signal amplitude')
-        ax1.set_ylabel('STD  $\sigma$ / a.u.')
+        ax1.set_ylabel('STD  $\sigma$ in a.u.')
         ax1.legend()
         ax1.grid(True)
         if(startIDX==0 and stopIDX==0):
@@ -450,7 +450,7 @@ class Databuffer:
             ax2.plot(self.Chunktimes[startIDX:stopIDX], self.isValidCalChunk[startIDX:stopIDX],'.')
             ax2.set_yticks([0,1])
         ax2.title.set_text('Valid data')
-        ax2.set_xlabel('Time /s')
+        ax2.set_xlabel('Time in s')
         ax2.set_ylabel('Valid = 1')
         ax2.xaxis.grid() # vertical lines
         plt.subplots_adjust(hspace=0.3)
@@ -575,12 +575,14 @@ if __name__ == '__main__':
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_1_4bar.csv')
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar.csv')
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar_2.csv')
-    DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
+    #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
+    DataReaderPROTOdump('data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv')
     DB1.setRefTransferFunction('data/messkette_cal.csv')
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     DB1.getTransferFunction(2)
     DB1.PlotTransferFunction()
+    DB1.PlotTransferFunction(PlotType='logx')
     # callculate all the ffts
 
 
