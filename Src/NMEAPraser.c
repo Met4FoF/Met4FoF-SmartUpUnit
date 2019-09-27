@@ -650,7 +650,8 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     delta_sec = (double)(cntdiff64) / (ref.xtal_err);//TS_CPS *
     double time_uncertainty_tmp=pow(1*2*ref.xtal_err_deviation,2)+pow(2*ref.xtal_err_deviation*delta_sec,2);
 #define NANOSECONDSTOTICKSSCALEFACKTOR 1E9/TS_CPS
-    time_uncertainty_tmp=sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
+    //TODO implement weightend menad value filter
+    time_uncertainty_tmp=2*sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
     time_uncertainty_tmp=round(time_uncertainty_tmp);
     uint32_t time_uncertainty_int32=(uint32_t)time_uncertainty_tmp;
 #if DEBUG_GPS == 1
