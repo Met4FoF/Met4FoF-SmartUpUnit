@@ -456,6 +456,29 @@ class Databuffer:
         plt.subplots_adjust(hspace=0.3)
         plt.show()
 
+    def PlotSTD(self,startIDX=0,stopIDX=0):
+        fig, ax1 = plt.subplots(1, 1)
+        self.Chunktimes=np.arange(self.STDArray.shape[0])
+        tmpdeltaT=DB1.DataLoopBuffer[self.params['IntegrationLength']-1,4]-DB1.DataLoopBuffer[0,4]
+        self.Chunktimes=self.Chunktimes*tmpdeltaT
+        #calculationg delta time from last vaild chunk
+        if(startIDX==0 and stopIDX==0):
+            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label='Sensor x')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label='Sensor y')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label='Sensor z')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label='Ref z')
+        else:
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 0], label='Sensor x')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 1], label='Sensor y')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 2], label='Sensor z')
+            ax1.plot(self.Chunktimes[startIDX:stopIDX], self.STDArray[startIDX:stopIDX, 3], label='Ref z')
+        ax1.title.set_text('Short term standard deviation  $\sigma$ (width of '+str(self.params['IntegrationLength'])+') of signal amplitude')
+        ax1.set_ylabel('STD  $\sigma$ in a.u.')
+        ax1.set_xlabel('Time in s')
+        ax1.legend()
+        ax1.grid(True)
+        plt.show()
+
 
 
 
