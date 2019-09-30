@@ -7,3 +7,5 @@ tools/log_files/
 *.testdump
 
 tools/__pycache__/
+
+tools/data/
