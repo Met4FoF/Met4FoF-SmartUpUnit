@@ -49,6 +49,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+//TODO clean up includes
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -66,6 +67,7 @@
 #include "pb_encode.h"
 
 #include "MPU9250.h"
+#include "bma280.h"
 #include <math.h>
 
 #include "adc.h"
@@ -105,7 +107,9 @@ osThreadId blinkTID;
 osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
-MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+
+BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -293,10 +297,19 @@ void StartDataStreamerThread(void const * argument) {
 	configMan.setADCCalCoevs(0,0.00488040211169927,-10.029208660668372,4.6824163159348675e-3);
 	configMan.setADCCalCoevs(1,0.004864769104581888,-9.911472983085314,13.68572038605262e-3);
 	configMan.setADCCalCoevs(2,0.004884955868836948,-10.031544601902738,4.721804326558252e-3);
+	/*
 	Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
 	Sensor2.begin();
 	//Sensor2.setSrd();
 	Sensor2.enableDataReadyInterrupt();
+	*/
+	// SET PS pin low
+	HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
+
+	Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
+	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+	//Sensor2.setSrd();
+
 	SEGGER_RTT_printf(0,"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",UDID_Read8(0),UDID_Read8(1),UDID_Read8(2),UDID_Read8(3),UDID_Read8(4),UDID_Read8(5),UDID_Read8(6),UDID_Read8(7),UDID_Read8(8),UDID_Read8(9),UDID_Read8(10),UDID_Read8(11));
 	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
