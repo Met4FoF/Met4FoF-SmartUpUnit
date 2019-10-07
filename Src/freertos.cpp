@@ -345,9 +345,6 @@ void StartDataStreamerThread(void const * argument) {
 	uint8_t ProtoBufferData[MTU_SIZE] = { 0 };
 	pb_ostream_t ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData,
 			MTU_SIZE);
-	uint8_t ProtoBufferDescription[MTU_SIZE] = { 0 };
-	pb_ostream_t ProtoStreamDescription = pb_ostream_from_buffer(
-			ProtoBufferDescription, MTU_SIZE);
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 	//Start timer and arm inputcapture
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
@@ -432,8 +429,7 @@ void StartDataStreamerThread(void const * argument) {
 				Datarptr->unix_time=(uint32_t)(SampelPointUtc.tv_sec);
 				Datarptr->unix_time_nsecs=(uint32_t)(SampelPointUtc.tv_nsec);
 #endif
-#if NULL
-				if(ProtoStreamData.bytes_written>(MTU_SIZE-DataMessage_size)){
+				if(ProtoStreamData.bytes_written>(MTU_SIZE-(DataMessage_size))){
 				//sending the buffer
 					netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
 				/* send the text */
@@ -442,11 +438,13 @@ void StartDataStreamerThread(void const * argument) {
 				// reallocating buffer this is maybe performance intensive profile this
 				//TODO profile this code
 					ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+					const char DataString[4]={68,65,84,65};//DATA Keyword
+					pb_write(&ProtoStreamData,(const pb_byte_t*)&DataString,4);
 				}
 
 			pb_encode_ex(&ProtoStreamData,DataMessage_fields,Datarptr,PB_ENCODE_DELIMITED);
-#endif
 #if !SIMULATIONMODE
+#if 0
 			pb_encode(&ProtoStreamData, DataMessage_fields, Datarptr);
 			//sending the buffer
 			netbuf_ref(buf, &ProtoBufferData, ProtoStreamData.bytes_written);
@@ -456,6 +454,7 @@ void StartDataStreamerThread(void const * argument) {
 			// reallocating buffer this is maybe performance intensive profile this
 			//TODO profile this code
 			ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData, MTU_SIZE);
+#endif
 			i++;
 #if TIMESTAMPDEBUGOUTPUT
 			SEGGER_RTT_printf(0,"%lu,%lu,%lu,%lu,%lu\n\r",Datarptr->sample_number,(uint32_t)(debugTimestamp>>32),(uint32_t)debugTimestamp,Datarptr->unix_time,Datarptr->unix_time_nsecs);

@@ -300,7 +300,7 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->f_Data_01=16384;
 		Message->f_Data_02=16384;
 		Message->f_Data_03=16384;
-		Message->f_Data_10=255; // TODO check this
+		Message->f_Data_10=255;
 	}
 	return retVal;
 }

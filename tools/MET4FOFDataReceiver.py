@@ -13,6 +13,8 @@ import socket
 import threading
 import messages_pb2
 import google.protobuf as pb
+from google.protobuf.internal.encoder import _VarintBytes
+from google.protobuf.internal.decoder import _DecodeVarint32
 from datetime import datetime
 import threading
 import time
@@ -75,47 +77,48 @@ class DataReceiver:
             ProtoData = messages_pb2.DataMessage()
             ProtoDescription=messages_pb2.DescriptionMessage()
             SensorID=0
-            #TODO check error handling
-            #TODO add state machine
-            try:
-                ProtoData.ParseFromString(data)
-                wasValidData=True
-                SensorID=ProtoData.id
-                message=ProtoData
-            except:
-                pass #? no exception for wrong data type !!
-            #  todo improve parsing
-            #  try:
-            #      ProtoDescription.ParseFromString(data)
-            #      wasValidDescription=True
-            #      SensorID=ProtoDescription.id
-            #      message=ProtoDescription
-            # except:
-            #     pass
+            BytesProcessed=4#we need an offset of 4 sice
+            if data[:4]==b'DATA':
+                while BytesProcessed<len(data):
+                    msg_len, new_pos = _DecodeVarint32(data, BytesProcessed)
+                    BytesProcessed = new_pos
 
-            if not(wasValidData or wasValidDescription):
-                print("INVALID PROTODATA")
-                pass # invalid data leave parsing routine
-            if SensorID in self.AllSensors:
-                try:
-                    self.AllSensors[SensorID].buffer.put_nowait(message)
-                except:
-                    print("packet lost for sensor ID:"+str(SensorID))
-            else:
-                self.AllSensors[SensorID]=Sensor(SensorID)
-                print("FOUND NEW SENSOR WITH ID="+hex(SensorID))
-            self.msgcount=self.msgcount+1
+                    try:
+                        msg_buf = data[new_pos:new_pos+msg_len]
+                        n = new_pos
+                        ProtoData.ParseFromString(msg_buf)
+                        wasValidData=True
+                        SensorID=ProtoData.id
+                        message=ProtoData
+                        BytesProcessed += msg_len
+                    except:
+                        pass #? no exception for wrong data type !!
+                    if not(wasValidData or wasValidDescription):
+                        print("INVALID PROTODATA")
+                        pass # invalid data leave parsing routine
+    
+    
+                    if SensorID in self.AllSensors:
+                        try:
+                            self.AllSensors[SensorID].buffer.put_nowait(message)
+                        except:
+                            print("packet lost for sensor ID:"+str(SensorID))
+                    else:
+                        self.AllSensors[SensorID]=Sensor(SensorID)
+                        print("FOUND NEW SENSOR WITH ID="+hex(SensorID))
+                    self.msgcount=self.msgcount+1
+        
+                    if (self.msgcount%self.params['PacketrateUpdateCount']==0):
+                        print('received '+str(self.params['PacketrateUpdateCount'])+' packets')
+                        if(self.lastTimestamp!=0):
+                            timeDIFF=datetime.now()-self.lastTimestamp
+                            timeDIFF=timeDIFF.seconds+timeDIFF.microseconds*1e-6
+                            self.Datarate=self.params['PacketrateUpdateCount']/timeDIFF
+                            print('Update rate is '+str(self.Datarate)+' Hz')
+                            self.lastTimestamp=datetime.now()
+                        else:
+                            self.lastTimestamp=datetime.now()
 
-            if (self.msgcount%self.params['PacketrateUpdateCount']==0):
-                print('received '+str(self.params['PacketrateUpdateCount'])+' packets')
-                if(self.lastTimestamp!=0):
-                    timeDIFF=datetime.now()-self.lastTimestamp
-                    timeDIFF=timeDIFF.seconds+timeDIFF.microseconds*1e-6
-                    self.Datarate=self.params['PacketrateUpdateCount']/timeDIFF
-                    print('Update rate is '+str(self.Datarate)+' Hz')
-                    self.lastTimestamp=datetime.now()
-                else:
-                    self.lastTimestamp=datetime.now()
     def getsenorIDs(self):
         return [*self.AllSensors]
 
