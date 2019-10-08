@@ -128,6 +128,8 @@ class DataReceiver:
                             self.lastTimestamp = datetime.now()
                         else:
                             self.lastTimestamp = datetime.now()
+            else:
+                print("unrecognized packed preamble"+data[:4].hex())
 
     def getsenorIDs(self):
         return [*self.AllSensors]
