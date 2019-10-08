@@ -390,7 +390,7 @@ class Databuffer:
                 self.TransferFreqs[i]=self.CalData[i].popt[axisDUT,2]
                 #
                 self.TransferAmpl[i]=(self.CalData[i].popt[axisDUT,0])/(self.CalData[i].popt[AxisRef,0]*RefScalefactor)
-                self.TransferPhase[i]=(self.CalData[i].popt[AxisRef,3]-self.CalData[i].popt[axisDUT,3])
+                self.TransferPhase[i]=(self.CalData[i].popt[axisDUT,3]-self.CalData[i].popt[AxisRef,3])
                 self.TransferPhase[i]=self.TransferPhase[i]+RefPhaseDC
                 i=i+1
         if(self.flags['RefTrnaferFunctionSet']==True):
@@ -598,8 +598,10 @@ if __name__ == '__main__':
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_1_4bar.csv')
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar.csv')
     #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar_2.csv')
-    DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
-    DB1.setRefTransferFunction('data/messkette_cal.csv')
+    #DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
+    #DataReaderPROTOdump('data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv')
+    DataReaderPROTOdump('data/191001_BMA280_10_250_10ms2_1.csv')
+    #DB1.setRefTransferFunction('data/messkette_cal.csv')
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     DB1.getTransferFunction(2)

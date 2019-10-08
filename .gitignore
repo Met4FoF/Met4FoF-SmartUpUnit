@@ -9,3 +9,4 @@ tools/log_files/
 tools/__pycache__/
 
 tools/data/
+/Release/

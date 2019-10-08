@@ -21,6 +21,7 @@ import messages_pb2
 
 UDP_IP = "192.168.2.100"
 UDP_PORT = 7000
+PRINTDIV=100
 
 sock = socket.socket(socket.AF_INET, # Internet
                      socket.SOCK_DGRAM) # UDP
@@ -38,7 +39,10 @@ def datadumper_reader(samplecount,stimfreq,stimampl,stimtype,filename):
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
             ProtoData = messages_pb2.DataMessage()
             ProtoData.ParseFromString(data)
-            if(int(ProtoData.id/65536)== 13616):
+            if True:
+            #if(int(ProtoData.id/65536)== 13616):
+                if(i%PRINTDIV==0):
+                    print(ProtoData)
                 if(i>=BUFFERFLUSHSIZE):
                     #print(ProtoData)
                     dumpfile.write(str(ProtoData.id)+';'+str(ProtoData.sample_number)+';'+str(ProtoData.unix_time)+';'+
