@@ -30,7 +30,15 @@ before_install:
 - rmdir st-gnu-arm-gcc-*
 - echo '===> Finished unpacking arm-none-eabi-* for sw4stm32'
 - echo '===> DONE'
-
 script:
 - sw4stm32 -noSplash -data /workspace/ -application org.eclipse.cdt.managedbuilder.core.headlessbuild -importAll ./ -build ".*/Debug" -cleanBuild all
 - ls -la ./Debug/
+deploy:
+  provider: releases
+  api_key:
+    secure: EEqnZM6MeYUCwYgBZ2IWwCQ/cpIIkpogbBARftyH3j3GgcKm31tKVt/vfN+3WDX9fSGbP6I7R979d76KwTyX/ByRJYLQ6tO8d3Xuq4Gp/ExrDgM+S/3idRCAWGycsKIUxpmUyUXEqGgtCW/xf5xS2lUI9jRW1wQgY+uA2hMOxyYSF4sMRRUQWAf0xLyXP82s7rX7MJrDOczAevCvV1JVcdsRwc48Y2Mo8afVS5qR/5gSYx0NoR/MATJB/ModFLJY1cmjqDJdPtBthLJjbDalbgZJrAfgYtFiOvj2ggGxUApp4WKNyxwxB0flt8/g+gc5jKzYKOBfxgsuTe4d25pjJmVYEnC75AWCTqTIBY+sPy5nbWZFDJVJG0eSmY8MawrFRg4z4GFrQADJHgzowJeK78i3uRilbTc8d2TSced3MAWmgrwd6lbssV2OD0Ls9HrIqNclY7bPQLwGYu5ERtkm8lMuBXqhiEdNd7YN9xjFrchSyahyGW8Urojf9E/SaokKsXqoHEXuoSy91eE7hMuwvbWp9JjxETgcL031+R70RL/B3tkrJNtHJbxqmMKcmU9wkAu5QFPuiIUDUGI96msxZYLMyt/zXyi577ksrxi2CAV6s3NmPfuTZXNLBgMHi5WCsNWEChCizKoPLCajjiMGOujWB+fI2uyOvcgMMshBkqI=
+  file: "./Debug/met4FOF_SSU_V2.elf"
+  skip_cleanup: true
+  on:
+    repo: Met4FoF/Met4FoF-SmartUpUnit
+    tags: true
