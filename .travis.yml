@@ -10,14 +10,13 @@ before_install:
 # adapted from: https://hub.docker.com/r/kamilcuk/docker-sw4stm32/dockerfile
 - set -ex
 - echo '===> Install prerequisites'
-- apt-get update
-- apt-get install -y --no-install-recommends openjdk-8-jre-headless make curl bzip2 sudo
+- sudo apt-get update
+- sudo apt-get install -y --no-install-recommends openjdk-8-jre-headless make curl bzip2 sudo
 - echo '===> Downloading sw4stm32'
 - curl -k -O https://www.ac6-tools.com/downloads/SW4STM32/install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run
 - echo '===> Check md5sum'
 - curl  -k  https://www.ac6-tools.com/downloads/SW4STM32/install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run.md5 | md5sum -c -
 - echo '===> Installing sw4stm32'
-- mkdir -p /etc/udev/rules.d
 - yes | java -DINSTALL_PATH=/opt/sw4stm32 -d64 -jar install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run -options-system
 - rm -v install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run
 - echo '===> Create sw4stm32 shortcut'
