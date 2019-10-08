@@ -20,11 +20,11 @@ before_install:
 - yes | java -DINSTALL_PATH=/opt/sw4stm32 -jar install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run -options-system
 - rm -v install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run
 - echo '===> Create sw4stm32 shortcut'
-- printf '#!/bin/sh\nexec /opt/sw4stm32/eclipse "$@"\n' > /usr/local/bin/sw4stm32
+- sudo printf '#!/bin/sh\nexec /opt/sw4stm32/eclipse "$@"\n' > /usr/local/bin/sw4stm32
 - chmod +x /usr/local/bin/sw4stm32
 - echo '===> Create sw4stm32-headless-build.sh shortcut'
-- printf '#!/bin/sh\nexec java -jar /opt/sw4stm32/plugins/org.eclipse.equinox.launcher_*.jar -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild "$@"\n' > /usr/local/bin/sw4stm32-headless-build.sh
-- chmod +x /usr/local/bin/sw4stm32-headless-build.sh
+- sudo printf '#!/bin/sh\nexec java -jar /opt/sw4stm32/plugins/org.eclipse.equinox.launcher_*.jar -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild "$@"\n' > /usr/local/bin/sw4stm32-headless-build.sh
+- sudo chmod +x /usr/local/bin/sw4stm32-headless-build.sh
 - echo '===> Unpacking fr.ac6.mcu.externaltools.arm-none plugin'
 - echo '===> ^ ^ Why sw4stm32 is too stupid to do this on its own ?!'
 - cd /opt/sw4stm32/plugins/fr.ac6.mcu.externaltools.arm-none.linux64_*/tools
