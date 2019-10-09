@@ -8,3 +8,13 @@ tools/__pycache__/
 
 tools/data/
 /Release/
+
+*.d
+
+*.o
+
+*.elf
+
+*.hex
+
+*.map
