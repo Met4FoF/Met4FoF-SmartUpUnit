@@ -9,6 +9,7 @@ before_install:
 # actually bzip2 and unzip and zip may be needed
 # adapted from: https://hub.docker.com/r/kamilcuk/docker-sw4stm32/dockerfile
 - set -ex
+- unset DISPLAY
 - echo '===> Install prerequisites'
 - sudo apt-get update
 - sudo apt-get install -y --no-install-recommends openjdk-8-jre-headless make curl bzip2 sudo
