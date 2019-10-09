@@ -135,6 +135,9 @@ class MPU9250{
     int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   protected:
+    uint32_t _SPIHSBOUDRATEPRESCALER;
+    const uint8_t SPI_READ = 0x80;
+	#define SPI_TIMEOUT 100U
     // spi
     GPIO_TypeDef* _SPICSTypeDef;
     uint16_t _SPICSPin;
@@ -146,9 +149,6 @@ class MPU9250{
     bool _useSPI=true;
     bool _useSPIHS=false;
     bool _useSPILSOLD=false;
-    uint32_t _SPIHSBOUDRATEPRESCALER;
-    const uint8_t SPI_READ = 0x80;
-	#define SPI_TIMEOUT 100U
     // track success of interacting with sensor
     int _status;
     // buffer for reading from sensor
