@@ -34,7 +34,7 @@ before_install:
 - echo '===> DONE'
 
 script:
-- sw4stm32 -noSplash -data /workspace/ -application org.eclipse.cdt.managedbuilder.core.headlessbuild -importAll ./ -build ".*/Debug" -cleanBuild all
+- sw4stm32 -noSplash -data /workspace/ -application org.eclipse.cdt.managedbuilder.core.headlessbuild -importAll ./ -build ".*/Debug" -configuration Debug
 - ls -la ./Debug/
 deploy:
   provider: releases
