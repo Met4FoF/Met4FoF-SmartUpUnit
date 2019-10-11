@@ -90,7 +90,6 @@ class DataReceiver:
 
                     try:
                         msg_buf = data[new_pos : new_pos + msg_len]
-                        n = new_pos
                         ProtoData.ParseFromString(msg_buf)
                         wasValidData = True
                         SensorID = ProtoData.id
@@ -128,8 +127,22 @@ class DataReceiver:
                             self.lastTimestamp = datetime.now()
                         else:
                             self.lastTimestamp = datetime.now()
+            elif data[:4] == b"DSCP":
+                while BytesProcessed < len(data):
+                    msg_len, new_pos = _DecodeVarint32(data, BytesProcessed)
+                    BytesProcessed = new_pos
+                    try:
+                        msg_buf = data[new_pos : new_pos + msg_len]
+                        ProtoDescription.ParseFromString(msg_buf)
+                        wasValidData = True
+                        SensorID = ProtoData.id
+                        message = ProtoData
+                        BytesProcessed += msg_len
+                        print(ProtoDescription)
+                    except:
+                        pass  # ? no exception for wrong data type !!
             else:
-                print("unrecognized packed preamble"+data[:4].hex())
+                print("unrecognized packed preamble"+str(data[:5]))
 
     def getsenorIDs(self):
         return [*self.AllSensors]

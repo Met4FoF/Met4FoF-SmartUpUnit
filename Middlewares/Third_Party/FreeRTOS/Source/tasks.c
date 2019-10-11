@@ -5025,7 +5025,7 @@ when performing module tests). */
 void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
 {
 TaskHandle_t bad_task_handle = xTask;     // this seems to give me the crashed task handle
-char * bad_task_name = pcTaskName;     // this seems to give me a pointer to the name of the crashed task
+volatile char * bad_task_name = pcTaskName;     // this seems to give me a pointer to the name of the crashed task
 SEGGER_RTT_printf(0,"!!!EROR STACKOVERFLOW in task %s !!!\n\r",bad_task_name);
 
 for( ;; );
