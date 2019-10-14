@@ -12,12 +12,13 @@ from scipy import signal
 from scipy.stats import norm
 
 LANG = "DE"
-GPSLoggArray = np.load(r"C:\Users\benes\Downloads\2019-09-23_gpslog.npy")
+#GPSLoggArray = np.load(r"C:\Users\benes\Downloads\2019-09-23_gpslog.npy")
+GPSLoggArray = np.load(r"data/2019-09-23_gpslog.npy")
 GPSLoggArray = np.reshape(GPSLoggArray, (int(GPSLoggArray.size / 4), 4))
 # cut out first 5 values sice they are pointless
 GPSLoggArray = np.copy(GPSLoggArray[5:, :])
 # cut out data in witch coldspray was used
-GPSLoggArray = np.copy(GPSLoggArray[1000:, :])
+#GPSLoggArray = np.copy(GPSLoggArray[1000:, :])
 # substract startvalues for index and secs to have handy values starting at zero for time series
 GPSLoggArray[:, 0] = GPSLoggArray[:, 0] - GPSLoggArray[0, 0]
 GPSLoggArray[:, 1] = GPSLoggArray[:, 1] - GPSLoggArray[0, 1]
@@ -27,6 +28,7 @@ DF = pd.DataFrame(
     columns=["Secs", "nSecs", "uncer"],
 )  # 1st row as the column names
 splipostion = np.array([96603, 104099])
+#splipostion = np.array([])
 for i in np.arange(splipostion.size):
     DF["nSecs"][splipostion[i] :] += 100
 DF["nSecDev"] = DF["nSecs"] - DF["nSecs"][0]

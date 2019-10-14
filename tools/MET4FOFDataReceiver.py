@@ -8,6 +8,7 @@ Data receiver for Met4FoF Protobuff Data
 """
 
 import sys
+import traceback
 import os
 import socket
 import threading
@@ -19,6 +20,7 @@ from datetime import datetime
 import threading
 import time
 from multiprocessing import Queue
+import copy
 
 
 class DataReceiver:
@@ -93,7 +95,7 @@ class DataReceiver:
                         ProtoData.ParseFromString(msg_buf)
                         wasValidData = True
                         SensorID = ProtoData.id
-                        message = {'ProtMsg':ProtoData,'Type':'Data'}
+                        message = {'ProtMsg':copy.deepcopy(ProtoData),'Type':'Data'}
                         BytesProcessed += msg_len
                     except:
                         pass  # ? no exception for wrong data type !!
@@ -148,7 +150,7 @@ class DataReceiver:
                         try:
                             self.AllSensors[SensorID].buffer.put_nowait(message)
                         except:
-                            print("packet lost for sensor ID:" + str(SensorID))
+                            print("packet lost for sensor ID:" + hex(SensorID))
                     else:
                         self.AllSensors[SensorID] = Sensor(SensorID)
                         print("FOUND NEW SENSOR WITH ID=" + hex(SensorID))
@@ -220,24 +222,31 @@ class Sensor:
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
             try:
                 message = self.buffer.get(timeout=0.1)
+                tmpTime = datetime.now()
+                self.deltaT = (
+                    tmpTime - self.lastPacketTimestamp
+                )  # will b 0 but has deltaTime type witch is intended
+                self.datarate = 1 / (self.deltaT.seconds + 1e-6 * self.deltaT.microseconds)
+                self.lastPacketTimestamp = datetime.now()
+                self.ProcessedPacekts = self.ProcessedPacekts + 1
+                if self.flags["PrintProcessedCounts"]:
+                    if self.ProcessedPacekts % 10000 == 0:
+                        print(
+                            "processed 10000 packets in receiver for Sensor ID:"
+                            + hex(self.params["ID"])
+                        )
+                if self.flags["callbackSet"]:
+                    if(message['Type']=='Data'):
+                        try:
+                            self.callback(message['ProtMsg'])
+                        except Exception:
+                            print (" Sensor id:"+hex(self.params["ID"])+"Exception in user callback:")
+                            print('-'*60)
+                            traceback.print_exc(file=sys.stdout)
+                            print('-'*60)
+                            pass
             except Exception:
-                break
-            tmpTime = datetime.now()
-            self.deltaT = (
-                tmpTime - self.lastPacketTimestamp
-            )  # will b 0 but has deltaTime type witch is intended
-            self.datarate = 1 / (self.deltaT.seconds + 1e-6 * self.deltaT.microseconds)
-            self.lastPacketTimestamp = datetime.now()
-            self.ProcessedPacekts = self.ProcessedPacekts + 1
-            if self.flags["PrintProcessedCounts"]:
-                if self.ProcessedPacekts % 10000 == 0:
-                    print(
-                        "processed 10000 packets in receiver for Sensor ID:"
-                        + hex(self.params["ID"])
-                    )
-            if self.flags["callbackSet"]:
-                if(message['Type']=='Data'):
-                    self.callback(message['ProtMsg'])
+                pass
 
     def SetCallback(self, callback):
         self.flags["callbackSet"] = True
@@ -258,3 +267,19 @@ class Sensor:
 
     def join(self, *args, **kwargs):
         self.stop()
+
+def DumpData(message):
+    if not (os.path.exists('data/timing.log')):
+        dumpfile = open('data/timing.log', "a+")
+        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
+    else:
+        dumpfile = open('data/timing.log', "a")
+        #2^48=281474976710656 2^32=4294967296 2^16=65536
+        gpscount=message.Data_01*281474976710656+message.Data_02*4294967296+message.Data_03*65536+message.Data_04
+        print(message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,gpscount)
+        dumpfile.write(str(message.sample_number)+';'+
+                       str(message.unix_time)+';'+
+                       str(message.unix_time_nsecs)+';'+
+                       str(message.time_uncertainty)+';'+
+                       str(gpscount)+"\n")
+    dumpfile.close()
