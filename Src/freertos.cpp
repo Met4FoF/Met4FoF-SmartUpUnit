@@ -335,7 +335,7 @@ void StartDataStreamerThread(void const * argument) {
 	struct netconn *conn;
 	struct netbuf *buf;
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
-	configMan.setUDPPort(7000);
+	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
 	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 2, 100 };
 	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
@@ -346,7 +346,7 @@ void StartDataStreamerThread(void const * argument) {
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 	/* connect the connection to the remote host */
-	err_t net_conn_result = netconn_connect(conn, &targetipaddr, 7000);
+	err_t net_conn_result = netconn_connect(conn, &targetipaddr, configMan.getUDPPort());
 	Check_LWIP_RETURN_VAL(net_conn_result);
 	/* create a new netbuf */
 	buf = netbuf_new();
@@ -356,11 +356,15 @@ void StartDataStreamerThread(void const * argument) {
 	uint8_t ProtoBufferData[MTU_SIZE] = { 0 };
 	pb_ostream_t ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData,
 	MTU_SIZE);
-
 	uint8_t ProtoBufferDescription[MTU_SIZE] = { 0 };
 	pb_ostream_t ProtoStreamDescription = pb_ostream_from_buffer(
 			ProtoBufferDescription,
 			MTU_SIZE);
+
+	const char DataString[4] = { 68, 65, 84, 65 };	//DATA Keyword
+	const char DescriptionString[4] = { 68, 83, 67, 80 };//DSCP Keyword
+	pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString, 4);
+	pb_write(&ProtoStreamDescription, (const pb_byte_t*) &DescriptionString, 4);
 
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 	//Start timer and arm inputcapture
@@ -426,7 +430,6 @@ void StartDataStreamerThread(void const * argument) {
 				//TODO profile this code
 				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData,
 						MTU_SIZE);
-				const char DataString[4] = { 68, 65, 84, 65 };	//DATA Keyword
 				pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString, 4);
 			}
 
@@ -459,7 +462,6 @@ void StartDataStreamerThread(void const * argument) {
 					//TODO profile this code
 					ProtoStreamDescription = pb_ostream_from_buffer(
 							ProtoBufferDescription, MTU_SIZE);
-					const char DescriptionString[4] = { 68, 83, 67, 80 };//DSCP Keyword
 					pb_write(&ProtoStreamDescription,
 							(const pb_byte_t*) &DescriptionString, 4);
 				}
