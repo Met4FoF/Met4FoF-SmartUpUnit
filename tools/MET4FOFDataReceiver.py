@@ -93,7 +93,7 @@ class DataReceiver:
                         ProtoData.ParseFromString(msg_buf)
                         wasValidData = True
                         SensorID = ProtoData.id
-                        message = ProtoData
+                        message = {'ProtMsg':ProtoData,'Type':'Data'}
                         BytesProcessed += msg_len
                     except:
                         pass  # ? no exception for wrong data type !!
@@ -135,12 +135,41 @@ class DataReceiver:
                         msg_buf = data[new_pos : new_pos + msg_len]
                         ProtoDescription.ParseFromString(msg_buf)
                         wasValidData = True
-                        SensorID = ProtoData.id
-                        message = ProtoData
+                        SensorID = ProtoDescription.id
+                        message = {'ProtMsg':ProtoDescription,'Type':'Description'}
                         BytesProcessed += msg_len
-                        print(ProtoDescription)
                     except:
                         pass  # ? no exception for wrong data type !!
+                    if not (wasValidData or wasValidDescription):
+                        print("INVALID PROTODATA")
+                        pass  # invalid data leave parsing routine
+
+                    if SensorID in self.AllSensors:
+                        try:
+                            self.AllSensors[SensorID].buffer.put_nowait(message)
+                        except:
+                            print("packet lost for sensor ID:" + str(SensorID))
+                    else:
+                        self.AllSensors[SensorID] = Sensor(SensorID)
+                        print("FOUND NEW SENSOR WITH ID=" + hex(SensorID))
+                    self.msgcount = self.msgcount + 1
+
+                    if self.msgcount % self.params["PacketrateUpdateCount"] == 0:
+                        print(
+                            "received "
+                            + str(self.params["PacketrateUpdateCount"])
+                            + " packets"
+                        )
+                        if self.lastTimestamp != 0:
+                            timeDIFF = datetime.now() - self.lastTimestamp
+                            timeDIFF = timeDIFF.seconds + timeDIFF.microseconds * 1e-6
+                            self.Datarate = (
+                                self.params["PacketrateUpdateCount"] / timeDIFF
+                            )
+                            print("Update rate is " + str(self.Datarate) + " Hz")
+                            self.lastTimestamp = datetime.now()
+                        else:
+                            self.lastTimestamp = datetime.now()
             else:
                 print("unrecognized packed preamble"+str(data[:5]))
 
@@ -187,7 +216,7 @@ class Sensor:
 
     def run(self):
         while not self._stop_event.is_set():
-            # problem when wee are closing the queue this function is waiting for data and raises EOF error if we delet the q
+            # problem when we are closing the queue this function is waiting for data and raises EOF error if we delet the q
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
             try:
                 message = self.buffer.get(timeout=0.1)
@@ -207,7 +236,8 @@ class Sensor:
                         + hex(self.params["ID"])
                     )
             if self.flags["callbackSet"]:
-                self.callback(message)
+                if(message['Type']=='Data'):
+                    self.callback(message['ProtMsg'])
 
     def SetCallback(self, callback):
         self.flags["callbackSet"] = True
