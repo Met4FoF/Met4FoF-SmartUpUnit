@@ -68,6 +68,7 @@
 
 #include "MPU9250.h"
 #include "bma280.h"
+#include "dummy_sensor.h"
 #include <math.h>
 
 #include "adc.h"
@@ -108,7 +109,8 @@ osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
 
-BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+DummySensor Sensor2(0);
+//BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -306,19 +308,21 @@ void StartDataStreamerThread(void const * argument) {
 	configMan.setADCCalCoevs(2, 0.004884955868836948, -10.031544601902738,
 			4.721804326558252e-3);
 
-	/*
+	/*//MPU9250
 	 Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
 	 Sensor2.begin();
 	 //Sensor2.setSrd();
 	 Sensor2.enableDataReadyInterrupt();
 	 */
+
+/*//BMA280
 	// SET PS pin low
 	HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-
 	Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
 	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	//Sensor2.setSrd();
-
+*/
+	//Dummy Sensor
+	Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -594,6 +598,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			DataMessage *mptr;
 			mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 			Sensor2.getData(mptr, timestamp, Channel3Tim2CaptureCount);
+			//TODO move this functionality into the sensor api!!!
+			//Sensor.addDescriptionStr(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,const char * Description)
+			//Sensor.addDescriptionFloat(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,float Description)
+			//after configuring the channels the can be used with this command
+			//Sensor.addData(int Channel,float value)
+
+			/*
 			mptr->has_Data_11 = true;
 			HAL_ADC_PollForConversion(&hadc1, 0);
 			float adcVal = (float) HAL_ADC_GetValue(&hadc1);
@@ -606,6 +617,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			HAL_ADC_PollForConversion(&hadc3, 0);
 			adcVal = (float) HAL_ADC_GetValue(&hadc3);
 			mptr->Data_13 = configMan.getADCVoltage(2, adcVal);
+			*/
 			osStatus result = osMailPut(DataMail, mptr);
 		}
 	}
