@@ -41,6 +41,7 @@ BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* b
 		_SPICSPin=SPICSPin;
 		_bmaspi=bmaspi;
 		_BaseID=BaseID;
+		_SetingsID=0;
 		_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
 		_aRes=0;
 		_conversionfactor=*(float*) nanf;
@@ -133,7 +134,6 @@ void BMA280::fastCompensation() {
 int BMA280::setBaseID(uint16_t BaseID)
 {
 	_BaseID=BaseID;
-	_SetingsID=0;
 	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
 	return 0;
 }
@@ -319,7 +319,7 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_01));
 		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_02));
 		strncpy(Message->str_Data_03,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_03));
-		strncpy(Message->str_Data_10,"\degreecelsius\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_10,"\\degreecelsius\0",sizeof(Message->str_Data_10));
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
