@@ -109,7 +109,8 @@ osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
 
-DummySensor Sensor2(0);
+DummySensor Sensor0(0);
+DummySensor Sensor1(1);
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 
@@ -322,7 +323,8 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 */
 	//Dummy Sensor
-	Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
+	Sensor0.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
+	Sensor1.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11)+1);
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -440,11 +442,12 @@ void StartDataStreamerThread(void const * argument) {
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 		}
 		//TODO improve this code
-		const uint32_t InfoUpdateTimems = 2000;
+		const uint32_t InfoUpdateTimems = 4000;
 		static TickType_t lastInfoticks = 0;
 		if (xTaskGetTickCount() - lastInfoticks > InfoUpdateTimems) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
+			//TODO improve this code with adding list of active sensors to configMan
 			for (int DescriptionType =
 					DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 					DescriptionType != DescriptionMessage_LAST;
@@ -466,7 +469,33 @@ void StartDataStreamerThread(void const * argument) {
 							(const pb_byte_t*) &DescriptionString, 4);
 				}
 				DescriptionMessage Descriptionmsg;
-				Sensor2.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
+				Sensor0.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+
+			}
+			for (int DescriptionType =
+					DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+					DescriptionType != DescriptionMessage_LAST;
+					DescriptionType++) {
+
+				if (ProtoStreamDescription.bytes_written
+						> (MTU_SIZE - (DescriptionMessage_size))) {
+					//sending the buffer
+					netbuf_ref(buf, &ProtoBufferDescription,
+							ProtoStreamDescription.bytes_written);
+					/* send the text */
+					err_t net_conn_result = netconn_send(conn, buf);
+					Check_LWIP_RETURN_VAL(net_conn_result);
+					// reallocating buffer this is maybe performance intensive profile this
+					//TODO profile this code
+					ProtoStreamDescription = pb_ostream_from_buffer(
+							ProtoBufferDescription, MTU_SIZE);
+					pb_write(&ProtoStreamDescription,
+							(const pb_byte_t*) &DescriptionString, 4);
+				}
+				DescriptionMessage Descriptionmsg;
+				Sensor1.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
 				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 						&Descriptionmsg, PB_ENCODE_DELIMITED);
 
@@ -597,9 +626,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim2CaptureCount++;
 		if (Channel3Tim2CaptureCount % 1 == 0) {
 			timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
-			DataMessage *mptr;
-			mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-			Sensor2.getData(mptr, timestamp, Channel3Tim2CaptureCount);
+			DataMessage *mptr0;
+			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
+			Sensor0.getData(mptr0, timestamp, Channel3Tim2CaptureCount);
 			//TODO move this functionality into the sensor api!!!
 			//Sensor.addDescriptionStr(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,const char * Description)
 			//Sensor.addDescriptionFloat(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,float Description)
@@ -620,7 +649,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			adcVal = (float) HAL_ADC_GetValue(&hadc3);
 			mptr->Data_13 = configMan.getADCVoltage(2, adcVal);
 			*/
-			osStatus result = osMailPut(DataMail, mptr);
+			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
@@ -655,6 +684,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			NMEBUFFERLEN - 1);
 			GPScaptureCount++;
 		}
+		DataMessage *mptr1;
+		mptr1 = (DataMessage *) osMailAlloc(DataMail, 0);
+		Sensor1.getData(mptr1, timestamp, Channel3Tim2CaptureCount);
+		osStatus result = osMailPut(DataMail, mptr1);
 	}
 
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
