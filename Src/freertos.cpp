@@ -323,8 +323,8 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 */
 	//Dummy Sensor
-	Sensor0.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
-	Sensor1.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11)+1);
+	Sensor0.setBaseID(0);
+	Sensor1.setBaseID(1);
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -388,7 +388,6 @@ void StartDataStreamerThread(void const * argument) {
 		DataMessage *Datarptr;
 		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
 		osEvent DataEvent = osMailGet(DataMail, 200);
-
 		struct timespec SampelPointUtc;
 		if (DataEvent.status == osEventMail) {
 			Datarptr = (DataMessage*) DataEvent.value.p;
@@ -609,10 +608,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t Channel3Tim2CaptureCount = 0;
 	static uint32_t Channel4Tim2CaptureCount = 0;
 	static uint32_t GPScaptureCount = 0;
-	uint64_t timestamp = 0;
+	uint64_t timestamp21 = 0;
+	uint64_t timestamp23 = 0;
+	uint64_t timestamp24 = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
-		timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		/*
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
@@ -625,10 +626,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		if (Channel3Tim2CaptureCount % 1 == 0) {
-			timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
+			timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
 			DataMessage *mptr0;
 			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
-			Sensor0.getData(mptr0, timestamp, Channel3Tim2CaptureCount);
+			Sensor0.getData(mptr0, timestamp23, Channel3Tim2CaptureCount);
 			//TODO move this functionality into the sensor api!!!
 			//Sensor.addDescriptionStr(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,const char * Description)
 			//Sensor.addDescriptionFloat(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,float Description)
@@ -654,7 +655,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
-		timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
@@ -664,7 +665,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			HAL_DMA_Abort(&hdma_uart7_rx);
 			mptr = (NMEASTamped *) osMailAlloc(NMEAMail, 0);//The parameter millisec must be 0 for using this function in an ISR.
 			if (mptr != NULL) {
-				mptr->RawTimerCount = timestamp;
+				mptr->RawTimerCount = timestamp24;
 				mptr->CaptureCount = GPScaptureCount;
 				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),
 				NMEBUFFERLEN);
@@ -686,7 +687,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 		DataMessage *mptr1;
 		mptr1 = (DataMessage *) osMailAlloc(DataMail, 0);
-		Sensor1.getData(mptr1, timestamp, Channel3Tim2CaptureCount);
+		Sensor1.getData(mptr1, timestamp24, Channel4Tim2CaptureCount);
 		osStatus result = osMailPut(DataMail, mptr1);
 	}
 
