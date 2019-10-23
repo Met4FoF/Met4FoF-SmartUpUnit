@@ -12,28 +12,19 @@ from scipy import signal
 from scipy.stats import norm
 
 LANG = "DE"
-#GPSLoggArray = np.load(r"C:\Users\benes\Downloads\2019-09-23_gpslog.npy")
-GPSLoggArray = np.load(r"data/2019-09-23_gpslog.npy")
-GPSLoggArray = np.reshape(GPSLoggArray, (int(GPSLoggArray.size / 4), 4))
-# cut out first 5 values sice they are pointless
-GPSLoggArray = np.copy(GPSLoggArray[5:, :])
-# cut out data in witch coldspray was used
-#GPSLoggArray = np.copy(GPSLoggArray[1000:, :])
-# substract startvalues for index and secs to have handy values starting at zero for time series
-GPSLoggArray[:, 0] = GPSLoggArray[:, 0] - GPSLoggArray[0, 0]
-GPSLoggArray[:, 1] = GPSLoggArray[:, 1] - GPSLoggArray[0, 1]
-DF = pd.DataFrame(
-    data=GPSLoggArray[:, 1:],  # values
-    index=GPSLoggArray[:, 0],  # 1st column as index
-    columns=["Secs", "nSecs", "uncer"],
-)  # 1st row as the column names
-splipostion = np.array([96603, 104099])
+DF=pd.read_csv('data/timing0_7.log',sep=';',skiprows=range(1,5))
+
+splipostion = np.array([2702,16896])
 #splipostion = np.array([])
 for i in np.arange(splipostion.size):
-    DF["nSecs"][splipostion[i] :] += 100
-DF["nSecDev"] = DF["nSecs"] - DF["nSecs"][0]
-DF["nSecDev"] = DF["nSecs"] - DF["nSecs"][0] - np.mean(DF["nSecDev"])
+    DF["unix_time_nsecs"][splipostion[i] :]+=100
+DF["nSecDev"] = DF["unix_time_nsecs"] - DF["unix_time_nsecs"][0]
+#remove glitches more than 0.1 ms deviation
+DF.drop(DF.index[DF['nSecDev'] < -100000], inplace = True)
+DF.drop(DF.index[DF['nSecDev'] > 100000], inplace = True)
+DF["nSecDev"] = DF["unix_time_nsecs"] - DF["unix_time_nsecs"][0] - np.mean(DF["nSecDev"])
 AK = signal.correlate(DF["nSecDev"], DF["nSecDev"], mode="same")
+
 fig1, ax1 = plt.subplots()
 if LANG == "EN":
     nSecDevLabel = r"time deviation $t_{(is)}-t_{(shold)}$"
@@ -41,8 +32,8 @@ if LANG == "EN":
 if LANG == "DE":
     nSecDevLabel = r"Zeitabweichung $t_{(ist)}-t_{(soll)}$"
     uncerLabel = "Messunsicherheit $u$"
-ax1.plot(2 * DF["uncer"], color="C1", label=uncerLabel)
-ax1.plot(-2 * DF["uncer"], color="C1")
+ax1.plot(DF["time_uncertainty"], color="C1", label=uncerLabel)
+ax1.plot(-DF["time_uncertainty"], color="C1")
 ax1.plot(DF["nSecDev"], color="C0", label=nSecDevLabel)
 if LANG == "EN":
     ax1.set_ylabel(r"time deviation $t_{(is)}-t_{(should)}$in ns")
@@ -57,7 +48,7 @@ if LANG == "DE":
 ax1.grid(True)
 ax1.legend()
 fig1.show()
-DF["inRange"] = (abs(DF["nSecDev"]) <= 2 * (DF["uncer"] * 60 / 59)).astype(int)
+DF["inRange"] = (abs(DF["nSecDev"]) <= (DF["time_uncertainty"])).astype(int)
 coverage = np.mean(DF["inRange"])
 print("uncertantiy coverage is " + str(coverage * 100) + " %")
 
@@ -94,3 +85,5 @@ if LANG == "DE":
 ax2.grid(True)
 
 fig2.show()
+
+
