@@ -41,6 +41,7 @@ BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* b
 		_SPICSPin=SPICSPin;
 		_bmaspi=bmaspi;
 		_BaseID=BaseID;
+		_SetingsID=0;
 		_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
 		_aRes=0;
 		_conversionfactor=*(float*) nanf;
@@ -133,7 +134,6 @@ void BMA280::fastCompensation() {
 int BMA280::setBaseID(uint16_t BaseID)
 {
 	_BaseID=BaseID;
-	_SetingsID=0;
 	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
 	return 0;
 }
@@ -264,35 +264,65 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Capture
 
 int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	int retVal=0;
-	strncpy(Message->Sensor_name,"MPU 9250",sizeof(Message->Sensor_name));
 	Message->id=_ID;
+	strncpy(Message->Sensor_name,"BMA 280\0",sizeof(Message->Sensor_name));
+	Message->Description_Type=DESCRIPTION_TYPE;
+	Message->has_str_Data_01=false;
+	Message->has_str_Data_02=false;
+	Message->has_str_Data_03=false;
+	Message->has_str_Data_04=false;
+	Message->has_str_Data_05=false;
+	Message->has_str_Data_06=false;
+	Message->has_str_Data_07=false;
+	Message->has_str_Data_08=false;
+	Message->has_str_Data_09=false;
+	Message->has_str_Data_10=false;
+	Message->has_str_Data_11=false;
+	Message->has_str_Data_12=false;
+	Message->has_str_Data_13=false;
+	Message->has_str_Data_14=false;
+	Message->has_str_Data_15=false;
+	Message->has_str_Data_16=false;
+	Message->has_f_Data_01=false;
+	Message->has_f_Data_02=false;
+	Message->has_f_Data_03=false;
+	Message->has_f_Data_04=false;
+	Message->has_f_Data_05=false;
+	Message->has_f_Data_06=false;
+	Message->has_f_Data_07=false;
+	Message->has_f_Data_08=false;
+	Message->has_f_Data_09=false;
+	Message->has_f_Data_10=false;
+	Message->has_f_Data_11=false;
+	Message->has_f_Data_12=false;
+	Message->has_f_Data_13=false;
+	Message->has_f_Data_14=false;
+	Message->has_f_Data_15=false;
+	Message->has_f_Data_16=false;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		Message->has_str_Data_03=true;
 		Message->has_str_Data_10=true;
-		strncpy(Message->str_Data_01,"X Acceleration",sizeof(Message->str_Data_01));
-		strncpy(Message->str_Data_02,"Y Acceleration",sizeof(Message->str_Data_02));
-		strncpy(Message->str_Data_03,"Z Acceleration",sizeof(Message->str_Data_03));
-		strncpy(Message->str_Data_10,"Temperature",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_01,"X Acceleration\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Y Acceleration\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"Z Acceleration\0",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
 	}
-	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UINT;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		Message->has_str_Data_03=true;
 		Message->has_str_Data_10=true;
-		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_01));
-		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_02));
-		strncpy(Message->str_Data_03,"\\metre\\second\\tothe{-2}",sizeof(Message->str_Data_03));
-		strncpy(Message->str_Data_10,"\\degree\\second\\tothe{-1}",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_10,"\\degreecelsius\0",sizeof(Message->str_Data_10));
 	}
-	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -300,7 +330,66 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->f_Data_01=16384;
 		Message->f_Data_02=16384;
 		Message->f_Data_03=16384;
-		Message->f_Data_10=255;
+		Message->f_Data_10=256;
+	}
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
+	{
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_03=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=-8192*_conversionfactor*g_to_ms2;
+		Message->f_Data_02=-8192*_conversionfactor*g_to_ms2;
+		Message->f_Data_03=-8192*_conversionfactor*g_to_ms2;
+		Message->f_Data_10=-41.0;
+	}
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
+	{
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_03=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=8191*_conversionfactor*g_to_ms2;
+		Message->f_Data_02=8191*_conversionfactor*g_to_ms2;
+		Message->f_Data_03=8191*_conversionfactor*g_to_ms2;
+		Message->f_Data_10=86.5;
+	}
+	else
+	{
+		Message->has_str_Data_01=false;
+		Message->has_str_Data_02=false;
+		Message->has_str_Data_03=false;
+		Message->has_str_Data_04=false;
+		Message->has_str_Data_05=false;
+		Message->has_str_Data_06=false;
+		Message->has_str_Data_07=false;
+		Message->has_str_Data_08=false;
+		Message->has_str_Data_09=false;
+		Message->has_str_Data_10=false;
+		Message->has_str_Data_11=false;
+		Message->has_str_Data_12=false;
+		Message->has_str_Data_13=false;
+		Message->has_str_Data_14=false;
+		Message->has_str_Data_15=false;
+		Message->has_str_Data_16=false;
+		Message->has_f_Data_01=false;
+		Message->has_f_Data_02=false;
+		Message->has_f_Data_03=false;
+		Message->has_f_Data_04=false;
+		Message->has_f_Data_05=false;
+		Message->has_f_Data_06=false;
+		Message->has_f_Data_07=false;
+		Message->has_f_Data_08=false;
+		Message->has_f_Data_09=false;
+		Message->has_f_Data_10=false;
+		Message->has_f_Data_11=false;
+		Message->has_f_Data_12=false;
+		Message->has_f_Data_13=false;
+		Message->has_f_Data_14=false;
+		Message->has_f_Data_15=false;
+		Message->has_f_Data_16=false;
+
+
 	}
 	return retVal;
 }

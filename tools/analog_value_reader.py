@@ -21,6 +21,7 @@ import messages_pb2
 
 UDP_IP = "192.168.2.100"
 UDP_PORT = 7000
+PRINTDIV=100
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet  # UDP
 sock.bind((UDP_IP, UDP_PORT))

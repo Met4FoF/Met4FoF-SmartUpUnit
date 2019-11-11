@@ -1,0 +1,48 @@
+sudo: required
+dist: xenial
+before_install:
+- export SW4STM32_VERSION=2.9
+
+# eclipse needs java8
+# make is needed by some projects with makefile
+# bzip2 needed to unpack fr.ac6.mcu.externaltools.arm-none and gets uninstalled later
+# actually bzip2 and unzip and zip may be needed
+# adapted from: https://hub.docker.com/r/kamilcuk/docker-sw4stm32/dockerfile
+- set -ex
+- unset DISPLAY
+- echo '===> Install prerequisites'
+- sudo apt-get update
+- sudo apt-get install -y --no-install-recommends openjdk-8-jre-headless make curl bzip2 sudo
+- echo '===> Downloading sw4stm32'
+- curl -k -O https://www.ac6-tools.com/downloads/SW4STM32/install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run
+- echo '===> Check md5sum'
+- curl  -k  https://www.ac6-tools.com/downloads/SW4STM32/install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run.md5 | md5sum -c -
+- echo '===> Installing sw4stm32'
+- yes | java -DINSTALL_PATH=/opt/sw4stm32 -jar install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run -options-system
+- rm -v install_sw4stm32_linux_64bits-v${SW4STM32_VERSION}.run
+- echo '===> Create sw4stm32 shortcut'
+- sudo printf '#!/bin/sh\nexec java -jar /opt/sw4stm32/plugins/org.eclipse.equinox.launcher_*.jar -nosplash -application org.eclipse.cdt.managedbuilder.core.headlessbuild "$@"\n' | sudo tee /usr/local/bin/sw4stm32-headless-build.sh
+- sudo chmod +x /usr/local/bin/sw4stm32-headless-build.sh
+- printf '#!/bin/sh\nexec /opt/sw4stm32/eclipse "$@"\n' | sudo tee /usr/local/bin/sw4stm32
+- sudo chmod +x /usr/local/bin/sw4stm32
+- echo '===> Unpacking fr.ac6.mcu.externaltools.arm-none plugin'
+- cd /opt/sw4stm32/plugins/fr.ac6.mcu.externaltools.arm-none.linux64_*/tools
+- mkdir -p compiler ; cd ./compiler
+- tar xjvf ../st-gnu-arm-gcc-*.tar.bz2
+- mv st-gnu-arm-gcc-*/* .
+- rmdir st-gnu-arm-gcc-*
+- echo '===> Finished unpacking arm-none-eabi-* for sw4stm32'
+- echo '===> DONE'
+
+script:
+- /opt/sw4stm32/eclipse -nosplash --launcher.suppressErrors -data /workspace/ -application org.eclipse.cdt.managedbuilder.core.headlessbuild -importAll ./ -build ".*/Debug" -configuration Debug
+- ls -la ./Debug/
+deploy:
+  provider: releases
+  api_key:
+    secure: EEqnZM6MeYUCwYgBZ2IWwCQ/cpIIkpogbBARftyH3j3GgcKm31tKVt/vfN+3WDX9fSGbP6I7R979d76KwTyX/ByRJYLQ6tO8d3Xuq4Gp/ExrDgM+S/3idRCAWGycsKIUxpmUyUXEqGgtCW/xf5xS2lUI9jRW1wQgY+uA2hMOxyYSF4sMRRUQWAf0xLyXP82s7rX7MJrDOczAevCvV1JVcdsRwc48Y2Mo8afVS5qR/5gSYx0NoR/MATJB/ModFLJY1cmjqDJdPtBthLJjbDalbgZJrAfgYtFiOvj2ggGxUApp4WKNyxwxB0flt8/g+gc5jKzYKOBfxgsuTe4d25pjJmVYEnC75AWCTqTIBY+sPy5nbWZFDJVJG0eSmY8MawrFRg4z4GFrQADJHgzowJeK78i3uRilbTc8d2TSced3MAWmgrwd6lbssV2OD0Ls9HrIqNclY7bPQLwGYu5ERtkm8lMuBXqhiEdNd7YN9xjFrchSyahyGW8Urojf9E/SaokKsXqoHEXuoSy91eE7hMuwvbWp9JjxETgcL031+R70RL/B3tkrJNtHJbxqmMKcmU9wkAu5QFPuiIUDUGI96msxZYLMyt/zXyi577ksrxi2CAV6s3NmPfuTZXNLBgMHi5WCsNWEChCizKoPLCajjiMGOujWB+fI2uyOvcgMMshBkqI=
+  file: "./Debug/met4FOF_SSU_V2.elf"
+  skip_cleanup: true
+  on:
+    repo: Met4FoF/Met4FoF-SmartUpUnit
+    tags: true

@@ -16,12 +16,13 @@ extern "C" {
 
 /* Enum definitions */
 typedef enum _DescriptionMessage_DESCRIPTION_TYPE {
-    DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY = 0,
-    DescriptionMessage_DESCRIPTION_TYPE_UINT = 1,
-    DescriptionMessage_DESCRIPTION_TYPE_UNCERTAINTY_TYPE = 2,
-    DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION = 3,
-    DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE = 4,
-    DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE = 5
+    DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
+    DescriptionMessage_DESCRIPTION_TYPE_UINT,
+    DescriptionMessage_DESCRIPTION_TYPE_UNCERTAINTY_TYPE,
+    DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
+    DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
+    DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
+	DescriptionMessage_LAST
 } DescriptionMessage_DESCRIPTION_TYPE;
 #define _DescriptionMessage_DESCRIPTION_TYPE_MIN DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY
 #define _DescriptionMessage_DESCRIPTION_TYPE_MAX DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE

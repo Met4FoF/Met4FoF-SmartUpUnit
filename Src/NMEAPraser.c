@@ -629,6 +629,8 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_t * time_uncertainty) {
+	utc->tv_sec=0;
+	utc->tv_nsec=0;
     double delta_sec;
     double intpart, fractpart;
     long tmp;
@@ -640,7 +642,8 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     }
 
     /* calculate delta in seconds between reference count_us and target count_us */
-    int64_t cntdiff64=(count_us - ref.count_us);
+    int64_t cntdiff64=0;
+    cntdiff64=(count_us - ref.count_us);
 #if DEBUG_GPS == 1
     if(cntdiff64<0)
     {
@@ -661,7 +664,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);
     tmp = ref.utc.tv_nsec + (long)(fractpart * 1E9);
-    if (tmp < (long)1E9 &&tmp>0) { /* the nanosecond part doesn't over or underflow */
+    if (tmp < (long)1E9 &&tmp>=0) { /* the nanosecond part doesn't over or underflow */
         utc->tv_sec = ref.utc.tv_sec + (time_t)intpart;
         utc->tv_nsec = tmp;
     } else if(tmp > (long)1E9 &&tmp>0) { /* must carry one second */
@@ -672,7 +675,6 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
         utc->tv_sec = ref.utc.tv_sec + (time_t)intpart -1;
         utc->tv_nsec = (long)1E9+tmp;
     }
-
     return LGW_GPS_SUCCESS;
 }
 
