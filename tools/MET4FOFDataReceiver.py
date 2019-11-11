@@ -268,29 +268,50 @@ class Sensor:
     def join(self, *args, **kwargs):
         self.stop()
 
-def DumpData0(message):
-    if not (os.path.exists('data/timing0_8.log')):
-        dumpfile = open('data/timing0_8.log', "a+")
-        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
+def DumpDataMPU9250(message):
+    PRINTDEVIDER=200
+    filename='data/DataDump.log'
+    if not (os.path.exists(filename)):
+        dumpfile = open(filename, "a+")
+        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
     else:
-        dumpfile = open('data/timing0_8.log', "a")
-        #2^48=281474976710656 2^32=4294967296 2^16=65536
-        gpscount=message.Data_01*281474976710656+message.Data_02*4294967296+message.Data_03*65536+message.Data_04
-        print(hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,gpscount)
+        dumpfile = open(filename, "a")
+        if(message.sample_number%PRINTDEVIDER==0):
+            print('=====DATA PACKET====','\n',
+                    hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
+                  '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
+                  '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
+                  '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
+                  '\n TEMP:',message.Data_10,
+                  '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
+
         dumpfile.write(str(message.id)+';'+
                        str(message.sample_number)+';'+
                        str(message.unix_time)+';'+
                        str(message.unix_time_nsecs)+';'+
                        str(message.time_uncertainty)+';'+
-                       str(gpscount)+"\n")
+                       str(message.Data_01)+';'+
+                       str(message.Data_02)+';'+
+                       str(message.Data_03)+';'+
+                       str(message.Data_04)+';'+
+                       str(message.Data_05)+';'+
+                       str(message.Data_06)+';'+
+                       str(message.Data_07)+';'+
+                       str(message.Data_08)+';'+
+                       str(message.Data_09)+';'+
+                       str(message.Data_10)+';'+
+                       str(message.Data_11)+';'+
+                       str(message.Data_12)+';'+
+                       str(message.Data_13)+';'+
+                       "\n")
     dumpfile.close()
 
-def DumpData1(message):
-    if not (os.path.exists('data/timing1_8.log')):
-        dumpfile = open('data/timing1_8.log', "a+")
+def DumpDataGPSDummySensor(message):
+    if not (os.path.exists('data/GPSLog.log')):
+        dumpfile = open('data/GPSLog.log', "a+")
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
     else:
-        dumpfile = open('data/timing1_8.log', "a")
+        dumpfile = open('data/GPSLog', "a")
         #2^48=281474976710656 2^32=4294967296 2^16=65536
         gpscount=message.Data_01*281474976710656+message.Data_02*4294967296+message.Data_03*65536+message.Data_04
         print(hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,gpscount)
