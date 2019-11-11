@@ -79,7 +79,7 @@ extern "C" {
 #include <GPSTimesyn.hpp>
 #include "tim64extender.h"
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 1
+#define VERSION_MINOR 2
 #define VERSION_PATCH 0
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
