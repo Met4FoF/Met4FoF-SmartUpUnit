@@ -110,7 +110,7 @@ class DataReceiver:
                             print("packet lost for sensor ID:" + str(SensorID))
                     else:
                         self.AllSensors[SensorID] = Sensor(SensorID)
-                        print("FOUND NEW SENSOR WITH ID=" + hex(SensorID))
+                        print("FOUND NEW SENSOR WITH ID=hex" + hex(SensorID)+'==>dec:'+str(SensorID))
                     self.msgcount = self.msgcount + 1
 
                     if self.msgcount % self.params["PacketrateUpdateCount"] == 0:
@@ -153,7 +153,7 @@ class DataReceiver:
                             print("packet lost for sensor ID:" + hex(SensorID))
                     else:
                         self.AllSensors[SensorID] = Sensor(SensorID)
-                        print("FOUND NEW SENSOR WITH ID=" + hex(SensorID))
+                        print("FOUND NEW SENSOR WITH ID=hex" + hex(SensorID)+' dec==>:'+str(SensorID))
                     self.msgcount = self.msgcount + 1
 
                     if self.msgcount % self.params["PacketrateUpdateCount"] == 0:
