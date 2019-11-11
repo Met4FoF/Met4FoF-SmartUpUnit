@@ -14,8 +14,8 @@ from scipy.stats import norm
 LANG = "DE"
 DF=pd.read_csv('data/timing0_7.log',sep=';',skiprows=range(1,5))
 
-splipostion = np.array([2702,16896])
-#splipostion = np.array([])
+#splipostion = np.array([2702,16896,74829,156910,163527])
+splipostion = np.array([])
 for i in np.arange(splipostion.size):
     DF["unix_time_nsecs"][splipostion[i] :]+=100
 DF["nSecDev"] = DF["unix_time_nsecs"] - DF["unix_time_nsecs"][0]

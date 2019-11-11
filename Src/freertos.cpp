@@ -109,11 +109,11 @@ osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
 
-DummySensor Sensor0(0);
-DummySensor Sensor1(1);
+//DummySensor Sensor0(0);
+//DummySensor Sensor1(1);
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-//MPU9250 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-
+MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 
@@ -243,10 +243,10 @@ void StartLCDThread(void const * argument) {
 	 ILI9341_Draw_Text(" Kto by ehto ni chital, ehto glupo.", 0, 220, WHITE, 1.5, BLUE);
 	 */
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "Build.date:%s", __DATE__);
+	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d",VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "Build.time:%s", __TIME__);
-	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 2, BLUE);
+	sprintf(Temp_Buffer_text, "Build:%s %s", __DATE__,__TIME__);
+	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 1, BLUE);
 	ip_addr_t UDPTargetIP = configMan.getUDPTargetIP();
 	char iPadressBuffer[17] = { };
 	ip4addr_ntoa_r(&(UDPTargetIP), iPadressBuffer, sizeof(iPadressBuffer));
@@ -309,12 +309,12 @@ void StartDataStreamerThread(void const * argument) {
 	configMan.setADCCalCoevs(2, 0.004884955868836948, -10.031544601902738,
 			4.721804326558252e-3);
 
-	/*//MPU9250
-	 Sensor2.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
-	 Sensor2.begin();
+	//MPU9250
+	 Sensor1.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
+	 Sensor1.begin();
 	 //Sensor2.setSrd();
-	 Sensor2.enableDataReadyInterrupt();
-	 */
+	 Sensor1.enableDataReadyInterrupt();
+
 
 /*//BMA280
 	// SET PS pin low
@@ -323,8 +323,10 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 */
 	//Dummy Sensor
+	/*
 	Sensor0.setBaseID(0);
 	Sensor1.setBaseID(1);
+	*/
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -339,7 +341,7 @@ void StartDataStreamerThread(void const * argument) {
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
 	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 2, 100 };
+	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
 	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
 			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
 	configMan.setUDPTargetIP(targetipaddr);

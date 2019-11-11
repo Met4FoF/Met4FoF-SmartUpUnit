@@ -18,3 +18,11 @@ tools/data/
 *.hex
 
 *.map
+
+Debug/
+
+\.cproject
+
+st-link\.cfg
+
+tools/linux_tty_lister\.sh

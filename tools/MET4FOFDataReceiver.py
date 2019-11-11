@@ -269,11 +269,11 @@ class Sensor:
         self.stop()
 
 def DumpData0(message):
-    if not (os.path.exists('data/timing0_1.log')):
-        dumpfile = open('data/timing0_1.log', "a+")
+    if not (os.path.exists('data/timing0_8.log')):
+        dumpfile = open('data/timing0_8.log', "a+")
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
     else:
-        dumpfile = open('data/timing0_1.log', "a")
+        dumpfile = open('data/timing0_8.log', "a")
         #2^48=281474976710656 2^32=4294967296 2^16=65536
         gpscount=message.Data_01*281474976710656+message.Data_02*4294967296+message.Data_03*65536+message.Data_04
         print(hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,gpscount)
@@ -286,11 +286,11 @@ def DumpData0(message):
     dumpfile.close()
 
 def DumpData1(message):
-    if not (os.path.exists('data/timing1_1.log')):
-        dumpfile = open('data/timing1_1.log', "a+")
+    if not (os.path.exists('data/timing1_8.log')):
+        dumpfile = open('data/timing1_8.log', "a+")
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
     else:
-        dumpfile = open('data/timing1_1.log', "a")
+        dumpfile = open('data/timing1_8.log', "a")
         #2^48=281474976710656 2^32=4294967296 2^16=65536
         gpscount=message.Data_01*281474976710656+message.Data_02*4294967296+message.Data_03*65536+message.Data_04
         print(hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,gpscount)

@@ -34,7 +34,7 @@ class DG4xxx:
     def sendCommand(self,CMD):
         return self.visa.write(CMD)
 
-    def fiereBurst(self,freq,ampl,offset,phase,cycles,delay=False):
+    def fiereBurst(self,freq,ampl,offset,phase,cycles,channel=1,delay=False):
         minAmpl=-ampl/2+offset
         maxAmpl=ampl/2+offset
         if(minAmpl<0):
@@ -43,13 +43,13 @@ class DG4xxx:
             raise ValueError('Output voltage should never be grater than 5 Volt but is at max '+str(maxAmpl))
         if(freq<0.001):
             raise ValueError('Output frequency is to low (<1 mHz) or negative')
-        self.sendCommand(':OUTPut OFF')
-        self.sendCommand(':APPLy:SINusoid '+str(freq)+','+str(ampl)+','+str(offset)+','+str(phase))
-        self.sendCommand(':BURSt:NCYCles '+str(cycles))
-        self.sendCommand(':BURSt:TRIGger:SOURce MANual') #activate manual TRIGger
-        self.sendCommand(':BURSt ON')#activate burst mode
-        self.sendCommand(':OUTPut ON')
-        self.sendCommand(':BURSt:TRIGger')
+        self.sendCommand(':OUTPut'+str(channel)+':STATe OFF')
+        self.sendCommand(':SOURce'+str(channel)+':APPLy:SINusoid '+str(freq)+','+str(ampl)+','+str(offset)+','+str(phase))
+        self.sendCommand(':SOURce'+str(channel)+':BURSt:NCYCles '+str(cycles))
+        self.sendCommand(':SOURce'+str(channel)+':BURSt:TRIGger:SOURce MANual') #activate manual TRIGger
+        self.sendCommand(':SOURce'+str(channel)+':BURSt ON')#activate burst mode
+        self.sendCommand(':OUTPut'+str(channel)+':STATe ON')
+        self.sendCommand(':SOURce'+str(channel)+':BURSt:TRIGger')
         if delay:
             Duration=1/freq*cycles
             print("Burst Duration="+str(Duration)+' seconds \nsleeping this time')
@@ -59,4 +59,6 @@ class DG4xxx:
         else:
             return
 
-
+def Fireloop():
+    for x in range(0, 20):
+        DG4162.fiereDifferentialBurst(100.0,0.01,0.005,0,10,True)
