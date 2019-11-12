@@ -2,6 +2,9 @@
 ## Setup
 1. Download this repo
 2. install Python dependencies [add needed deps]
+```python
+  pip install protobuf
+  ```
 3. Flash the µC with the newest release [add link] [see installation manual]
 4. Connect µC an PC directly via Lan (or over an switch with DHCP anabled to 192.168.2.x Subnet)
 5. Set ip Adress of pc to 192.168.2.100
