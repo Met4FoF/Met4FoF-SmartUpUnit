@@ -217,17 +217,18 @@ class Sensor:
         self.Dumpfile.close()
 
     def run(self):
+        lastpackedId=0
         while not self._stop_event.is_set():
             # problem when we are closing the queue this function is waiting for data and raises EOF error if we delet the q
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
             try:
                 message = self.buffer.get(timeout=0.1)
                 tmpTime = datetime.now()
-                self.deltaT = (
-                    tmpTime - self.lastPacketTimestamp
-                )  # will b 0 but has deltaTime type witch is intended
-                self.datarate = 1 / (self.deltaT.seconds + 1e-6 * self.deltaT.microseconds)
-                self.lastPacketTimestamp = datetime.now()
+                #self.deltaT = (
+                #    tmpTime - self.lastPacketTimestamp
+                #)  # will b 0 but has deltaTime type witch is intended
+                #self.datarate = 1 / (self.deltaT.seconds + 1e-6 * self.deltaT.microseconds)
+                #self.lastPacketTimestamp = datetime.now()
                 self.ProcessedPacekts = self.ProcessedPacekts + 1
                 if self.flags["PrintProcessedCounts"]:
                     if self.ProcessedPacekts % 10000 == 0:
@@ -252,6 +253,10 @@ class Sensor:
         self.flags["callbackSet"] = True
         self.callback = callback
 
+    def UnSetCallback(self,):
+        self.flags["callbackSet"] = False
+        self.callback = doNothingCb
+
     def stop(self):
         print("Stopping Sensor " + hex(self.params["ID"]))
         self._stop_event.set()
@@ -269,42 +274,34 @@ class Sensor:
         self.stop()
 
 def DumpDataMPU9250(message):
-    PRINTDEVIDER=200
-    filename='data/DataDump.log'
-    if not (os.path.exists(filename)):
-        dumpfile = open(filename, "a+")
-        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
-    else:
-        dumpfile = open(filename, "a")
-        if(message.sample_number%PRINTDEVIDER==0):
-            print('=====DATA PACKET====','\n',
-                    hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
-                  '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
-                  '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
-                  '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
-                  '\n TEMP:',message.Data_10,
-                  '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
-
-        dumpfile.write(str(message.id)+';'+
-                       str(message.sample_number)+';'+
-                       str(message.unix_time)+';'+
-                       str(message.unix_time_nsecs)+';'+
-                       str(message.time_uncertainty)+';'+
-                       str(message.Data_01)+';'+
-                       str(message.Data_02)+';'+
-                       str(message.Data_03)+';'+
-                       str(message.Data_04)+';'+
-                       str(message.Data_05)+';'+
-                       str(message.Data_06)+';'+
-                       str(message.Data_07)+';'+
-                       str(message.Data_08)+';'+
-                       str(message.Data_09)+';'+
-                       str(message.Data_10)+';'+
-                       str(message.Data_11)+';'+
-                       str(message.Data_12)+';'+
-                       str(message.Data_13)+';'+
-                       "\n")
-    dumpfile.close()
+    PRINTDEVIDER=10000
+    dumpfile.write(str(message.id)+';'+
+                   str(message.sample_number)+';'+
+                   str(message.unix_time)+';'+
+                   str(message.unix_time_nsecs)+';'+
+                   str(message.time_uncertainty)+';'+
+                   str(message.Data_01)+';'+
+                   str(message.Data_02)+';'+
+                   str(message.Data_03)+';'+
+                   str(message.Data_04)+';'+
+                   str(message.Data_05)+';'+
+                   str(message.Data_06)+';'+
+                   str(message.Data_07)+';'+
+                   str(message.Data_08)+';'+
+                   str(message.Data_09)+';'+
+                   str(message.Data_10)+';'+
+                   str(message.Data_11)+';'+
+                   str(message.Data_12)+';'+
+                   str(message.Data_13)+';'+
+                   "\n")
+    if(message.sample_number%PRINTDEVIDER==0):
+        print('=====DATA PACKET====','\n',
+          hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
+          '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
+          '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
+          '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
+          '\n TEMP:',message.Data_10,
+          '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
 
 def DumpDataGPSDummySensor(message):
     if not (os.path.exists('data/GPSLog.log')):
@@ -322,3 +319,14 @@ def DumpDataGPSDummySensor(message):
                        str(message.time_uncertainty)+';'+
                        str(gpscount)+"\n")
     dumpfile.close()
+
+def doNothingCb():
+    pass
+
+def openDumpFile():
+    filename='data/DataDump.log'
+    if not (os.path.exists(filename)):
+        dumpfile = open(filename, "a+")
+        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
+    else:
+        dumpfile = open(filename, "a")
