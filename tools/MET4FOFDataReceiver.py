@@ -274,6 +274,12 @@ class Sensor:
         self.stop()
 
 def DumpDataMPU9250(message):
+    filename='data/DataDump.log'
+    if not (os.path.exists(filename)):
+        dumpfile = open(filename, "a+")
+        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
+    else:
+        dumpfile = open(filename, "a")        
     PRINTDEVIDER=10000
     dumpfile.write(str(message.id)+';'+
                    str(message.sample_number)+';'+
@@ -294,14 +300,14 @@ def DumpDataMPU9250(message):
                    str(message.Data_12)+';'+
                    str(message.Data_13)+';'+
                    "\n")
-    if(message.sample_number%PRINTDEVIDER==0):
-        print('=====DATA PACKET====','\n',
-          hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
-          '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
-          '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
-          '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
-          '\n TEMP:',message.Data_10,
-          '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
+    # if(message.sample_number%PRINTDEVIDER==0):
+    #     print('=====DATA PACKET====','\n',
+    #       hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
+    #       '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
+    #       '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
+    #       '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
+    #       '\n TEMP:',message.Data_10,
+    #       '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
 
 def DumpDataGPSDummySensor(message):
     if not (os.path.exists('data/GPSLog.log')):
@@ -318,7 +324,6 @@ def DumpDataGPSDummySensor(message):
                        str(message.unix_time_nsecs)+';'+
                        str(message.time_uncertainty)+';'+
                        str(gpscount)+"\n")
-    dumpfile.close()
 
 def doNothingCb():
     pass

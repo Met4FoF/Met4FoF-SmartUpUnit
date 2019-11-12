@@ -375,11 +375,11 @@ void StartDataStreamerThread(void const * argument) {
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
-	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
-	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
-	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
-	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
-	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
+	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
+	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
+	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
+	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
+	//__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 	/* Enable ADCs external trigger */
 	HAL_ADC_Start_IT(&hadc1);
 	HAL_ADC_Start_IT(&hadc2);
@@ -387,7 +387,7 @@ void StartDataStreamerThread(void const * argument) {
 
 	while (1) {
 		DataMessage *Datarptr;
-		//Delay =200 ms so the other routine is processed with 5 Hz >>1 Hz GPS PPS
+		static uint32_t lastMessageId=0;
 		osEvent DataEvent = osMailGet(DataMail, 200);
 		struct timespec SampelPointUtc;
 		if (DataEvent.status == osEventMail) {
@@ -420,6 +420,8 @@ void StartDataStreamerThread(void const * argument) {
 
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
+			if(lastMessageId<Datarptr->sample_number){
+				//TODO investigate the reason for double packets or super old packets
 			if (ProtoStreamData.bytes_written
 					> (MTU_SIZE - (DataMessage_size))) {
 				//sending the buffer
@@ -438,6 +440,8 @@ void StartDataStreamerThread(void const * argument) {
 			pb_encode_ex(&ProtoStreamData, DataMessage_fields, Datarptr,
 					PB_ENCODE_DELIMITED);
 			i++;
+			lastMessageId=Datarptr->sample_number;
+			}
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 		}
