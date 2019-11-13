@@ -398,8 +398,6 @@ void StartDataStreamerThread(void const * argument) {
 				 available wait 10 ticks to see if it becomes free. */
 				if ( xSemaphoreTake(xSemaphoreGPS_REF,
 						(TickType_t ) 10) == pdTRUE) {
-					//Message->time_uncertainty=(uint32_t)(RawTimeStamp & 0xFFFFFFFF00000000) >> 32;//high word
-					//Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 					uint64_t timestamp = (uint64_t) (Datarptr->time_uncertainty)
 							<< 32;
 					timestamp += (uint64_t) (Datarptr->unix_time_nsecs);
@@ -421,7 +419,7 @@ void StartDataStreamerThread(void const * argument) {
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
 			if(lastMessageId<Datarptr->sample_number){
-				//TODO investigate the reason for double packets or super old packets
+				//this check is just for extra security in normal operation this should never happen
 			if (ProtoStreamData.bytes_written
 					> (MTU_SIZE - (DataMessage_size))) {
 				//sending the buffer
@@ -657,7 +655,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			HAL_ADC_PollForConversion(&hadc3, 0);
 			adcVal = (float) HAL_ADC_GetValue(&hadc3);
 			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal);
-
 			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}
@@ -694,12 +691,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			NMEBUFFERLEN - 1);
 			GPScaptureCount++;
 		}
-
-		DataMessage *mptr1;
-		mptr1 = (DataMessage *) osMailAlloc(DataMail, 0);
-		//Sensor1.getData(mptr1, timestamp24, Channel4Tim2CaptureCount);
-		osStatus result = osMailPut(DataMail, mptr1);
-
 	}
 
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
