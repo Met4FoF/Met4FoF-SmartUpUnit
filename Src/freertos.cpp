@@ -340,7 +340,7 @@ void StartDataStreamerThread(void const * argument) {
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
 	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 2, 100 };
+	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
 	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
 			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
 	configMan.setUDPTargetIP(targetipaddr);

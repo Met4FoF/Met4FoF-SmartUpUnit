@@ -22,7 +22,6 @@ import time
 from multiprocessing import Queue
 import copy
 
-
 class DataReceiver:
     def __init__(self, IP, Port):
         self.flags = {"Networtinited": False}
@@ -78,7 +77,7 @@ class DataReceiver:
     def run(self):
         # implement stop routine
         while not self._stop_event.is_set():
-            data, addr = self.socket.recvfrom(1024)  # buffer size is 1024 bytes
+            data, addr = self.socket.recvfrom(1500)  # buffer size is 1024 bytes
             wasValidData = False
             wasValidDescription = False
             ProtoData = messages_pb2.DataMessage()
@@ -182,9 +181,69 @@ class DataReceiver:
         self.socket.close()
 
 
+### classes to proces sensor descriptions
+class AliasDict(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.aliases = {}
+
+    def __getitem__(self, key):
+        return dict.__getitem__(self, self.aliases.get(key, key))
+
+    def __setitem__(self, key, value):
+        return dict.__setitem__(self, self.aliases.get(key, key), value)
+
+    def add_alias(self, key, alias):
+        self.aliases[alias] = key
+
+class ChannelDescription:
+   def __init__(self,CHID):
+       self.Description={"CHID":CHID,
+                         "PHYSICAL_QUANTITY":'Not Set',
+                         "UINT":'Not Set',
+                         "UNCERTAINTY_TYPE":'Not Set',
+                         "RESOLUTION":'Not Set',
+                         "MIN_SCALE":'Not Set',
+                         "MAX_SCALE":'Not Set'}
+   def __getitem__(self, key):
+       #if key='SpecialKey':
+       # self.Description['SpecialKey']
+       return self.Description[key]
+
+   def __str__(self):
+         return 'Channel: '+str(self.Description["CHID"])+' ==>'+str(self.Description["PHYSICAL_QUANTITY"])+' in '+str(self.Description["UNIT"])
+   #todo override set methode
+   def setDescription(self,key,value):
+       self.Description[key]=value
+
+class SensorDescription:
+    def __init__(self,ID,SensorName):
+        self.ID=ID
+        self.SensorName=SensorName
+        self._complete=False
+        self.Channels=AliasDict({"PHYSICAL_QUANTITY":'Not Set',
+                         "UINT":'Not Set',
+                         "UNCERTAINTY_TYPE":'Not Set',
+                         "RESOLUTION":'Not Set',
+                         "MIN_SCALE":'Not Set',
+                         "MAX_SCALE":'Not Set'})
+
+    def setChannelParam(self,CHID,key,value):
+        if CHID in self.Channels:
+            self.Channels[CHID].setDescription(key,value)
+            if(key=='PHYSICAL_QUANTITY'):
+                self.Channels.add_alias(CHID,value)#make channels callable by ther Quantity
+        else:
+            if(key=='PHYSICAL_QUANTITY'):
+                self.Channels.add_alias(CHID,value)#make channels callable by ther Quantity
+            self.Channels[CHID]=ChannelDescription(CHID)
+            self.Channels[CHID].setDescription(key,value)
+            self.Channels.add_alias(CHID,'Data_'+'{:02d}'.format(CHID))#make channels callable by ther Data_xx name
+
 class Sensor:
     # TODO implement multi therading and callbacks
     def __init__(self, ID, BufferSize=1e4):
+        self.Description=SensorDescription(ID,'Name not Set')
         self.buffer = Queue(int(BufferSize))
         self.flags = {
             "DumpToFile": False,
@@ -192,6 +251,19 @@ class Sensor:
             "callbackSet": False,
         }
         self.params = {"ID": ID, "BufferSize": BufferSize, "DumpFileName": ""}
+        self.DescriptionsProcessed=AliasDict({"PHYSICAL_QUANTITY":False,
+                         "UINT":False,
+                         "UNCERTAINTY_TYPE":False,
+                         "RESOLUTION":False,
+                         "MIN_SCALE":False,
+                         "MAX_SCALE":False})
+        #TODO there is an better way for this
+        self.DescriptionsProcessed.add_alias("PHYSICAL_QUANTITY",0)
+        self.DescriptionsProcessed.add_alias("UINT",1)
+        self.DescriptionsProcessed.add_alias("UNCERTAINTY_TYPE",2)
+        self.DescriptionsProcessed.add_alias("RESOLUTION",3)
+        self.DescriptionsProcessed.add_alias("MIN_SCALE",4)
+        self.DescriptionsProcessed.add_alias("MAX_SCALE",5)
 
         self._stop_event = threading.Event()
         self.thread = threading.Thread(target=self.run, args=())
@@ -236,6 +308,29 @@ class Sensor:
                             "processed 10000 packets in receiver for Sensor ID:"
                             + hex(self.params["ID"])
                         )
+                if message['Type']=='Description':
+                    Description=message['ProtMsg']
+                    try:
+                        if not any(self.DescriptionsProcessed.values())and Description.IsInitialized():
+                            #run only if no description packed has been procesed ever
+                            #self.Description.SensorName=message.Sensor_name
+                            print('Found new '+Description.Sensor_name+' sensor with ID:'+str(self.params['ID']))
+                            print(str(Description.Description_Type))
+                        if self.DescriptionsProcessed[Description.Description_Type]==False :
+                            #we havent processed thiss message before now do that
+                            if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UINT","UNCERTAINTY_TYPE"]
+                                #string Processing
+                                self.DescriptionsProcessed[Description.Description_Type]=True
+                                print(self.DescriptionsProcessed)
+                            if Description.Description_Type in [3,4,5]:#["RESOLUTION","MIN_SCALE","MAX_SCALE"]
+                                self.DescriptionsProcessed[Description.Description_Type]=True
+                                print(self.DescriptionsProcessed)
+                                #string Processing
+                    except Exception:
+                        print (" Sensor id:"+hex(self.params["ID"])+"Exception in user Description parsing:")
+                        print('-'*60)
+                        traceback.print_exc(file=sys.stdout)
+                        print('-'*60)
                 if self.flags["callbackSet"]:
                     if(message['Type']=='Data'):
                         try:
