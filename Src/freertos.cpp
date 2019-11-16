@@ -230,20 +230,16 @@ void StartLCDThread(void const * argument) {
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	//TODO move this to config manager
+	uint8_t UDID[12]={};
+	for(int i=0;i<12;i++)
+	{
+		 UDID[i]=UDID_Read8(i);
+	}
+	uint16_t BaseID=gen_crc16(UDID, 12);
 	char Temp_Buffer_text[40];
-	/*
-	 ILI9341_Draw_Text(" Wer das liest ist doof.", 0, 60, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Wie dat leest, is dom.", 0, 80, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Who reads that is stupid.", 0, 100, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Celui qui lit ca est stupide.", 0, 120, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Quienquiera que lea eso es estupido.", 0, 140, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Quem le isso e estupido.", 0, 160, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Chiunque lo legga e stupido.", 0, 180, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Ktokolwiek to czyta, jest glupi.", 0, 200, WHITE, 1.5, BLUE);
-	 ILI9341_Draw_Text(" Kto by ehto ni chital, ehto glupo.", 0, 220, WHITE, 1.5, BLUE);
-	 */
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d",VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH);
+	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d  ID:%x",VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,BaseID);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "Build:%s %s", __DATE__,__TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 1, BLUE);
@@ -310,7 +306,14 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
-	 Sensor0.setBaseID(((uint16_t)UDID_Read8(10)<<8)+UDID_Read8(11));
+	//TODO move this to config manager
+	uint8_t UDID[12]={};
+	for(int i=0;i<12;i++)
+	{
+		 UDID[i]=UDID_Read8(i);
+	}
+	uint16_t BaseID=gen_crc16(UDID, 12);
+	 Sensor0.setBaseID(BaseID);
 	 Sensor0.begin();
 	 Sensor0.enableDataReadyInterrupt();
 
@@ -324,7 +327,7 @@ void StartDataStreamerThread(void const * argument) {
 	//Dummy Sensor
 	/*
 	Sensor0.setBaseID(0);
-	Sensor1.setBaseID(1);
+	Sensor1.setBaseID(1);crc
 	*/
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
@@ -704,6 +707,41 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
 
+#define CRC16 0x8005
+
+uint16_t gen_crc16(const uint8_t *data, uint16_t size)
+{
+    uint16_t out = 0;
+    int bits_read = 0, bit_flag;
+
+    /* Sanity check: */
+    if(data == NULL)
+        return 0;
+
+    while(size > 0)
+    {
+        bit_flag = out >> 15;
+
+        /* Get next bit: */
+        out <<= 1;
+        out |= (*data >> (7 - bits_read)) & 1;
+
+        /* Increment bit counter: */
+        bits_read++;
+        if(bits_read > 7)
+        {
+            bits_read = 0;
+            data++;
+            size--;
+        }
+
+        /* Cycle check: */
+        if(bit_flag)
+            out ^= CRC16;
+    }
+
+    return out;
+}
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 

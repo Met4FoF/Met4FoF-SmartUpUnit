@@ -126,6 +126,8 @@ extern void MX_FATFS_Init(void);
 void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
+//TODO move to configmanager
+uint16_t gen_crc16(const uint8_t *data, uint16_t size);
 
 
 /* (MISRA C 2004 rule 8.1) */
