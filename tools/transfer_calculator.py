@@ -283,7 +283,7 @@ class Databuffer:
             "axixofintest": 1,
             "stdvalidaxis": 3,
             "minValidChunksInRow": 3,
-            "minSTDforVailid": 0.5,
+            "minSTDforVailid": 5,
             "defaultEndCutOut": 750,
         }
         self.flags = {
@@ -453,7 +453,7 @@ class Databuffer:
             raise RuntimeError("REFTransferFunction NOT SET RETURNING 0,0")
 
     def getTransferFunction(
-        self, axisDUT, AxisRef=3, RefScalefactor=10, RefPhaseDC=-np.pi
+        self, axisDUT, AxisRef=3, RefScalefactor=1, RefPhaseDC=-np.pi
     ):
         if not self.flags["AllSinFitCalculated"]:
             print(
@@ -476,7 +476,7 @@ class Databuffer:
                     self.CalData[i].popt[AxisRef, 0] * RefScalefactor
                 )
                 self.TransferPhase[i] = (
-                    self.CalData[i].popt[AxisRef, 3] - self.CalData[i].popt[axisDUT, 3]
+                  self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
                 )
                 self.TransferPhase[i] = self.TransferPhase[i] + RefPhaseDC
                 i = i + 1
@@ -490,7 +490,7 @@ class Databuffer:
                     (self.CalData[i].popt[AxisRef, 0] * RefScalefactor) / AmplTF
                 )
                 self.TransferPhase[i] = (
-                    self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
+                     self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
                 )
                 self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF
                 i = i + 1
@@ -719,7 +719,7 @@ def DataReaderPROTOdump(ProtoCSVFilename):
             sdf["Data_01"][Index : Index + chunkSize],
             sdf["Data_02"][Index : Index + chunkSize],
             sdf["Data_03"][Index : Index + chunkSize],
-            sdf["Data_11"][Index : Index + chunkSize],
+            sdf["Data_11"][Index : Index + chunkSize]*10,
             (sdf["unix_time"][Index : Index + chunkSize])
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
@@ -735,10 +735,11 @@ def DataReaderGYROdump(ProtoCSVFilename):
             sdf["GYR_x"][Index : Index + chunkSize]*(180/np.pi),
             sdf["GYR_y"][Index : Index + chunkSize]*(180/np.pi),
             sdf["GYR_z"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["ADC_1"][Index : Index + chunkSize]*10,
+            sdf["ADC_1"][Index : Index + chunkSize]*100,
             (sdf["unix_time"][Index : Index + chunkSize])
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
+
 
 # Column Names
 # 'id'
@@ -773,12 +774,12 @@ if __name__ == "__main__":
     # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar_2.csv')
     # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
     # DataReaderPROTOdump("data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv")
-    DataReaderPROTOdump("/home/seeger01/STM32Toolchain/projects/Met4FoF-SmartUpUnit/tools/data/191001_BMA280_10_250_10ms2_1.csv")
-    #DataReaderGYROdump("data/accutronic/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
-    DB1.setRefTransferFunction("data/messkette_cal.csv")
+    # DataReaderPROTOdump("data/191001_BMA280_10_250_10ms2_1.csv")
+    DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
+    #DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(2)
+    DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     # callculate all the ffts
