@@ -222,11 +222,6 @@ void StartBlinkThread(void const * argument) {
 void StartLCDThread(void const * argument) {
 	osDelay(10);
 	ConfigManager& configMan = ConfigManager::instance();
-	//osDelay(3000);
-	/* USER CODE BEGIN Variables */
-	//TODO use real ip adress
-	//uint8_t ETH_IP_ADDRESS[4] = { 192, 168, 0, 10 };
-	// Target IP for udp straming
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);

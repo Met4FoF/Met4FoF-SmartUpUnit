@@ -1230,9 +1230,9 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_01));
 		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_02));
 		strncpy(Message->str_Data_03,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_03));
-		strncpy(Message->str_Data_04,"\\degree\\second\\tothe{-1}\0",sizeof(Message->str_Data_04));
-		strncpy(Message->str_Data_05,"\\degree\\second\\tothe{-1\0}",sizeof(Message->str_Data_05));
-		strncpy(Message->str_Data_06,"\\degree\\second\\tothe{-1}\0",sizeof(Message->str_Data_06));
+		strncpy(Message->str_Data_04,"\\radian\\second\\tothe{-1}\0",sizeof(Message->str_Data_04));
+		strncpy(Message->str_Data_05,"\\radian\\second\\tothe{-1}\0",sizeof(Message->str_Data_05));
+		strncpy(Message->str_Data_06,"\\radian\\second\\tothe{-1}\0",sizeof(Message->str_Data_06));
 		strncpy(Message->str_Data_07,"\\micro\\tesla\0",sizeof(Message->str_Data_07));
 		strncpy(Message->str_Data_08,"\\micro\\tesla\0",sizeof(Message->str_Data_08));
 		strncpy(Message->str_Data_09,"\\micro\\tesla\0",sizeof(Message->str_Data_09));
