@@ -279,7 +279,7 @@ class Databuffer:
         """
         self.params = {
             "IntegrationLength": 1024,
-            "MaxChunks": 50000,
+            "MaxChunks": 15000,
             "axixofintest": 1,
             "stdvalidaxis": 3,
             "minValidChunksInRow": 3,
@@ -434,23 +434,40 @@ class Databuffer:
             item.CalcFFT()
         self.flags["AllFFTCalculated"] = True
 
+
     def setRefTransferFunction(self, transferCSV):
         #'STM32Toolchain/projects/Met4FoF-SmartUpUnit/tools/data/messkette_cal.csv'
         self.RefTransferFunction = pd.read_csv(
             transferCSV, sep="\t", skiprows=[1, 2, 3], decimal=","
         )
         self.flags["RefTrnaferFunctionSet"] = True
+        self.flags["RefGroupDelaySet"] = False
+
+    def setRefGroupDelay(self,GropuDelay):
+        # TODO improve selection between Ref Freq an group delay
+        self.flags["RefTrnaferFunctionSet"] = True
+        self.flags["RefGroupDelaySet"] = True
+        self.params["RefGroupDelay"]=GropuDelay
 
     def getNearestReFTPoint(self, freq):
         if self.flags["RefTrnaferFunctionSet"] == True:
-            tmp = abs(self.RefTransferFunction["Frequenz"] - freq)
-            IDX = np.where(tmp == np.amin(tmp))[0]
-            return (
-                self.RefTransferFunction["Spannungs-ÜTK"][IDX] / 100,
-                self.RefTransferFunction["Phasenverschiebung"][IDX] / 180 * np.pi,
-            )
+            if not self.flags['RefGroupDelaySet']:
+                tmp = abs(self.RefTransferFunction["Frequenz"] - freq)
+                IDX = np.where(tmp == np.amin(tmp))[0]
+                return (
+                        self.RefTransferFunction["Spannungs-ÜTK"][IDX] / 100,
+                        self.RefTransferFunction["Phasenverschiebung"][IDX] / 180 * np.pi,
+                        )
+            else:
+                print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
+                return (
+                        1,#Asume Amplitude as One
+                        freq*self.params["RefGroupDelay"]*2*np.pi*-1,#-1 because we are seeing this aus transferfunction of the Ref Mesurment
+                                                                    # so an positiv grouddelay results in in linear increasing negative phase
+                                                                    )
         else:
             raise RuntimeError("REFTransferFunction NOT SET RETURNING 0,0")
+
 
     def getTransferFunction(
         self, axisDUT, AxisRef=3, RefScalefactor=1, RefPhaseDC=-np.pi
@@ -492,7 +509,7 @@ class Databuffer:
                 self.TransferPhase[i] = (
                      self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
                 )
-                self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF
+                self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF + RefPhaseDC
                 i = i + 1
         self.TransferPhase = np.unwrap(self.TransferPhase)
 
@@ -517,6 +534,10 @@ class Databuffer:
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
         plt.show()
+
+    def PrintTransferParams(self):
+        self.TransferParams=pd.DataFrame({'Freq':self.TransferFreqs,'Ampl':self.TransferAmpl,'Phase Deg':self.TransferPhase / np.pi * 180,'Phase Rad':self.TransferPhase})
+        return self.TransferParams
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0):
         fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -776,7 +797,9 @@ if __name__ == "__main__":
     # DataReaderPROTOdump("data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv")
     # DataReaderPROTOdump("data/191001_BMA280_10_250_10ms2_1.csv")
     DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
-    #DB1.setRefTransferFunction("data/messkette_cal.csv")
+    # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
+    DB1.setRefGroupDelay(220e-6)
+    # DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
