@@ -135,6 +135,7 @@ class DataReceiver:
                     try:
                         msg_buf = data[new_pos : new_pos + msg_len]
                         ProtoDescription.ParseFromString(msg_buf)
+                        print(msg_buf)
                         wasValidData = True
                         SensorID = ProtoDescription.id
                         message = {'ProtMsg':ProtoDescription,'Type':'Description'}
@@ -319,7 +320,11 @@ class Sensor:
                         if self.DescriptionsProcessed[Description.Description_Type]==False :
                             #we havent processed thiss message before now do that
                             if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UINT","UNCERTAINTY_TYPE"]
+                                print(Description)
                                 #string Processing
+                                if Description.HasField('str_Data_01'):
+                                    print(Description.str_Data_01)
+
                                 self.DescriptionsProcessed[Description.Description_Type]=True
                                 print(self.DescriptionsProcessed)
                             if Description.Description_Type in [3,4,5]:#["RESOLUTION","MIN_SCALE","MAX_SCALE"]
@@ -430,3 +435,10 @@ def openDumpFile():
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
     else:
         dumpfile = open(filename, "a")
+
+#Example for DSCP Messages
+# Quant b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x00"\x0eX Acceleration*\x0eY Acceleration2\x0eZ Acceleration:\x12X Angular velocityB\x12Y Angular velocityJ\x12Z Angular velocityR\x17X Magnetic flux densityZ\x17Y Magnetic flux densityb\x17Z Magnetic flux densityj\x0bTemperature'
+# Unit  b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x01"\x17\\metre\\second\\tothe{-2}*\x17\\metre\\second\\tothe{-2}2\x17\\metre\\second\\tothe{-2}:\x18\\radian\\second\\tothe{-1}B\x18\\radian\\second\\tothe{-1}J\x18\\radian\\second\\tothe{-1}R\x0c\\micro\\teslaZ\x0c\\micro\\teslab\x0c\\micro\\teslaj\rdegreecelsius'
+# Res   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x03\xa5\x01\x00\x00\x80G\xad\x01\x00\x00\x80G\xb5\x01\x00\x00\x80G\xbd\x01\x00\x00\x80G\xc5\x01\x00\x00\x80G\xcd\x01\x00\x00\x80G\xd5\x01\x00\xf0\x7fG\xdd\x01\x00\xf0\x7fG\xe5\x01\x00\xf0\x7fG\xed\x01\x00\x00\x80G'
+# Min   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x04\xa5\x01\x16\xea\x1c\xc3\xad\x01\x16\xea\x1c\xc3\xb5\x01\x16\xea\x1c\xc3\xbd\x01\xe3\xa0\x0b\xc2\xc5\x01\xe3\xa0\x0b\xc2\xcd\x01\xe3\xa0\x0b\xc2\xd5\x01\x00\x00\x00\x80\xdd\x01\x00\x00\x00\x80\xe5\x01\x00\x00\x00\x80\xed\x01\xf3j\x9a\xc2'
+# Max   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x05\xa5\x01\xdc\xe8\x1cC\xad\x01\xdc\xe8\x1cC\xb5\x01\xdc\xe8\x1cC\xbd\x01\xcc\x9f\x0bB\xc5\x01\xcc\x9f\x0bB\xcd\x01\xcc\x9f\x0bB\xd5\x01\x00\x00\x00\x00\xdd\x01\x00\x00\x00\x00\xe5\x01\x00\x00\x00\x00\xed\x01\x02)\xeeB'
