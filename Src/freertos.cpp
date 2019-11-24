@@ -226,17 +226,17 @@ void StartLCDThread(void const * argument) {
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
 	//TODO move this to config manager
-	uint8_t UDID[12]={};
-	for(int i=0;i<12;i++)
-	{
-		 UDID[i]=UDID_Read8(i);
+	uint8_t UDID[12] = { };
+	for (int i = 0; i < 12; i++) {
+		UDID[i] = UDID_Read8(i);
 	}
-	uint16_t BaseID=gen_crc16(UDID, 12);
+	uint16_t BaseID = gen_crc16(UDID, 12);
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d  ID:%x",VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,BaseID);
+	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d  ID:%x", VERSION_MAJOR,
+			VERSION_MINOR, VERSION_PATCH, BaseID);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
-	sprintf(Temp_Buffer_text, "Build:%s %s", __DATE__,__TIME__);
+	sprintf(Temp_Buffer_text, "Build:%s %s", __DATE__, __TIME__);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 1, BLUE);
 	ip_addr_t UDPTargetIP = configMan.getUDPTargetIP();
 	char iPadressBuffer[17] = { };
@@ -302,28 +302,26 @@ void StartDataStreamerThread(void const * argument) {
 
 	//MPU9250
 	//TODO move this to config manager
-	uint8_t UDID[12]={};
-	for(int i=0;i<12;i++)
-	{
-		 UDID[i]=UDID_Read8(i);
+	uint8_t UDID[12] = { };
+	for (int i = 0; i < 12; i++) {
+		UDID[i] = UDID_Read8(i);
 	}
-	uint16_t BaseID=gen_crc16(UDID, 12);
-	 Sensor0.setBaseID(BaseID);
-	 Sensor0.begin();
-	 Sensor0.enableDataReadyInterrupt();
+	uint16_t BaseID = gen_crc16(UDID, 12);
+	Sensor0.setBaseID(BaseID);
+	Sensor0.begin();
+	Sensor0.enableDataReadyInterrupt();
 
-
-/*//BMA280
-	// SET PS pin low
-	HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
-	Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-*/
+	/*//BMA280
+	 // SET PS pin low
+	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
+	 Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
+	 Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+	 */
 	//Dummy Sensor
 	/*
-	Sensor0.setBaseID(0);
-	Sensor1.setBaseID(1);crc
-	*/
+	 Sensor0.setBaseID(0);
+	 Sensor1.setBaseID(1);crc
+	 */
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -347,7 +345,8 @@ void StartDataStreamerThread(void const * argument) {
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 	/* connect the connection to the remote host */
-	err_t net_conn_result = netconn_connect(conn, &targetipaddr, configMan.getUDPPort());
+	err_t net_conn_result = netconn_connect(conn, &targetipaddr,
+			configMan.getUDPPort());
 	Check_LWIP_RETURN_VAL(net_conn_result);
 	/* create a new netbuf */
 	buf = netbuf_new();
@@ -363,7 +362,7 @@ void StartDataStreamerThread(void const * argument) {
 			MTU_SIZE);
 
 	const char DataString[4] = { 68, 65, 84, 65 };	//DATA Keyword
-	const char DescriptionString[4] = { 68, 83, 67, 80 };//DSCP Keyword
+	const char DescriptionString[4] = { 68, 83, 67, 80 };	//DSCP Keyword
 	pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString, 4);
 	pb_write(&ProtoStreamDescription, (const pb_byte_t*) &DescriptionString, 4);
 
@@ -385,7 +384,7 @@ void StartDataStreamerThread(void const * argument) {
 
 	while (1) {
 		DataMessage *Datarptr;
-		static uint32_t lastMessageId=0;
+		static uint32_t lastMessageId = 0;
 		osEvent DataEvent = osMailGet(DataMail, 200);
 		struct timespec SampelPointUtc;
 		if (DataEvent.status == osEventMail) {
@@ -416,27 +415,28 @@ void StartDataStreamerThread(void const * argument) {
 
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
-			if(lastMessageId<Datarptr->sample_number){
+			if (lastMessageId < Datarptr->sample_number) {
 				//this check is just for extra security in normal operation this should never happen
-			if (ProtoStreamData.bytes_written
-					> (MTU_SIZE - (DataMessage_size))) {
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferData,
-						ProtoStreamData.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData,
-						MTU_SIZE);
-				pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString, 4);
-			}
+				if (ProtoStreamData.bytes_written
+						> (MTU_SIZE - (DataMessage_size))) {
+					//sending the buffer
+					netbuf_ref(buf, &ProtoBufferData,
+							ProtoStreamData.bytes_written);
+					/* send the text */
+					err_t net_conn_result = netconn_send(conn, buf);
+					Check_LWIP_RETURN_VAL(net_conn_result);
+					// reallocating buffer this is maybe performance intensive profile this
+					//TODO profile this code
+					ProtoStreamData = pb_ostream_from_buffer(ProtoBufferData,
+					MTU_SIZE);
+					pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString,
+							4);
+				}
 
-			pb_encode_ex(&ProtoStreamData, DataMessage_fields, Datarptr,
-					PB_ENCODE_DELIMITED);
-			i++;
-			lastMessageId=Datarptr->sample_number;
+				pb_encode_ex(&ProtoStreamData, DataMessage_fields, Datarptr,
+				PB_ENCODE_DELIMITED);
+				i++;
+				lastMessageId = Datarptr->sample_number;
 			}
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
@@ -448,61 +448,60 @@ void StartDataStreamerThread(void const * argument) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
 			//TODO improve this code with adding list of active sensors to configMan
-			for (int DescriptionType =
-					DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
-					DescriptionType != DescriptionMessage_LAST;
-					DescriptionType++) {
-
-				if (ProtoStreamDescription.bytes_written
-						> (MTU_SIZE - (DescriptionMessage_size))) {
-					//sending the buffer
-					netbuf_ref(buf, &ProtoBufferDescription,
-							ProtoStreamDescription.bytes_written);
-					/* send the text */
-					err_t net_conn_result = netconn_send(conn, buf);
-					Check_LWIP_RETURN_VAL(net_conn_result);
-					// reallocating buffer this is maybe performance intensive profile this
-					//TODO profile this code
-					ProtoStreamDescription = pb_ostream_from_buffer(
-							ProtoBufferDescription, MTU_SIZE);
-					pb_write(&ProtoStreamDescription,
-							(const pb_byte_t*) &DescriptionString, 4);
-				}
+#define NUMDESCRIPTIONSTOSEND 3
+			DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
+					{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
+							DescriptionMessage_DESCRIPTION_TYPE_UINT,
+							DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION };
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
-				Sensor0.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
+				Sensor0.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
 				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
 			/*
-			for (int DescriptionType =
-					DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
-					DescriptionType != DescriptionMessage_LAST;
-					DescriptionType++) {
+			 for (int DescriptionType =
+			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+			 DescriptionType != DescriptionMessage_LAST;
+			 DescriptionType++) {
 
-				if (ProtoStreamDescription.bytes_written
-						> (MTU_SIZE - (DescriptionMessage_size))) {
-					//sending the buffer
-					netbuf_ref(buf, &ProtoBufferDescription,
-							ProtoStreamDescription.bytes_written);
-					// send the text
-					err_t net_conn_result = netconn_send(conn, buf);
-					Check_LWIP_RETURN_VAL(net_conn_result);
-					// reallocating buffer this is maybe performance intensive profile this
-					//TODO profile this code
-					ProtoStreamDescription = pb_ostream_from_buffer(
-							ProtoBufferDescription, MTU_SIZE);
-					pb_write(&ProtoStreamDescription,
-							(const pb_byte_t*) &DescriptionString, 4);
-				}
-				DescriptionMessage Descriptionmsg;
-				Sensor1.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
+			 if (ProtoStreamDescription.bytes_written
+			 > (MTU_SIZE - (DescriptionMessage_size))) {
+			 //sending the buffer
+			 netbuf_ref(buf, &ProtoBufferDescription,
+			 ProtoStreamDescription.bytes_written);
+			 // send the text
+			 err_t net_conn_result = netconn_send(conn, buf);
+			 Check_LWIP_RETURN_VAL(net_conn_result);
+			 // reallocating buffer this is maybe performance intensive profile this
+			 //TODO profile this code
+			 ProtoStreamDescription = pb_ostream_from_buffer(
+			 ProtoBufferDescription, MTU_SIZE);
+			 pb_write(&ProtoStreamDescription,
+			 (const pb_byte_t*) &DescriptionString, 4);
+			 }
+			 DescriptionMessage Descriptionmsg;
+			 Sensor1.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
+			 pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+			 &Descriptionmsg, PB_ENCODE_DELIMITED);
 
 
-			}
-			*/
+			 }
+			 */
 
 		}
 
@@ -640,7 +639,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			//after configuring the channels the can be used with this command
 			//Sensor0.addData(int Channel,float value)
 
-
 			mptr0->has_Data_11 = true;
 			HAL_ADC_PollForConversion(&hadc1, 0);
 			float adcVal = (float) HAL_ADC_GetValue(&hadc1);
@@ -704,38 +702,35 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 #define CRC16 0x8005
 
-uint16_t gen_crc16(const uint8_t *data, uint16_t size)
-{
-    uint16_t out = 0;
-    int bits_read = 0, bit_flag;
+uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
+	uint16_t out = 0;
+	int bits_read = 0, bit_flag;
 
-    /* Sanity check: */
-    if(data == NULL)
-        return 0;
+	/* Sanity check: */
+	if (data == NULL)
+		return 0;
 
-    while(size > 0)
-    {
-        bit_flag = out >> 15;
+	while (size > 0) {
+		bit_flag = out >> 15;
 
-        /* Get next bit: */
-        out <<= 1;
-        out |= (*data >> (7 - bits_read)) & 1;
+		/* Get next bit: */
+		out <<= 1;
+		out |= (*data >> (7 - bits_read)) & 1;
 
-        /* Increment bit counter: */
-        bits_read++;
-        if(bits_read > 7)
-        {
-            bits_read = 0;
-            data++;
-            size--;
-        }
+		/* Increment bit counter: */
+		bits_read++;
+		if (bits_read > 7) {
+			bits_read = 0;
+			data++;
+			size--;
+		}
 
-        /* Cycle check: */
-        if(bit_flag)
-            out ^= CRC16;
-    }
+		/* Cycle check: */
+		if (bit_flag)
+			out ^= CRC16;
+	}
 
-    return out;
+	return out;
 }
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */

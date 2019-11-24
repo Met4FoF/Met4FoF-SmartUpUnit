@@ -1261,6 +1261,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->f_Data_08=16384;
 		Message->f_Data_09=16384;
 		Message->f_Data_09=16384;
+		Message->f_Data_10=65536;
 	}
 	return retVal;
 }
