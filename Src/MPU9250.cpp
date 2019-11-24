@@ -1257,11 +1257,67 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->f_Data_04=65536;
 		Message->f_Data_05=65536;
 		Message->f_Data_06=65536;
-		Message->f_Data_07=16384;
-		Message->f_Data_08=16384;
-		Message->f_Data_09=16384;
-		Message->f_Data_09=16384;
+		Message->f_Data_07=65520;
+		Message->f_Data_08=65520;
+		Message->f_Data_09=65520;
 		Message->f_Data_10=65536;
+	}
+	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
+	{
+		float accMIN=(((float)(-32768) * _accelScale) - _axb)*_axs;
+		float gyrMIN=((float)(-32768) * _gyroScale) - _gxb;
+		float magMIN=(((float)(-32760) * _magScaleX) - _hxb)*_hxs;
+		float tempMIN= ((((float) -32768) - _tempOffset)/_tempScale) + _tempOffset;;
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_03=true;
+		Message->has_f_Data_04=true;
+		Message->has_f_Data_05=true;
+		Message->has_f_Data_06=true;
+		Message->has_f_Data_07=true;
+		Message->has_f_Data_08=true;
+		Message->has_f_Data_09=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=accMIN;
+		Message->f_Data_02=accMIN;
+		Message->f_Data_03=accMIN;
+		Message->f_Data_04=gyrMIN;
+		Message->f_Data_05=gyrMIN;
+		Message->f_Data_06=gyrMIN;
+		Message->f_Data_07=magMIN;
+		Message->f_Data_08=magMIN;
+		Message->f_Data_09=magMIN;
+		Message->f_Data_10=tempMIN;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
+	{
+		float accMAX=(((float)(32767) * _accelScale) - _axb)*_axs;
+		float gyrMAX=((float)(32767) * _gyroScale) - _gxb;
+		float magMAX=(((float)(32760) * _magScaleX) - _hxb)*_hxs;
+		float tempMAX= ((((float) 32767) - _tempOffset)/_tempScale) + _tempOffset;;
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_03=true;
+		Message->has_f_Data_04=true;
+		Message->has_f_Data_05=true;
+		Message->has_f_Data_06=true;
+		Message->has_f_Data_07=true;
+		Message->has_f_Data_08=true;
+		Message->has_f_Data_09=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=accMAX;
+		Message->f_Data_02=accMAX;
+		Message->f_Data_03=accMAX;
+		Message->f_Data_04=gyrMAX;
+		Message->f_Data_05=gyrMAX;
+		Message->f_Data_06=gyrMAX;
+		Message->f_Data_07=magMAX;
+		Message->f_Data_08=magMAX;
+		Message->f_Data_09=magMAX;
+		Message->f_Data_10=tempMAX;
 	}
 	return retVal;
 }
