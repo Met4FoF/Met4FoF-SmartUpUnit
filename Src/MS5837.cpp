@@ -14,7 +14,7 @@ const float MS5837::mbar = 1.0f;
 const uint8_t MS5837::MS5837_30BA = 0;
 const uint8_t MS5837::MS5837_02BA = 1;
 
-MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model) {
+MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model,uint16_t BaseID) {
 	fluidDensity = 1029;
 	_model=model;
 	_I2C=I2C;
@@ -23,14 +23,16 @@ MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model) {
 	D2=0;
 	TEMP=0;
 	P=0;
+	_ID=BaseID;
 }
+
 
 bool MS5837::init() {
 	// Reset the MS5837, per datasheet
 	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_RESET,1,100);
 
 	// Wait for reset to complete
-	HAL_Delay(10);
+	osDelay(10);
 	//Write Adress the read calldata in one block
 
 	// Read calibration values and CRC
@@ -58,7 +60,7 @@ void MS5837::read() {
 	// Request D1 conversion
 	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_CONVERT_D1_8192,1,100);
 
-	HAL_Delay(20); // Max conversion time per datasheet
+	osDelay(20); // Max conversion time per datasheet
 	
 	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_ADC_READ,1,100);
 
@@ -67,7 +69,7 @@ void MS5837::read() {
 	// Request D2 conversion
 	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_CONVERT_D2_8192,1,100);
 
-	HAL_Delay(20); // Max conversion time per datasheet
+	osDelay(20); // Max conversion time per datasheet
 	
 	HAL_I2C_Master_Receive(&_I2C,MS5837_ADDR,(uint8_t*)D1 ,3, 100);
 	calculate();
@@ -156,6 +158,141 @@ float MS5837::depth() {
 
 float MS5837::altitude() {
 	return (1-pow((pressure()/1013.25),.190284))*145366.45*.3048;
+}
+
+int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount){
+	int result=0;
+	Message->id=_ID;
+	Message->unix_time=unix_time;
+	Message->time_uncertainty=unix_time_nsecs;
+	Message->unix_time_nsecs=time_uncertainty;
+	Message->sample_number=CaptureCount;
+	MS5837::read();
+	MS5837::calculate();
+	Message->Data_01=TEMP;
+	Message->has_Data_02=true;
+	Message->Data_02=P*MS5837::Pa;
+	return result;
+}
+
+
+int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	int retVal=0;
+	if(_model==MS5837::MS5837_30BA){
+	strncpy(Message->Sensor_name,"MS5837_30BA\0",sizeof(Message->Sensor_name));
+	}
+	if(_model==MS5837::MS5837_02BA){
+	strncpy(Message->Sensor_name,"MS5837_02BA\0",sizeof(Message->Sensor_name));
+	}
+	Message->id=_ID;
+	Message->Description_Type=DESCRIPTION_TYPE;
+	Message->has_str_Data_01=false;
+	Message->has_str_Data_02=false;
+	Message->has_str_Data_03=false;
+	Message->has_str_Data_04=false;
+	Message->has_str_Data_05=false;
+	Message->has_str_Data_06=false;
+	Message->has_str_Data_07=false;
+	Message->has_str_Data_08=false;
+	Message->has_str_Data_09=false;
+	Message->has_str_Data_10=false;
+	Message->has_str_Data_11=false;
+	Message->has_str_Data_12=false;
+	Message->has_str_Data_13=false;
+	Message->has_str_Data_14=false;
+	Message->has_str_Data_15=false;
+	Message->has_str_Data_16=false;
+	Message->has_f_Data_01=false;
+	Message->has_f_Data_02=false;
+	Message->has_f_Data_03=false;
+	Message->has_f_Data_04=false;
+	Message->has_f_Data_05=false;
+	Message->has_f_Data_06=false;
+	Message->has_f_Data_07=false;
+	Message->has_f_Data_08=false;
+	Message->has_f_Data_09=false;
+	Message->has_f_Data_10=false;
+	Message->has_f_Data_11=false;
+	Message->has_f_Data_12=false;
+	Message->has_f_Data_13=false;
+	Message->has_f_Data_14=false;
+	Message->has_f_Data_15=false;
+	Message->has_f_Data_16=false;
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_01,"Pressure\0",sizeof(Message->str_Data_02));
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UINT;
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_02));
+	}
+	if(_model==MS5837::MS5837::MS5837_02BA){
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->f_Data_01=12500;
+		Message->f_Data_02=119000;
+	}
+	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->f_Data_01=-40;
+		Message->f_Data_02=1000;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_09=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=85;
+		Message->f_Data_02=120000;
+	}
+	}
+	if(_model==MS5837::MS5837_30BA){
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->f_Data_01=12500;
+		Message->f_Data_02=119000;
+	}
+	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->f_Data_01=-40;
+		Message->f_Data_02=0;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
+	{
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
+		Message->has_f_Data_01=true;
+		Message->has_f_Data_02=true;
+		Message->has_f_Data_09=true;
+		Message->has_f_Data_10=true;
+		Message->f_Data_01=85;
+		Message->f_Data_02=3e6;
+	}
+	}
+	return retVal;
 }
 
 

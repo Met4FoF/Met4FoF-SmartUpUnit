@@ -9,11 +9,11 @@ sensor.
 
 Authors: Rustom Jehangir, Blue Robotics Inc.
          Adam Šimko, Blue Robotics Inc.
-		Benedikt Seeger, PTB germany
+		 Benedikt Seeger, PTB germany
 -------------------------------
 The MIT License (MIT)
 
-Copyright (c) 2015 Blue Robotics Inc+ 2019 PTB (changes for STM32).
+Copyright (c) 2015 Blue Robotics Inc + 2019 PTB (changes for STM32).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,10 @@ THE SOFTWARE.
 #ifndef MS5837_H_BLUEROBOTICS
 #define MS5837_H_BLUEROBOTICS
 #include "stm32f7xx_hal.h"
+// for osDelay instead of HAL_delay
+#include "cmsis_os.h"
+#include "pb.h"
+#include "message.pb.h"
 #include <math.h>
 class MS5837 {
 public:
@@ -47,7 +51,7 @@ public:
 	static const uint8_t MS5837_30BA;
 	static const uint8_t MS5837_02BA;
 
-	MS5837(I2C_HandleTypeDef I2C,uint8_t model);
+	MS5837(I2C_HandleTypeDef I2C,uint8_t model,uint16_t BaseID);
 
 	bool init();
 	/** Provide the density of the working fluid in kg/m^3. Default is for 
@@ -76,6 +80,12 @@ public:
 	 */
 	float altitude();
 
+	int getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount);
+
+	int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
+
+
+
 private:
 	I2C_HandleTypeDef _I2C;
 	uint16_t C[8];
@@ -83,7 +93,7 @@ private:
 	int32_t TEMP;
 	int32_t P;
 	uint8_t _model;
-
+	uint16_t _ID;
 	float fluidDensity;
 
 	/** Performs calculations per the sensor data sheet for conversion and

@@ -68,6 +68,7 @@
 
 #include "MPU9250.h"
 #include "bma280.h"
+#include "MS5837.h"
 #include "dummy_sensor.h"
 #include <math.h>
 
@@ -76,6 +77,7 @@
 #include "rng.h"
 #include "usart.h"
 #include "dma.h"
+#include "i2c.h"
 
 #include "backupsram.h"
 
@@ -108,12 +110,16 @@ osThreadId blinkTID;
 osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
+osThreadId TempSensorTID;
 
+
+//TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA,2);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 
@@ -160,6 +166,10 @@ void MX_FREERTOS_Init(void) {
 
 	DataStreamerTID = osThreadCreate(osThread(DataStreamerThread), NULL);
 
+	osThreadDef(TempSensorThread, StartTempSensorThread, osPriorityNormal, 0, 512);
+
+	TempSensorTID = osThreadCreate(osThread(TempSensorThread), NULL);
+
 	initGPSTimesny();
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
@@ -196,6 +206,46 @@ void StartDefaultTask(void const * argument) {
 	for (;;) {
 		osDelay(10000);
 		sntp_request(NULL);
+	}
+	/* USER CODE END StartDefaultTask */
+}
+
+void StartTempSensorThread(void const * argument) {
+	static uint32_t TempsensoreCaptureCount=0;
+	osDelay(5000);
+	TempSensor0.init();
+	/* Infinite loop */
+	for (;;) {
+		osDelay(2000);
+		DataMessage *mptr;
+		mptr = (DataMessage *) osMailAlloc(DataMail, 20);
+		uint64_t timestamp = TIM_Get_64Bit_TimeStamp_Base(&htim2);
+		struct timespec SampelPointUtc;
+		if (xSemaphoreGPS_REF != NULL) {
+			/* See if we can obtain the semaphore.  If the semaphore is not
+			 available wait 10 ticks to see if it becomes free. */
+			if ( xSemaphoreTake(xSemaphoreGPS_REF,
+					(TickType_t ) 10) == pdTRUE) {
+				uint32_t tmp_time_uncertainty = 0;
+				lgw_cnt2utc(GPS_ref, timestamp, &SampelPointUtc,
+						&tmp_time_uncertainty);
+				mptr->time_uncertainty = tmp_time_uncertainty;
+				xSemaphoreGive(xSemaphoreGPS_REF);
+			} else {
+				/* We could not obtain the semaphore and can therefore not access
+				 the shared resource safely. */
+				SEGGER_RTT_printf(0,
+						"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+				taskYIELD()
+				;
+			}
+		}
+		//int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount)
+		TempSensor0.getData(mptr,(uint32_t)SampelPointUtc.tv_sec,(uint32_t)SampelPointUtc.tv_nsec,40e6,TempsensoreCaptureCount);
+		osStatus result = osMailPut(DataMail, mptr);
+		TempsensoreCaptureCount++;
+
+
 	}
 	/* USER CODE END StartDefaultTask */
 }
@@ -390,6 +440,9 @@ void StartDataStreamerThread(void const * argument) {
 		if (DataEvent.status == osEventMail) {
 			Datarptr = (DataMessage*) DataEvent.value.p;
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+			if(Datarptr->unix_time==0xFFFFFFFF){
+				//calculate the exact time from raw time stamp encoded in Datarptr->time_uncertainty Datarptr->unix_time_nsecs as actual time stamp
+				//if Datarptr->unix_time is not 0xFFFFFFFF the calculation has been done before and so this conversion will yield only garbage
 			if (xSemaphoreGPS_REF != NULL) {
 				/* See if we can obtain the semaphore.  If the semaphore is not
 				 available wait 10 ticks to see if it becomes free. */
@@ -412,9 +465,9 @@ void StartDataStreamerThread(void const * argument) {
 					;
 				}
 			}
-
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
+			}
 			if (lastMessageId < Datarptr->sample_number) {
 				//this check is just for extra security in normal operation this should never happen
 				if (ProtoStreamData.bytes_written
@@ -447,6 +500,7 @@ void StartDataStreamerThread(void const * argument) {
 		if (xTaskGetTickCount() - lastInfoticks > InfoUpdateTimems) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
+
 			//TODO improve this code with adding list of active sensors to configMan
 #define NUMDESCRIPTIONSTOSEND 5
 			DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
@@ -458,6 +512,26 @@ void StartDataStreamerThread(void const * argument) {
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Sensor0.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				TempSensor0.getDescription(&Descriptionmsg,
 						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
 				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 						&Descriptionmsg, PB_ENCODE_DELIMITED);
