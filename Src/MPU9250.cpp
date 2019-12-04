@@ -1214,9 +1214,9 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		strncpy(Message->str_Data_09,"Z Magnetic flux density\0",sizeof(Message->str_Data_09));
 		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
 	}
-	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UINT;
+		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UNIT;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		Message->has_str_Data_03=true;

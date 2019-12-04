@@ -310,7 +310,7 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		strncpy(Message->str_Data_03,"Z Acceleration\0",sizeof(Message->str_Data_03));
 		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
 	}
-	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;

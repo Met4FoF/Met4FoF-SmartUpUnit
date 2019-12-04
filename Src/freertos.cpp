@@ -505,7 +505,7 @@ void StartDataStreamerThread(void const * argument) {
 #define NUMDESCRIPTIONSTOSEND 5
 			DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
 					{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
-							DescriptionMessage_DESCRIPTION_TYPE_UINT,
+							DescriptionMessage_DESCRIPTION_TYPE_UNIT,
 							DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
 							DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
 					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE};

@@ -17,7 +17,7 @@ extern "C" {
 /* Enum definitions */
 typedef enum _DescriptionMessage_DESCRIPTION_TYPE {
     DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
-    DescriptionMessage_DESCRIPTION_TYPE_UINT,
+    DescriptionMessage_DESCRIPTION_TYPE_UNIT,
     DescriptionMessage_DESCRIPTION_TYPE_UNCERTAINTY_TYPE,
     DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
     DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
