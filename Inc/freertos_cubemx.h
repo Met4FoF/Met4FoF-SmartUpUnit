@@ -80,7 +80,7 @@ extern "C" {
 #include "tim64extender.h"
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 2
-#define VERSION_PATCH 4
+#define VERSION_PATCH 5
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

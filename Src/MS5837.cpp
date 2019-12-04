@@ -231,8 +231,8 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UINT;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
-		strncpy(Message->str_Data_01,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_01));
-		strncpy(Message->str_Data_02,"\\metre\\second\\tothe{-2}\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_01,"\\degreecelsius\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"\\pascal\0",sizeof(Message->str_Data_02));
 	}
 	if(_model==MS5837::MS5837::MS5837_02BA){
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
@@ -257,8 +257,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
-		Message->has_f_Data_09=true;
-		Message->has_f_Data_10=true;
 		Message->f_Data_01=85;
 		Message->f_Data_02=120000;
 	}
@@ -286,8 +284,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
-		Message->has_f_Data_09=true;
-		Message->has_f_Data_10=true;
 		Message->f_Data_01=85;
 		Message->f_Data_02=3e6;
 	}

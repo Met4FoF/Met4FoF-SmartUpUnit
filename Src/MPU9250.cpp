@@ -1236,7 +1236,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		strncpy(Message->str_Data_07,"\\micro\\tesla\0",sizeof(Message->str_Data_07));
 		strncpy(Message->str_Data_08,"\\micro\\tesla\0",sizeof(Message->str_Data_08));
 		strncpy(Message->str_Data_09,"\\micro\\tesla\0",sizeof(Message->str_Data_09));
-		strncpy(Message->str_Data_10,"\degreecelsius\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_10,"\\degreecelsius\0",sizeof(Message->str_Data_10));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{

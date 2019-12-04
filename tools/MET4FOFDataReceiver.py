@@ -201,7 +201,7 @@ class ChannelDescription:
    def __init__(self,CHID):
        self.Description={"CHID":CHID,
                          "PHYSICAL_QUANTITY":'Not Set',
-                         "UINT":'Not Set',
+                         "UNIT":'Not Set',
                          "UNCERTAINTY_TYPE":'Not Set',
                          "RESOLUTION":'Not Set',
                          "MIN_SCALE":'Not Set',
@@ -222,26 +222,29 @@ class SensorDescription:
         self.ID=ID
         self.SensorName=SensorName
         self._complete=False
-        self.Channels=AliasDict({"PHYSICAL_QUANTITY":'Not Set',
-                         "UINT":'Not Set',
-                         "UNCERTAINTY_TYPE":'Not Set',
-                         "RESOLUTION":'Not Set',
-                         "MIN_SCALE":'Not Set',
-                         "MAX_SCALE":'Not Set'})
-
+        self.Channels=AliasDict([])
     def setChannelParam(self,CHID,key,value):
         if CHID in self.Channels:
             self.Channels[CHID].setDescription(key,value)
             if(key=='PHYSICAL_QUANTITY'):
-                self.Channels.add_alias(CHID,value)#make channels callable by ther Quantity
+                self.Channels.add_alias(CHID,value)#make channels callable by their Quantity
         else:
             if(key=='PHYSICAL_QUANTITY'):
-                self.Channels.add_alias(CHID,value)#make channels callable by ther Quantity
+                self.Channels.add_alias(CHID,value)#make channels callable by their Quantity
             self.Channels[CHID]=ChannelDescription(CHID)
             self.Channels[CHID].setDescription(key,value)
             self.Channels.add_alias(CHID,'Data_'+'{:02d}'.format(CHID))#make channels callable by ther Data_xx name
+    def __getitem__(self, key):
+       #if key='SpecialKey':
+       # self.Description['SpecialKey']
+       return self.Channels[key]
 
 class Sensor:
+    StrFieldNames=['str_Data_01','str_Data_02','str_Data_03','str_Data_04','str_Data_05','str_Data_06','str_Data_07','str_Data_08','str_Data_09',
+                                 'str_Data_10','str_Data_11','str_Data_12','str_Data_13','str_Data_14','str_Data_15','str_Data_16']
+    FFieldNames=['f_Data_01','f_Data_02','f_Data_03','f_Data_04','f_Data_05','f_Data_06','f_Data_07','f_Data_08','f_Data_09',
+                                 'f_Data_10','f_Data_11','f_Data_12','f_Data_13','f_Data_14','f_Data_15','f_Data_16']
+    DescriptionTypNames={0:"PHYSICAL_QUANTITY",1:"UNIT",2:"UNCERTAINTY_TYPE",3:"RESOLUTION",4:"MIN_SCALE",5:"MAX_SCALE"}
     # TODO implement multi therading and callbacks
     def __init__(self, ID, BufferSize=1e4):
         self.Description=SensorDescription(ID,'Name not Set')
@@ -258,14 +261,8 @@ class Sensor:
                          "RESOLUTION":False,
                          "MIN_SCALE":False,
                          "MAX_SCALE":False})
-        #TODO there is an better way for this
-        self.DescriptionsProcessed.add_alias("PHYSICAL_QUANTITY",0)
-        self.DescriptionsProcessed.add_alias("UINT",1)
-        self.DescriptionsProcessed.add_alias("UNCERTAINTY_TYPE",2)
-        self.DescriptionsProcessed.add_alias("RESOLUTION",3)
-        self.DescriptionsProcessed.add_alias("MIN_SCALE",4)
-        self.DescriptionsProcessed.add_alias("MAX_SCALE",5)
-
+        for i in range(6):
+            self.DescriptionsProcessed.add_alias(self.DescriptionTypNames[i],i)
         self._stop_event = threading.Event()
         self.thread = threading.Thread(target=self.run, args=())
         # self.thread.daemon = True
@@ -320,15 +317,27 @@ class Sensor:
                         if self.DescriptionsProcessed[Description.Description_Type]==False :
                             #we havent processed thiss message before now do that
                             if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UINT","UNCERTAINTY_TYPE"]
-                                print(Description)
+                                #print(Description)
                                 #string Processing
-                                if Description.HasField('str_Data_01'):
-                                    print(Description.str_Data_01)
+
+                                FieldNumber=1
+                                for StrField in self.StrFieldNames:
+                                    if Description.HasField(StrField):
+                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(StrField))
+                                        print(str(FieldNumber)+' '+Description.__getattribute__(StrField))
+                                    FieldNumber=FieldNumber+1
 
                                 self.DescriptionsProcessed[Description.Description_Type]=True
                                 print(self.DescriptionsProcessed)
                             if Description.Description_Type in [3,4,5]:#["RESOLUTION","MIN_SCALE","MAX_SCALE"]
                                 self.DescriptionsProcessed[Description.Description_Type]=True
+                                FieldNumber=1
+                                for FloatField in self.FFieldNames:
+                                    if Description.HasField(FloatField):
+                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(StrField))
+                                        print(str(FieldNumber)+' '+str(Description.__getattribute__(FloatField)))
+
+                                    FieldNumber=FieldNumber+1
                                 print(self.DescriptionsProcessed)
                                 #string Processing
                     except Exception:
