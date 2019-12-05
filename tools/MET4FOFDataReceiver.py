@@ -216,6 +216,12 @@ class ChannelDescription:
    #todo override set methode
    def setDescription(self,key,value):
        self.Description[key]=value
+       if(self.Description['PHYSICAL_QUANTITY']!=False and
+          self.Description['UNIT']!=False and
+          self.Description['RESOLUTION']!=False and
+          self.Description['MIN_SCALE']!=False and
+          self.Description['MAX_SCALE']!=False):
+               self._complete=True
 
 class SensorDescription:
     def __init__(self,ID,SensorName):
@@ -223,8 +229,13 @@ class SensorDescription:
         self.SensorName=SensorName
         self._complete=False
         self.Channels=AliasDict([])
+        self.ChannelCount=0
+        self._ChannelsComplte=0
+
     def setChannelParam(self,CHID,key,value):
+        wasComplete=False
         if CHID in self.Channels:
+            wasComplete=self.Channels[CHID]._complete#read if channel was completed before
             self.Channels[CHID].setDescription(key,value)
             if(key=='PHYSICAL_QUANTITY'):
                 self.Channels.add_alias(CHID,value)#make channels callable by their Quantity
@@ -234,10 +245,25 @@ class SensorDescription:
             self.Channels[CHID]=ChannelDescription(CHID)
             self.Channels[CHID].setDescription(key,value)
             self.Channels.add_alias(CHID,'Data_'+'{:02d}'.format(CHID))#make channels callable by ther Data_xx name
+            self.ChannelCount=self.ChannelCount+1
+        if(wasComplete==False and self.Channels[CHID]._complete):
+            self._ChannelsComplte=self._ChannelsComplte+1
+            if( self._ChannelsComplte==self.ChannelCount):
+                self._complete=True
+                print("Description completed")
+
     def __getitem__(self, key):
        #if key='SpecialKey':
        # self.Description['SpecialKey']
        return self.Channels[key]
+
+    def getDict(self):
+        RetunDict={'Name':self.SensorName}
+        for key in self.Channels:
+            print(self.Channels[key].Description)
+            RetunDict.update({self.Channels[key]['CHID']:self.Channels[key].Description})
+        return RetunDict
+
 
 class Sensor:
     StrFieldNames=['str_Data_01','str_Data_02','str_Data_03','str_Data_04','str_Data_05','str_Data_06','str_Data_07','str_Data_08','str_Data_09',
@@ -313,8 +339,11 @@ class Sensor:
                             #run only if no description packed has been procesed ever
                             #self.Description.SensorName=message.Sensor_name
                             print('Found new '+Description.Sensor_name+' sensor with ID:'+str(self.params['ID']))
-                            print(str(Description.Description_Type))
+                            #print(str(Description.Description_Type))
                         if self.DescriptionsProcessed[Description.Description_Type]==False :
+
+                            if( self.Description.SensorName=='Name not Set'):
+                                self.Description.SensorName=Description.Sensor_name
                             #we havent processed thiss message before now do that
                             if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UNIT","UNCERTAINTY_TYPE"]
                                 #print(Description)
@@ -324,21 +353,20 @@ class Sensor:
                                 for StrField in self.StrFieldNames:
                                     if Description.HasField(StrField):
                                         self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(StrField))
-                                        print(str(FieldNumber)+' '+Description.__getattribute__(StrField))
+                                        #print(str(FieldNumber)+' '+Description.__getattribute__(StrField))
                                     FieldNumber=FieldNumber+1
 
                                 self.DescriptionsProcessed[Description.Description_Type]=True
-                                print(self.DescriptionsProcessed)
+                                #print(self.DescriptionsProcessed)
                             if Description.Description_Type in [3,4,5]:#["RESOLUTION","MIN_SCALE","MAX_SCALE"]
                                 self.DescriptionsProcessed[Description.Description_Type]=True
                                 FieldNumber=1
                                 for FloatField in self.FFieldNames:
                                     if Description.HasField(FloatField):
-                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(StrField))
-                                        print(str(FieldNumber)+' '+str(Description.__getattribute__(FloatField)))
-
+                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(FloatField))
+                                        #print(str(FieldNumber)+' '+str(Description.__getattribute__(FloatField)))
                                     FieldNumber=FieldNumber+1
-                                print(self.DescriptionsProcessed)
+                                #print(self.DescriptionsProcessed)
                                 #string Processing
                     except Exception:
                         print (" Sensor id:"+hex(self.params["ID"])+"Exception in user Description parsing:")
@@ -348,7 +376,7 @@ class Sensor:
                 if self.flags["callbackSet"]:
                     if(message['Type']=='Data'):
                         try:
-                            self.callback(message['ProtMsg'])
+                            self.callback(message['ProtMsg'],self.Description)
                         except Exception:
                             print (" Sensor id:"+hex(self.params["ID"])+"Exception in user callback:")
                             print('-'*60)
@@ -382,7 +410,7 @@ class Sensor:
     def join(self, *args, **kwargs):
         self.stop()
 
-def DumpDataMPU9250(message):
+def DumpDataMPU9250(message,Description):
     filename='data/DataDump.log'
     if not (os.path.exists(filename)):
         dumpfile = open(filename, "a+")
@@ -418,7 +446,7 @@ def DumpDataMPU9250(message):
     #       '\n TEMP:',message.Data_10,
     #       '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
 
-def DumpDataGPSDummySensor(message):
+def DumpDataGPSDummySensor(message,Description):
     if not (os.path.exists('data/GPSLog.log')):
         dumpfile = open('data/GPSLog.log', "a+")
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")

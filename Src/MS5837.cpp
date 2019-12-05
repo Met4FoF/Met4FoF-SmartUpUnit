@@ -225,7 +225,7 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_01));
-		strncpy(Message->str_Data_01,"Pressure\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_02,"Pressure\0",sizeof(Message->str_Data_02));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
