@@ -135,7 +135,7 @@ class DataReceiver:
                     try:
                         msg_buf = data[new_pos : new_pos + msg_len]
                         ProtoDescription.ParseFromString(msg_buf)
-                        print(msg_buf)
+                        #print(msg_buf)
                         wasValidData = True
                         SensorID = ProtoDescription.id
                         message = {'ProtMsg':ProtoDescription,'Type':'Description'}
@@ -200,12 +200,12 @@ class AliasDict(dict):
 class ChannelDescription:
    def __init__(self,CHID):
        self.Description={"CHID":CHID,
-                         "PHYSICAL_QUANTITY":'Not Set',
-                         "UNIT":'Not Set',
-                         "UNCERTAINTY_TYPE":'Not Set',
-                         "RESOLUTION":'Not Set',
-                         "MIN_SCALE":'Not Set',
-                         "MAX_SCALE":'Not Set'}
+                         "PHYSICAL_QUANTITY":False,
+                         "UNIT":False,
+                         "RESOLUTION":False,
+                         "MIN_SCALE":False,
+                         "MAX_SCALE":False}
+       self._complete=False
    def __getitem__(self, key):
        #if key='SpecialKey':
        # self.Description['SpecialKey']
@@ -256,7 +256,7 @@ class Sensor:
         }
         self.params = {"ID": ID, "BufferSize": BufferSize, "DumpFileName": ""}
         self.DescriptionsProcessed=AliasDict({"PHYSICAL_QUANTITY":False,
-                         "UINT":False,
+                         "UNIT":False,
                          "UNCERTAINTY_TYPE":False,
                          "RESOLUTION":False,
                          "MIN_SCALE":False,
@@ -316,7 +316,7 @@ class Sensor:
                             print(str(Description.Description_Type))
                         if self.DescriptionsProcessed[Description.Description_Type]==False :
                             #we havent processed thiss message before now do that
-                            if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UINT","UNCERTAINTY_TYPE"]
+                            if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UNIT","UNCERTAINTY_TYPE"]
                                 #print(Description)
                                 #string Processing
 

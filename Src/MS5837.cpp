@@ -14,7 +14,7 @@ const float MS5837::mbar = 1.0f;
 const uint8_t MS5837::MS5837_30BA = 0;
 const uint8_t MS5837::MS5837_02BA = 1;
 
-MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model,uint16_t BaseID) {
+MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model) {
 	fluidDensity = 1029;
 	_model=model;
 	_I2C=I2C;
@@ -23,11 +23,12 @@ MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model,uint16_t BaseID) {
 	D2=0;
 	TEMP=0;
 	P=0;
-	_ID=BaseID;
+	_ID=0;
 }
 
 
-bool MS5837::init() {
+bool MS5837::init(uint32_t BaseID) {
+	_ID=BaseID;
 	// Reset the MS5837, per datasheet
 	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_RESET,1,100);
 

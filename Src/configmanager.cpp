@@ -132,3 +132,52 @@ float ConfigManager::getADCRMSNoise(uint8_t ADCNumber){
 	return retVal;
 }
 
+
+uint16_t ConfigManager::getBaseID(){
+uint8_t UDID[12] = { };
+for (int i = 0; i < 12; i++) {
+	UDID[i] = UDID_Read8(i);
+}
+uint16_t BaseID = gen_crc16(UDID, 12);
+return BaseID;
+}
+
+uint32_t ConfigManager::getSensorBaseID(uint8_t SensorNumber){
+uint16_t BaseID = getBaseID();
+uint32_t SensorBaseID=((uint32_t)BaseID<<16)+((uint32_t)SensorNumber<<8);
+return SensorBaseID;
+}
+
+
+#define CRC16 0x8005
+
+uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
+	uint16_t out = 0;
+	int bits_read = 0, bit_flag;
+
+	/* Sanity check: */
+	if (data == NULL)
+		return 0;
+
+	while (size > 0) {
+		bit_flag = out >> 15;
+
+		/* Get next bit: */
+		out <<= 1;
+		out |= (*data >> (7 - bits_read)) & 1;
+
+		/* Increment bit counter: */
+		bits_read++;
+		if (bits_read > 7) {
+			bits_read = 0;
+			data++;
+			size--;
+		}
+
+		/* Cycle check: */
+		if (bit_flag)
+			out ^= CRC16;
+	}
+
+	return out;
+}

@@ -35,14 +35,14 @@
 #include "gpio.h"
 #include "main.h"
 
-BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint16_t BaseID){
+BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID){
 		// INFORMATION remeber to set the PS pin on BMA 280 to SPi settings (LOW)
 		_SPICSTypeDef=SPICSTypeDef;
 		_SPICSPin=SPICSPin;
 		_bmaspi=bmaspi;
 		_BaseID=BaseID;
 		_SetingsID=0;
-		_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+		_ID=_BaseID+(uint32_t)_SetingsID;
 		_aRes=0;
 		_conversionfactor=*(float*) nanf;
 		_SetingsID=0;
@@ -131,10 +131,10 @@ void BMA280::fastCompensation() {
 	//printf("z-axis offset = %f mg", (float) (offsetZ) * FCres / 256.0f);
 }
 
-int BMA280::setBaseID(uint16_t BaseID)
+int BMA280::setBaseID(uint32_t BaseID)
 {
 	_BaseID=BaseID;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
 	return 0;
 }
 

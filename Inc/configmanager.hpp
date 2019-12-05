@@ -12,6 +12,12 @@
 #include "lwip/ip_addr.h"
 #include "main.h"
 #include "math.h"
+
+
+
+//CRC Function
+uint16_t gen_crc16(const uint8_t *data, uint16_t size);
+
 //https://en.wikibooks.org/wiki/C%2B%2B_Programming/Code/Design_Patterns#Singleton
 
 /*
@@ -60,6 +66,8 @@ public:
 	bool setADCCalCoevs(uint8_t ADCNumber,float slope,float xAxisCrossPoint,float RMSNoise);
 	float getADCVoltage(uint8_t ADCNumber,uint32_t ADCVal);
 	float getADCRMSNoise(uint8_t ADCNumber);
+	uint16_t getBaseID();
+	uint32_t getSensorBaseID(uint8_t SensorNumber);
 	/*
 	int pushData(double timeStamp, std::string info, double val);
 	int writeDataToCsv(std::string fileName);

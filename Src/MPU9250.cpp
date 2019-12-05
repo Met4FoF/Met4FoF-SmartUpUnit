@@ -27,20 +27,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "MPU9250.h"
 
 /* MPU9250 object, input the SPI bus and chip select pin */
-MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint16_t BaseID){
+MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID){
 	_BaseID=BaseID;
 	_SetingsID=0;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
     _SPICSTypeDef=SPICSTypeDef;
     _SPICSPin=SPICSPin;
     _MPU9250spi=MPU9250spi;
 }
 
-int MPU9250::setBaseID(uint16_t BaseID)
+int MPU9250::setBaseID(uint32_t BaseID)
 {
 	_BaseID=BaseID;
 	_SetingsID=0;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
 	return 0;
 }
 /* starts communication with the MPU-9250 */
@@ -160,7 +160,7 @@ int MPU9250::begin(){
 /* sets the accelerometer full scale range to values other than default */
 int MPU9250::setAccelRange(AccelRange range) {
 	_SetingsID++;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // use low speed SPI for register setting
   _useSPIHS = false;
   switch(range) {
@@ -204,7 +204,7 @@ int MPU9250::setAccelRange(AccelRange range) {
 /* sets the gyro full scale range to values other than default */
 int MPU9250::setGyroRange(GyroRange range) {
 	_SetingsID++;
-	_ID=((uint32_t)_BaseID<<16)+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // use low speed SPI for register setting
   _useSPIHS = false;
   switch(range) {
@@ -248,7 +248,7 @@ int MPU9250::setGyroRange(GyroRange range) {
 /* sets the DLPF bandwidth to values other than default */
 int MPU9250::setDlpfBandwidth(DlpfBandwidth bandwidth) {
 	_SetingsID++;
-	_ID=(uint32_t)(_BaseID<<16)+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // use low speed SPI for register setting
   _useSPIHS = false;
   switch(bandwidth) {
@@ -644,7 +644,7 @@ void MPU9250FIFO::getFifoTemperature_C(size_t *size,float* data) {
 /* estimates the gyro biases */
 int MPU9250::calibrateGyro() {
 	_SetingsID++;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // set the range, bandwidth, and srd
   if (setGyroRange(GYRO_RANGE_250DPS) < 0) {
     return -1;
@@ -719,7 +719,7 @@ this should be run for each axis in each direction (6 total) to find
 the min and max values along each */
 int MPU9250::calibrateAccel() {
 	_SetingsID++;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // set the range, bandwidth, and srd
   if (setAccelRange(ACCEL_RANGE_2G) < 0) {
     return -1;
@@ -840,7 +840,7 @@ void MPU9250::setAccelCalZ(float bias,float scaleFactor) {
 the sensor should be rotated in a figure 8 motion until complete */
 int MPU9250::calibrateMag() {
 	_SetingsID++;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
   // set the srd
   if (setSrd(19) < 0) {
     return -1;

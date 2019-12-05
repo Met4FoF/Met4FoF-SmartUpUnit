@@ -112,14 +112,13 @@ osThreadId LCDTID;
 osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
 
-
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA,2);
+MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 
@@ -211,9 +210,11 @@ void StartDefaultTask(void const * argument) {
 }
 
 void StartTempSensorThread(void const * argument) {
+	ConfigManager& configMan = ConfigManager::instance();
 	static uint32_t TempsensoreCaptureCount=0;
 	osDelay(5000);
-	TempSensor0.init();
+	uint32_t SensorID3=configMan.getSensorBaseID(3);
+	TempSensor0.init(SensorID3);
 	/* Infinite loop */
 	for (;;) {
 		osDelay(2000);
@@ -251,6 +252,7 @@ void StartTempSensorThread(void const * argument) {
 }
 
 void StartWebserverThread(void const * argument) {
+	ConfigManager& configMan = ConfigManager::instance();
 	// wait until LWIP is inited
 	osDelay(7000);
 	SEGGER_RTT_printf(0, "Starting Web Server\r\n");
@@ -270,17 +272,12 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartLCDThread(void const * argument) {
-	osDelay(10);
 	ConfigManager& configMan = ConfigManager::instance();
+	osDelay(10);
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	//TODO move this to config manager
-	uint8_t UDID[12] = { };
-	for (int i = 0; i < 12; i++) {
-		UDID[i] = UDID_Read8(i);
-	}
-	uint16_t BaseID = gen_crc16(UDID, 12);
+	uint16_t BaseID = configMan.getBaseID();
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
 	sprintf(Temp_Buffer_text, "Rev:%d.%d.%d  ID:%x", VERSION_MAJOR,
@@ -351,20 +348,17 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
-	//TODO move this to config manager
-	uint8_t UDID[12] = { };
-	for (int i = 0; i < 12; i++) {
-		UDID[i] = UDID_Read8(i);
-	}
-	uint16_t BaseID = gen_crc16(UDID, 12);
-	Sensor0.setBaseID(BaseID);
+	uint32_t SensorID0=configMan.getSensorBaseID(0);
+
+	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
 	Sensor0.enableDataReadyInterrupt();
 
 	/*//BMA280
 	 // SET PS pin low
+	  * uint32_t SensorID2=configMan.getSensorBaseID(2);
 	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	 Sensor2.setBaseID(((uint16_t) UDID_Read8(10) << 8) + UDID_Read8(11));
+	 Sensor2.setBaseID(SensorID);
 	 Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 	 */
 	//Dummy Sensor
@@ -496,7 +490,7 @@ void StartDataStreamerThread(void const * argument) {
 		}
 		//TODO improve this code
 		const uint32_t InfoUpdateTimems = 4000;
-		static TickType_t lastInfoticks = 0;
+		static TickType_t lastInfoticks = 4000;//wait until all sensors are inited and have the right baseid
 		if (xTaskGetTickCount() - lastInfoticks > InfoUpdateTimems) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
@@ -776,38 +770,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
 
-#define CRC16 0x8005
 
-uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
-	uint16_t out = 0;
-	int bits_read = 0, bit_flag;
-
-	/* Sanity check: */
-	if (data == NULL)
-		return 0;
-
-	while (size > 0) {
-		bit_flag = out >> 15;
-
-		/* Get next bit: */
-		out <<= 1;
-		out |= (*data >> (7 - bits_read)) & 1;
-
-		/* Increment bit counter: */
-		bits_read++;
-		if (bits_read > 7) {
-			bits_read = 0;
-			data++;
-			size--;
-		}
-
-		/* Cycle check: */
-		if (bit_flag)
-			out ^= CRC16;
-	}
-
-	return out;
-}
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 

@@ -84,9 +84,9 @@ class MPU9250{
       LP_ACCEL_ODR_250HZ = 10,
       LP_ACCEL_ODR_500HZ = 11
     };
-    MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint16_t BaseID);
+    MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID);
     int begin();
-    int setBaseID(uint16_t BaseID);
+    int setBaseID(uint32_t BaseID);
     int setAccelRange(AccelRange range);
     int setGyroRange(GyroRange range);
     int setDlpfBandwidth(DlpfBandwidth bandwidth);
@@ -143,8 +143,8 @@ class MPU9250{
     uint16_t _SPICSPin;
     SPI_HandleTypeDef* _MPU9250spi;
     uint32_t _ID;
-    uint16_t _BaseID;
-    uint16_t _SetingsID;
+    uint32_t _BaseID;
+    uint8_t _SetingsID;
     // the sensor can not handle fullspeed spi communication for setup registers we have to read the prescaler register and change it acordingly
     bool _useSPI=true;
     bool _useSPIHS=false;

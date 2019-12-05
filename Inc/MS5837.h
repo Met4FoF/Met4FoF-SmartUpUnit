@@ -51,9 +51,9 @@ public:
 	static const uint8_t MS5837_30BA;
 	static const uint8_t MS5837_02BA;
 
-	MS5837(I2C_HandleTypeDef I2C,uint8_t model,uint16_t BaseID);
+	MS5837(I2C_HandleTypeDef I2C,uint8_t model);
 
-	bool init();
+	bool init(uint32_t BaseID);
 	/** Provide the density of the working fluid in kg/m^3. Default is for 
 	 * seawater. Should be 997 for freshwater.
 	 */
@@ -93,7 +93,7 @@ private:
 	int32_t TEMP;
 	int32_t P;
 	uint8_t _model;
-	uint16_t _ID;
+	uint32_t _ID;
 	float fluidDensity;
 
 	/** Performs calculations per the sensor data sheet for conversion and
