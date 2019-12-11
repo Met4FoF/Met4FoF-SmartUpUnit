@@ -21,6 +21,7 @@ import threading
 import time
 from multiprocessing import Queue
 import copy
+import json
 
 class DataReceiver:
     def __init__(self, IP, Port):
@@ -257,7 +258,7 @@ class SensorDescription:
        # self.Description['SpecialKey']
        return self.Channels[key]
 
-    def getDict(self):
+    def asDict(self):
         RetunDict={'Name':self.SensorName}
         for key in self.Channels:
             print(self.Channels[key].Description)
@@ -300,10 +301,16 @@ class Sensor:
         )  # will b 0 but has deltaTime type witch is intended
         self.datarate = 0
 
-    def StartDumpingToFile(self, filename):
+    def StartDumpingToFile(self, filename=''):
         # check if the path is valid
         # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
+        if filename=='':
+            now=datetime.now()
+            filename='data/'+now.strftime("%Y%m%d%H%M%S")+'_'+str(self.Description.SensorName).replace(' ','_')+'_'+hex(self.Description.ID)+'.dump'
         self.Dumpfile = open(filename, "a")
+        json.dump(self.Description.asDict(),self.Dumpfile)
+        self.Dumpfile.write('\n')
+        self.Dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;Data_01;Data_02;Data_03;Data_04;Data_05;Data_06;Data_07;Data_08;Data_09;Data_10;Data_11;Data_12;Data_13;Data_14;Data_15;Data_16\n")
         self.params["DumpFileName"] = filename
         self.flags["DumpToFile"] = True
 
@@ -383,6 +390,16 @@ class Sensor:
                             traceback.print_exc(file=sys.stdout)
                             print('-'*60)
                             pass
+                if self.flags["DumpToFile"]:
+                    if(message['Type']=='Data'):
+                        try:
+                            self.dumMsgToFile(message['ProtMsg'])
+                        except Exception:
+                            print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
+                            print('-'*60)
+                            traceback.print_exc(file=sys.stdout)
+                            print('-'*60)
+                            pass
             except Exception:
                 pass
 
@@ -410,10 +427,35 @@ class Sensor:
     def join(self, *args, **kwargs):
         self.stop()
 
+    def dumMsgToFile(self,message):
+        self.Dumpfile.write(str(message.id)+';'+
+                   str(message.sample_number)+';'+
+                   str(message.unix_time)+';'+
+                   str(message.unix_time_nsecs)+';'+
+                   str(message.time_uncertainty)+';'+
+                   str(message.Data_01)+';'+
+                   str(message.Data_02)+';'+
+                   str(message.Data_03)+';'+
+                   str(message.Data_04)+';'+
+                   str(message.Data_05)+';'+
+                   str(message.Data_06)+';'+
+                   str(message.Data_07)+';'+
+                   str(message.Data_08)+';'+
+                   str(message.Data_09)+';'+
+                   str(message.Data_10)+';'+
+                   str(message.Data_11)+';'+
+                   str(message.Data_12)+';'+
+                   str(message.Data_13)+';'+
+                   str(message.Data_14)+';'+
+                   str(message.Data_15)+';'+
+                   str(message.Data_16)+'\n')
+
+
 def DumpDataMPU9250(message,Description):
-    filename='data/DataDump.log'
+    filename='data(dumpfile.dump'
     if not (os.path.exists(filename)):
         dumpfile = open(filename, "a+")
+        json.dump(Description,filename)
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
     else:
         dumpfile = open(filename, "a")        
@@ -479,3 +521,5 @@ def openDumpFile():
 # Res   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x03\xa5\x01\x00\x00\x80G\xad\x01\x00\x00\x80G\xb5\x01\x00\x00\x80G\xbd\x01\x00\x00\x80G\xc5\x01\x00\x00\x80G\xcd\x01\x00\x00\x80G\xd5\x01\x00\xf0\x7fG\xdd\x01\x00\xf0\x7fG\xe5\x01\x00\xf0\x7fG\xed\x01\x00\x00\x80G'
 # Min   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x04\xa5\x01\x16\xea\x1c\xc3\xad\x01\x16\xea\x1c\xc3\xb5\x01\x16\xea\x1c\xc3\xbd\x01\xe3\xa0\x0b\xc2\xc5\x01\xe3\xa0\x0b\xc2\xcd\x01\xe3\xa0\x0b\xc2\xd5\x01\x00\x00\x00\x80\xdd\x01\x00\x00\x00\x80\xe5\x01\x00\x00\x00\x80\xed\x01\xf3j\x9a\xc2'
 # Max   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x05\xa5\x01\xdc\xe8\x1cC\xad\x01\xdc\xe8\x1cC\xb5\x01\xdc\xe8\x1cC\xbd\x01\xcc\x9f\x0bB\xc5\x01\xcc\x9f\x0bB\xcd\x01\xcc\x9f\x0bB\xd5\x01\x00\x00\x00\x00\xdd\x01\x00\x00\x00\x00\xe5\x01\x00\x00\x00\x00\xed\x01\x02)\xeeB'
+
+DR=DataReceiver("",7654)
