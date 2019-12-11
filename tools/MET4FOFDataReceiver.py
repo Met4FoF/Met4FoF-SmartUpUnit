@@ -23,6 +23,12 @@ from multiprocessing import Queue
 import copy
 import json
 
+
+#for profiling
+import yappi
+
+yappi.start()
+
 class DataReceiver:
     def __init__(self, IP, Port):
         self.flags = {"Networtinited": False}
@@ -61,7 +67,7 @@ class DataReceiver:
         self.lastTimestamp = 0
         self.Datarate = 0
         self._stop_event = threading.Event()
-        thread = threading.Thread(target=self.run, args=())
+        thread = threading.Thread(target=self.run,name='Datareceiver_thread', args=())
         thread.start()
 
     def stop(self):
@@ -276,6 +282,7 @@ class Sensor:
     def __init__(self, ID, BufferSize=1e4):
         self.Description=SensorDescription(ID,'Name not Set')
         self.buffer = Queue(int(BufferSize))
+        self.buffersize=BufferSize
         self.flags = {
             "DumpToFile": False,
             "PrintProcessedCounts": True,
@@ -291,7 +298,7 @@ class Sensor:
         for i in range(6):
             self.DescriptionsProcessed.add_alias(self.DescriptionTypNames[i],i)
         self._stop_event = threading.Event()
-        self.thread = threading.Thread(target=self.run, args=())
+        self.thread = threading.Thread(target=self.run,name='Sensor_'+str(ID)+'_thread',args=())
         # self.thread.daemon = True
         self.thread.start()
         self.ProcessedPacekts = 0
@@ -301,32 +308,48 @@ class Sensor:
         )  # will b 0 but has deltaTime type witch is intended
         self.datarate = 0
 
-    def StartDumpingToFile(self, filename=''):
+    def StartDumpingToFileASCII(self, filename=''):
         # check if the path is valid
         # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
         if filename=='':
             now=datetime.now()
             filename='data/'+now.strftime("%Y%m%d%H%M%S")+'_'+str(self.Description.SensorName).replace(' ','_')+'_'+hex(self.Description.ID)+'.dump'
-        self.Dumpfile = open(filename, "a")
-        json.dump(self.Description.asDict(),self.Dumpfile)
-        self.Dumpfile.write('\n')
-        self.Dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;Data_01;Data_02;Data_03;Data_04;Data_05;Data_06;Data_07;Data_08;Data_09;Data_10;Data_11;Data_12;Data_13;Data_14;Data_15;Data_16\n")
-        self.params["DumpFileName"] = filename
-        self.flags["DumpToFile"] = True
+        self.DumpfileASCII = open(filename, "a")
+        json.dump(self.Description.asDict(),self.DumpfileASCII)
+        self.DumpfileASCII.write('\n')
+        self.DumpfileASCII.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;Data_01;Data_02;Data_03;Data_04;Data_05;Data_06;Data_07;Data_08;Data_09;Data_10;Data_11;Data_12;Data_13;Data_14;Data_15;Data_16\n")
+        self.params["DumpFileNameASCII"] = filename
+        self.flags["DumpToFileASCII"] = True
 
-    def StopDumpingToFile(self):
-        self.flags["DumpToFile"] = False
-        self.params["DumpFileName"] = ""
-        self.Dumpfile.close()
+    def StopDumpingToFileASCII(self):
+        self.flags["DumpToFileASCII"] = False
+        self.params["DumpFileNameASCII"] = ""
+        self.DumpfileASCII.close()
+
+    def StartDumpingToFileProto(self, filename=''):
+        # check if the path is valid
+        # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
+        if filename=='':
+            now=datetime.now()
+            filename='data/'+now.strftime("%Y%m%d%H%M%S")+'_'+str(self.Description.SensorName).replace(' ','_')+'_'+hex(self.Description.ID)+'.protodump'
+        self.DumpfileProto = open(filename, 'a')
+        json.dump(self.Description.asDict(),self.DumpfileProto)
+        self.DumpfileProto.write('\n')
+        self.DumpfileProto = open(filename, 'ab')
+        self.params["DumpFileNameProto"] = filename
+        self.flags["DumpToFileProto"] = True
+
+    def StopDumpingToFileProto(self):
+        self.flags["DumpToFileProto"] = False
+        self.params["DumpFileNameProto"] = ""
+        self.DumpfileProto.close()
 
     def run(self):
-        lastpackedId=0
         while not self._stop_event.is_set():
             # problem when we are closing the queue this function is waiting for data and raises EOF error if we delet the q
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
             try:
                 message = self.buffer.get(timeout=0.1)
-                tmpTime = datetime.now()
                 #self.deltaT = (
                 #    tmpTime - self.lastPacketTimestamp
                 #)  # will b 0 but has deltaTime type witch is intended
@@ -337,8 +360,7 @@ class Sensor:
                     if self.ProcessedPacekts % 10000 == 0:
                         print(
                             "processed 10000 packets in receiver for Sensor ID:"
-                            + hex(self.params["ID"])
-                        )
+                            + hex(self.params["ID"])+' Packets in Que '+str(self.buffer.qsize())+' -->'+str((self.buffer.qsize()/self.buffersize)*100)+'%')
                 if message['Type']=='Description':
                     Description=message['ProtMsg']
                     try:
@@ -390,10 +412,20 @@ class Sensor:
                             traceback.print_exc(file=sys.stdout)
                             print('-'*60)
                             pass
-                if self.flags["DumpToFile"]:
+                if self.flags["DumpToFileProto"]:
                     if(message['Type']=='Data'):
                         try:
-                            self.dumMsgToFile(message['ProtMsg'])
+                            self.dumMsgToFileProto(message['ProtMsg'])
+                        except Exception:
+                            print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
+                            print('-'*60)
+                            traceback.print_exc(file=sys.stdout)
+                            print('-'*60)
+                            pass
+                if self.flags["DumpToFileASCII"]:
+                    if(message['Type']=='Data'):
+                        try:
+                            self.dumMsgToFileASCII(message['ProtMsg'])
                         except Exception:
                             print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
                             print('-'*60)
@@ -427,8 +459,8 @@ class Sensor:
     def join(self, *args, **kwargs):
         self.stop()
 
-    def dumMsgToFile(self,message):
-        self.Dumpfile.write(str(message.id)+';'+
+    def dumMsgToFileASCII(self,message):
+        self.DumpfileASCII.write(str(message.id)+';'+
                    str(message.sample_number)+';'+
                    str(message.unix_time)+';'+
                    str(message.unix_time_nsecs)+';'+
@@ -449,6 +481,11 @@ class Sensor:
                    str(message.Data_14)+';'+
                    str(message.Data_15)+';'+
                    str(message.Data_16)+'\n')
+
+    def dumMsgToFileProto(self,message):
+        size=message.ByteSize()
+        self.DumpfileProto.write(_VarintBytes(size))
+        self.DumpfileProto.write(message.SerializeToString())
 
 
 def DumpDataMPU9250(message,Description):
@@ -523,3 +560,5 @@ def openDumpFile():
 # Max   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x05\xa5\x01\xdc\xe8\x1cC\xad\x01\xdc\xe8\x1cC\xb5\x01\xdc\xe8\x1cC\xbd\x01\xcc\x9f\x0bB\xc5\x01\xcc\x9f\x0bB\xcd\x01\xcc\x9f\x0bB\xd5\x01\x00\x00\x00\x00\xdd\x01\x00\x00\x00\x00\xe5\x01\x00\x00\x00\x00\xed\x01\x02)\xeeB'
 
 DR=DataReceiver("",7654)
+#func_stats = yappi.get_func_stats()
+#func_stats.save('./callgrind.out.', 'CALLGRIND')
