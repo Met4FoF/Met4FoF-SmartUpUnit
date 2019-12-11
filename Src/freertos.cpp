@@ -70,6 +70,8 @@
 #include "bma280.h"
 #include "MS5837.h"
 #include "dummy_sensor.h"
+#include "BMP280.h"
+
 #include <math.h>
 
 #include "adc.h"
@@ -119,6 +121,7 @@ osThreadId TempSensorTID;
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA);
+BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 
@@ -215,6 +218,7 @@ void StartTempSensorThread(void const * argument) {
 	osDelay(5000);
 	uint32_t SensorID3=configMan.getSensorBaseID(3);
 	TempSensor0.init(SensorID3);
+	AirPressSensor.begin();
 	/* Infinite loop */
 	for (;;) {
 		osDelay(2000);
@@ -245,6 +249,12 @@ void StartTempSensorThread(void const * argument) {
 		TempSensor0.getData(mptr,(uint32_t)SampelPointUtc.tv_sec,(uint32_t)SampelPointUtc.tv_nsec,40e6,TempsensoreCaptureCount);
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
+		osDelay(10);
+		char delay = AirPressSensor.startMeasurment();
+		osDelay(delay);
+		double BMPPresure,BMPTemperature=0;
+		AirPressSensor.getTemperatureAndPressure(BMPTemperature,BMPPresure);
+		osDelay(1000);
 
 
 	}
