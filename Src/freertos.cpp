@@ -70,7 +70,7 @@
 #include "bma280.h"
 #include "MS5837.h"
 #include "dummy_sensor.h"
-#include "BMP280.h"
+#include "bmp280.h"
 
 #include <math.h>
 

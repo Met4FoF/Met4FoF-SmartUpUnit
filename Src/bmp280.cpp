@@ -15,7 +15,7 @@
 	buy me italian pizza someday.
 */
 
-#include "BMP280.h"
+#include "bmp280.h"
 #include <i2c.h>
 #include <stdio.h>
 #include <math.h>
