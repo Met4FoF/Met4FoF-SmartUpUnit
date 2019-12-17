@@ -459,7 +459,7 @@ class Databuffer:
                         self.RefTransferFunction["Phasenverschiebung"][IDX] / 180 * np.pi,
                         )
             else:
-                print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
+                #print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
                 return (
                         1,#Asume Amplitude as One
                         freq*self.params["RefGroupDelay"]*2*np.pi*-1,#-1 because we are seeing this aus transferfunction of the Ref Mesurment
@@ -481,7 +481,11 @@ class Databuffer:
         self.TransferFreqs = np.zeros(len(self.CalData))
         self.TransferAmpl = np.zeros(len(self.CalData))
         self.TransferPhase = np.zeros(len(self.CalData))
-        i = 0
+        self.TransferPhaseDEBUG = np.zeros(len(self.CalData))
+        self.TransferPhaseDEBUG2 = np.zeros(len(self.CalData))
+        self.TransferRunCount = np.zeros(len(self.CalData))
+        i = 0 #number of packets processed
+        Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
         if self.flags["RefTrnaferFunctionSet"] == False:
             for item in self.CalData:
                 print(
@@ -495,8 +499,18 @@ class Databuffer:
                 self.TransferPhase[i] = (
                   self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
                 )
+                self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
                 self.TransferPhase[i] = self.TransferPhase[i] + RefPhaseDC
+                #detect run count based on frequency drop to do right unwraping
+                self.TransferRunCount[i]=Runcount
+                self.TransferPhaseDEBUG2[i]=self.TransferPhase[i]
+                if(i>0):
+                    if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
+                        #ok the freq now is smaller the the last freq we have enterd a new loop
+                        Runcount=Runcount+1
+                        self.TransferRunCount[i]=Runcount
                 i = i + 1
+
         if self.flags["RefTrnaferFunctionSet"] == True:
             for item in self.CalData:
                 self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
@@ -509,30 +523,56 @@ class Databuffer:
                 self.TransferPhase[i] = (
                      self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
                 )
+                self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
                 self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF + RefPhaseDC
+                                #detect run count based on frequency drop to do right unwraping
+                self.TransferRunCount[i]=Runcount
+                self.TransferPhaseDEBUG2[i]=self.TransferPhase[i]
+                if(i>0):
+                    if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
+                        #ok the freq now is smaller the the last freq we have enterd a new loop
+                        Runcount=Runcount+1
+                        self.TransferRunCount[i]=Runcount
                 i = i + 1
-        self.TransferPhase = np.unwrap(self.TransferPhase)
+        for run in range(Runcount):
+            runIDX=self.TransferRunCount==run
+            transferfunctionunwraped=np.unwrap(DB1.TransferPhase[runIDX])
+            if all (transferfunctionunwraped<=(-2*np.pi)):
+                transferfunctionunwraped=transferfunctionunwraped+2*np.pi
+            self.TransferPhase[runIDX]=transferfunctionunwraped
+        # TODO implement bettwer way vor unwraping and function for data set labeling
+        # self.TransferPhase = np.unwrap(self.TransferPhase)
 
     def PlotTransferFunction(self, PlotType="lin"):
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType == "lin":
-            ax1.plot(self.TransferFreqs, self.TransferAmpl, ".", markersize=20)
+             for run in range(int(np.max(self.TransferRunCount))):
+                 runIDX=self.TransferRunCount==run
+                 ax1.plot(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
         if PlotType == "logx":
-            ax1.semilogx(self.TransferFreqs, self.TransferAmpl, ".", markersize=20)
+            for run in range(int(np.max(self.TransferRunCount))):
+                runIDX=self.TransferRunCount==run
+                ax1.semilogx(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
         fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
         if PlotType == "lin":
-            ax2.plot(
-                self.TransferFreqs, self.TransferPhase / np.pi * 180, ".", markersize=20
+            for run in range(int(np.max(self.TransferRunCount))):
+                runIDX=self.TransferRunCount==run
+                ax2.plot(
+                     self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
         if PlotType == "logx":
-            ax2.semilogx(
-                self.TransferFreqs, self.TransferPhase / np.pi * 180, ".", markersize=20
+            for run in range(int(np.max(self.TransferRunCount))):
+                runIDX=self.TransferRunCount==run
+                ax2.semilogx(
+                     self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
+        ax1.legend(numpoints=1, fontsize=8,ncol=3)
+        ax2.legend(numpoints=1, fontsize=8,ncol=3)
         plt.show()
 
     def PrintTransferParams(self):
@@ -761,6 +801,22 @@ def DataReaderGYROdump(ProtoCSVFilename):
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
+def  DataReaderGYROdump2(ProtoCSVFilename):
+    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False,skiprows=1)
+    print(sdf.columns.values)
+    chunkSize = DB1.params["IntegrationLength"]
+    for Index in np.arange(0, len(sdf), chunkSize)[
+        :-1
+    ]:  # don't use last chuck since this will propably not have chnukSize elements
+        DB1.pushBlock(
+            sdf["Data_04"][Index : Index + chunkSize]*(180/np.pi),
+            sdf["Data_05"][Index : Index + chunkSize]*(180/np.pi),
+            sdf["Data_06"][Index : Index + chunkSize]*(180/np.pi),
+            sdf["Data_11"][Index : Index + chunkSize]*100,
+            (sdf["unix_time"][Index : Index + chunkSize])
+            + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
+        )
+
 
 # Column Names
 # 'id'
@@ -796,8 +852,9 @@ if __name__ == "__main__":
     # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
     # DataReaderPROTOdump("data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv")
     # DataReaderPROTOdump("data/191001_BMA280_10_250_10ms2_1.csv")
-    DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
+    # DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
+    DataReaderGYROdump2("/media/seeger01/Part1/191213_Datenlogging_Signalexpress_Winkelgeschwindigkeit/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     DB1.setRefGroupDelay(220e-6)
     # DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
