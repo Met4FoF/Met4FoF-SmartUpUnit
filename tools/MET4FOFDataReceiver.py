@@ -412,16 +412,17 @@ class Sensor:
                             traceback.print_exc(file=sys.stdout)
                             print('-'*60)
                             pass
-                if self.flags["DumpToFileProto"]:
-                    if(message['Type']=='Data'):
-                        try:
-                            self.dumMsgToFileProto(message['ProtMsg'])
-                        except Exception:
-                            print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
-                            print('-'*60)
-                            traceback.print_exc(file=sys.stdout)
-                            print('-'*60)
-                            pass
+
+                # if self.flags["DumpToFileProto"]:
+                #     if(message['Type']=='Data'):
+                #         try:
+                #             self.dumMsgToFileProto(message['ProtMsg'])
+                #         except Exception:
+                #             print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
+                #             print('-'*60)
+                #             traceback.print_exc(file=sys.stdout)
+                #             print('-'*60)
+                #             pass
                 if self.flags["DumpToFileASCII"]:
                     if(message['Type']=='Data'):
                         try:
@@ -551,6 +552,43 @@ def openDumpFile():
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
     else:
         dumpfile = open(filename, "a")
+
+def initRos():
+    #todo make the imports golbaly
+    import rospy
+    from std_msgs.msg import String
+    from sensor_msgs.msg import Imu
+    from sensor_msgs.msg import MagneticField
+    pub_imu = rospy.Publisher("IMU0", Imu, queue_size=20)
+    pub_mag = rospy.Publisher("MAG0", MagneticField, queue_size=20)
+    rospy.init_node("imu_publisher1", anonymous=True)
+
+def RosCallbackIMU(message,Description):
+    imu_msg = Imu()
+    imu_msg.header.frame_id = "IMU"
+    imu_msg.header.seq = message.sample_number
+    imu_msg.header.stamp = rospy.Time(
+        message.unix_time, message.unix_time_nsecs
+    )
+    imu_msg.linear_acceleration.x = message.Data_01
+    imu_msg.linear_acceleration.y = message.Data_02
+    imu_msg.linear_acceleration.z = message.Data_03
+    imu_msg.angular_velocity.x = message.Data_04
+    imu_msg.angular_velocity.y = message.Data_05
+    imu_msg.angular_velocity.z = message.Data_06
+    pub_imu.publish(imu_msg)
+
+    mag_msg = MagneticField()
+    mag_msg.header.frame_id = "IMU"
+    mag_msg.header.seq = message.sample_number
+    mag_msg.header.stamp = rospy.Time(
+        message.unix_time, message.unix_time_nsecs
+    )
+    mag_msg.magnetic_field.x = message.Data_07
+    mag_msg.magnetic_field.y = message.Data_08
+    mag_msg.magnetic_field.z = message.Data_09
+    pub_mag.publish(mag_msg)
+
 
 #Example for DSCP Messages
 # Quant b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x00"\x0eX Acceleration*\x0eY Acceleration2\x0eZ Acceleration:\x12X Angular velocityB\x12Y Angular velocityJ\x12Z Angular velocityR\x17X Magnetic flux densityZ\x17Y Magnetic flux densityb\x17Z Magnetic flux densityj\x0bTemperature'

@@ -65,11 +65,11 @@ int MPU9250::begin(){
 	  // reset the MPU9250
 	  writeRegister(PWR_MGMNT_1,PWR_RESET);
 	  // wait for MPU-9250 to come back up
-	  HAL_Delay(100);
+	  HAL_Delay(200);
 	  // reset the AK8963
 	  writeAK8963Register(AK8963_CNTL2,AK8963_RESET);
 
-	  HAL_Delay(100);
+	  HAL_Delay(200);
 	  // select clock source to gyro
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
 	    return -4;
@@ -117,19 +117,19 @@ int MPU9250::begin(){
 		}
 		// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
 		if( whoAmIAK8963() != 72 ){
-	    return -14;
+	    //return -14;
 		}
 	  /* get the magnetometer calibration */
 	  // set AK8963 to Power Down
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-	    return -15;
+	    //return -15;
 	  }
 	  HAL_Delay(200); // long wait between AK8963 mode changes
 	  // set AK8963 to FUSE ROM access
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_FUSE_ROM) < 0){
-	    return -16;
+	    //return -16;
 	  }
-	  HAL_Delay(100); // long wait between AK8963 mode changes
+	  HAL_Delay(200); // long wait between AK8963 mode changes
 	  // read the AK8963 ASA registers and compute magnetometer scale factors
 	  readAK8963Registers(AK8963_ASA,3,_buffer);
 	  _magScaleX = ((((float)_buffer[0]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
@@ -137,19 +137,19 @@ int MPU9250::begin(){
 	  _magScaleZ = ((((float)_buffer[2]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
 	  // set AK8963 to Power Down
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
-	    return -17;
+	    //return -17;
 	  }
 	  HAL_Delay(200); // long wait between AK8963 mode changes
 	  // set AK8963 to 16 bit resolution, 100 Hz update rate
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
-	    return -18;
+	    //return -18;
 	  }
 	 HAL_Delay(200); // long wait between AK8963 mode changes
 	  // select clock source to gyro
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
-	    return -19;
+	    //return -19;
 	  }
-	  HAL_Delay(100);
+	  HAL_Delay(200);
 	  // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
 	  readAK8963Registers(AK8963_HXL,7,_buffer);
 	  // estimate gyro bias
@@ -1063,7 +1063,7 @@ int MPU9250::writeAK8963Register(uint8_t subAddress, uint8_t data){
 	if (writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | (uint8_t)1) < 0) {
     return -4;
   }
-	HAL_Delay(20);
+	HAL_Delay(50);
 	// read the register and confirm
 	if (readAK8963Registers(subAddress,1,_buffer) < 0) {
     return -5;
@@ -1089,7 +1089,7 @@ int MPU9250::readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* des
 	if (writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | count) < 0) {
     return -3;
   }
-	HAL_Delay(10); // takes some time for these registers to fill
+	HAL_Delay(50); // takes some time for these registers to fill
   // read the bytes off the MPU9250 EXT_SENS_DATA registers
 	_status = readRegisters(EXT_SENS_DATA_00,count,dest); 
   return _status;
