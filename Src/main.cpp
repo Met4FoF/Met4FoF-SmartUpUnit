@@ -64,7 +64,7 @@
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
+#include "usb_device.h"
 #include "gpio.h"
 #include "freertos_cubemx.h"
 
@@ -152,7 +152,7 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART3_UART_Init();
-  MX_USB_OTG_FS_PCD_Init();
+  //MX_USB_DEVICE_Init(); USb usage results in hardfault needs to be debugged but has low priority
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_SPI3_Init();
