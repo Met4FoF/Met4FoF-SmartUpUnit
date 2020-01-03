@@ -66,8 +66,8 @@ void SystemClock_Config(void);
 #define LCD_RESET_GPIO_Port GPIOF
 #define LCD_CS_Pin GPIO_PIN_6
 #define LCD_CS_GPIO_Port GPIOF
-#define SD_CS_Pin GPIO_PIN_7
-#define SD_CS_GPIO_Port GPIOF
+#define SD_Detect_Pin GPIO_PIN_7
+#define SD_Detect_GPIO_Port GPIOF
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
 #define RMII_MDC_Pin GPIO_PIN_1

@@ -86,6 +86,8 @@
 #include "configmanager.hpp"
 
 #include "lwip/apps/sntp.h"
+
+#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -124,6 +126,8 @@ MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
+
+bool Lwip_anf_FAT_init_finished=false;
 
 /**
  * @brief  FreeRTOS initialization
@@ -197,6 +201,7 @@ void StartDefaultTask(void const * argument) {
 	/* init code for FATFS */
 	MX_FATFS_Init();
 
+	Lwip_anf_FAT_init_finished=true;
 	/* USER CODE BEGIN StartDefaultTask */
 
 	//TODO implent NPTP ip array
@@ -213,9 +218,11 @@ void StartDefaultTask(void const * argument) {
 }
 
 void StartTempSensorThread(void const * argument) {
+	while(! Lwip_anf_FAT_init_finished){
+		osDelay(100);
+	}
 	ConfigManager& configMan = ConfigManager::instance();
 	static uint32_t TempsensoreCaptureCount=0;
-	osDelay(5000);
 	uint32_t SensorID3=configMan.getSensorBaseID(3);
 	TempSensor0.init(SensorID3);
 	AirPressSensor.begin();
@@ -262,9 +269,12 @@ void StartTempSensorThread(void const * argument) {
 }
 
 void StartWebserverThread(void const * argument) {
+	while(! Lwip_anf_FAT_init_finished){
+		osDelay(100);
+	}
 	ConfigManager& configMan = ConfigManager::instance();
 	// wait until LWIP is inited
-	osDelay(7000);
+	osDelay(5000);
 	SEGGER_RTT_printf(0, "Starting Web Server\r\n");
 	http_server_netconn_init();
 	/* Infinite loop */
@@ -282,6 +292,9 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartLCDThread(void const * argument) {
+	while(! Lwip_anf_FAT_init_finished){
+		osDelay(100);
+	}
 	ConfigManager& configMan = ConfigManager::instance();
 	osDelay(10);
 	ILI9341_Init();		//initial driver setup to drive ili9341
@@ -349,6 +362,9 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamerThread(void const * argument) {
+	while(! Lwip_anf_FAT_init_finished){
+		osDelay(100);
+	}
 	ConfigManager& configMan = ConfigManager::instance();
 	configMan.setADCCalCoevs(0, 0.00488040211169927, -10.029208660668372,
 			4.6824163159348675e-3);

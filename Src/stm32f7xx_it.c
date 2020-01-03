@@ -293,6 +293,7 @@ void TIM2_IRQHandler(void)
   /* USER CODE END TIM2_IRQn 1 */
   SEGGER_SYSVIEW_RecordExitISR();
 
+}
 /**
   * @brief This function handles I2C1 event interrupt.
   */
@@ -364,6 +365,7 @@ void ETH_IRQHandler(void)
   /* USER CODE END ETH_IRQn 1 */
   SEGGER_SYSVIEW_RecordExitISR();
 
+}
 /**
   * @brief This function handles USB On The Go FS global interrupt.
   */
