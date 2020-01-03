@@ -343,8 +343,10 @@ void StartLCDThread(void const * argument) {
 		strftime(Temp_Buffer_text, 40, "NTP Updte: %Y-%m-%d %H:%M:%S",
 				ntp_update_time);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 200, WHITE, 1, BLUE);
-		if (lcdupdatecnt == 10) {
-			lcdupdatecnt = 0;
+
+		sprintf(Temp_Buffer_text, "Counting happy: %i",lcdupdatecnt);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
+		if (lcdupdatecnt %10==0) {
 			iPadressBuffer[17]= {};
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
 					sizeof(iPadressBuffer));
