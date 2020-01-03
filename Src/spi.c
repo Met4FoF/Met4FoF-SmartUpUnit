@@ -44,7 +44,7 @@ void MX_SPI1_Init(void)
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi1.Init.CRCPolynomial = 7;
   hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;  //this should not fix SPi timing problems for software chip select, use hardware NSS in future anyway.
   if (HAL_SPI_Init(&hspi1) != HAL_OK)
   {
     Error_Handler();
