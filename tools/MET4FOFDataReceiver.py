@@ -22,7 +22,7 @@ import time
 from multiprocessing import Queue
 import copy
 import json
-
+import copy
 
 #for profiling
 import yappi
@@ -589,6 +589,30 @@ def RosCallbackIMU(message,Description):
     mag_msg.magnetic_field.z = message.Data_09
     pub_mag.publish(mag_msg)
 
+
+#USAGE
+#create Buffer instance with ExampleBuffer=DataBuffer(1000)
+# Bind Sensor Callback to Buffer PushData function
+# DR.AllSensors[$IDOFSENSOR].SetCallback(ExampleBuffer.PushData)
+# wait until buffer is Full
+# Data can be acessed over the atribute ExampleBuffer.Buffer[0]
+class DataBuffer():
+    def __init__(self, BufferLength):
+        self.BufferLength=BufferLength
+        self.Buffer=[None] * BufferLength
+        self.Datasetpushed=0
+        self.FullmesaggePrinted=False
+
+    def PushData(self,message,Description):
+        if self.Datasetpushed==0:
+            self.Description=copy.deepcopy(Description)
+        if self.Datasetpushed<self.BufferLength:
+            self.Buffer[self.Datasetpushed]=message
+            self.Datasetpushed=self.Datasetpushed+1
+        else:
+            if self.FullmesaggePrinted==False:
+                print("Buffer full")
+                self.FullmesaggePrinted=True
 
 #Example for DSCP Messages
 # Quant b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x00"\x0eX Acceleration*\x0eY Acceleration2\x0eZ Acceleration:\x12X Angular velocityB\x12Y Angular velocityJ\x12Z Angular velocityR\x17X Magnetic flux densityZ\x17Y Magnetic flux densityb\x17Z Magnetic flux densityj\x0bTemperature'
