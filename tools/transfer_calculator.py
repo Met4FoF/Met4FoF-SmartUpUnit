@@ -15,7 +15,7 @@ import pandas as pd
 import scipy as scp
 from scipy.optimize import curve_fit
 import SineTools as st
-
+import csv
 # from termcolor import colored
 plt.rcParams.update({"font.size": 30})
 plt.rc("text", usetex=True)
@@ -100,15 +100,15 @@ class CalTimeSeries:
         self.fftFreqs = np.fft.fftfreq(self.Data.shape[0], self.MeanDeltaT)
         # calculate to fft bins coresponding freqs
         self.flags["FFTCalculated"] = True
-        fftPeakindexiposfreq = int(self.Data.shape[0] / 2)
+        fftPeakindexiposfreq = int(self.Data.shape[0] / 3)
         # TODO axis is hard coded this is not good
         self.REFFfftPeakIndex = (
-            np.argmax(abs(self.FFTData[1:fftPeakindexiposfreq, 2])) + 1
+            np.argmax(abs(self.FFTData[1:fftPeakindexiposfreq, 3])) + 1
         )
         print(self.REFFfftPeakIndex)
         # +1 is needed sice we use relative index in the array passed to np.argmax
         # ingnore dc idx>0 only positive freqs idx<int(length/2)
-        print("Max peak at axis 2 has index " + str(self.REFFfftPeakIndex))
+        print("Max peak at axis 3 has index " + str(self.REFFfftPeakIndex))
         self.FFTFreqPeak = self.fftFreqs[self.REFFfftPeakIndex]
         # für OW der index wird richtig berechnent
         self.FFTAmplitudePeak = abs(self.FFTData[self.REFFfftPeakIndex, :])
@@ -279,7 +279,7 @@ class Databuffer:
         """
         self.params = {
             "IntegrationLength": 1024,
-            "MaxChunks": 15000,
+            "MaxChunks": 100000,
             "axixofintest": 1,
             "stdvalidaxis": 3,
             "minValidChunksInRow": 3,
@@ -338,6 +338,7 @@ class Databuffer:
             self.i = self.i + 1
             if self.i == self.params["IntegrationLength"]:
                 self.calc()
+                print()
 
     def pushBlock(self, arrayx, arrayy, arrayz, arrayREF, arrayt):
         """
@@ -586,6 +587,7 @@ class Databuffer:
             DB1.DataLoopBuffer[self.params["IntegrationLength"] - 1, 4]
             - DB1.DataLoopBuffer[0, 4]
         )
+        print(tmpdeltaT)
         self.Chunktimes = self.Chunktimes * tmpdeltaT
         # calculationg delta time from last vaild chunk
         if startIDX == 0 and stopIDX == 0:
@@ -786,7 +788,7 @@ def DataReaderPROTOdump(ProtoCSVFilename):
         )
 
 def DataReaderGYROdump(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False)
+    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False,skiprows=1)
     print(sdf.columns.values)
     chunkSize = DB1.params["IntegrationLength"]
     for Index in np.arange(0, len(sdf), chunkSize)[
@@ -801,23 +803,34 @@ def DataReaderGYROdump(ProtoCSVFilename):
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
-def  DataReaderGYROdump2(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False,skiprows=1)
-    print(sdf.columns.values)
-    chunkSize = DB1.params["IntegrationLength"]
-    for Index in np.arange(0, len(sdf), chunkSize)[
-        :-1
-    ]:  # don't use last chuck since this will propably not have chnukSize elements
-        DB1.pushBlock(
-            sdf["Data_04"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["Data_05"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["Data_06"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["Data_11"][Index : Index + chunkSize]*100,
-            (sdf["unix_time"][Index : Index + chunkSize])
-            + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
-        )
-
-
+def  DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
+    reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
+    print("reading first to rows")
+    print(next(reader))
+    print(next(reader))
+    #we sacrifice a line to set the start time stamp
+    line=next(reader)
+    startsec=float(line[2])
+    i=0
+    if(i==0):
+        linestoread=Databuffer.params["IntegrationLength"]*Databuffer.params["MaxChunks"]
+    #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
+    while i<linestoread:
+        #['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+        try:
+            line=next(reader)
+            time=float(line[2])-startsec+(float(line[3])*1e-9)
+            #pushData(self, x, y, z, REF, t)
+            Databuffer.pushData(float(line[8])*(180/np.pi),
+                                float(line[9])*(180/np.pi),
+                                float(line[10])*(180/np.pi),
+                                float(line[15])*100,
+                                time)
+            i=i+1
+        except Exception as e:
+            print(e)
+            break
+    return
 # Column Names
 # 'id'
 # 'sample_number'
@@ -854,12 +867,14 @@ if __name__ == "__main__":
     # DataReaderPROTOdump("data/191001_BMA280_10_250_10ms2_1.csv")
     # DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
-    DataReaderGYROdump2("/media/seeger01/Part1/191213_Datenlogging_Signalexpress_Winkelgeschwindigkeit/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
+    # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
+    # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
+    DataReaderGYROdumpLARGE(DB1,"/data/191617_MPU_9250_Y_Rot_100_Wdh/20191217100017_MPU_9250_0x1fe40000.dump")
     DB1.setRefGroupDelay(220e-6)
     # DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
+    DB1.getTransferFunction(1,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     # callculate all the ffts
