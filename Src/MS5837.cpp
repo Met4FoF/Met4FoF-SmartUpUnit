@@ -1,6 +1,6 @@
 #include "MS5837.h"
 
-#define MS5837_ADDR               0x76  
+#define MS5837_ADDR               0xEC//=0x76<<1
 #define MS5837_RESET              0x1E
 #define MS5837_ADC_READ           0x00
 #define MS5837_PROM_READ          0xA0
@@ -14,7 +14,7 @@ const float MS5837::mbar = 1.0f;
 const uint8_t MS5837::MS5837_30BA = 0;
 const uint8_t MS5837::MS5837_02BA = 1;
 
-MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model) {
+MS5837::MS5837(I2C_HandleTypeDef* I2C,uint8_t model) {
 	fluidDensity = 1029;
 	_model=model;
 	_I2C=I2C;
@@ -30,16 +30,18 @@ MS5837::MS5837(I2C_HandleTypeDef I2C,uint8_t model) {
 bool MS5837::init(uint32_t BaseID) {
 	_ID=BaseID;
 	// Reset the MS5837, per datasheet
-	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_RESET,1,100);
+	uint8_t CMD=MS5837_RESET;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
 	// Wait for reset to complete
 	osDelay(10);
 	//Write Adress the read calldata in one block
 
 	// Read calibration values and CRC
-	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_PROM_READ,1,100);
+	CMD=MS5837_PROM_READ;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
-	HAL_I2C_Master_Receive(&_I2C,MS5837_ADDR,(uint8_t*)C[0] ,16, 100);
+	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)C ,16, 100);
 
 	// Verify that data is correct with CRC
 	uint8_t crcRead = C[0] >> 12;
@@ -59,20 +61,23 @@ void MS5837::setFluidDensity(float density) {
 
 void MS5837::read() {
 	// Request D1 conversion
-	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_CONVERT_D1_8192,1,100);
+	uint8_t CMD;
+	CMD=MS5837_CONVERT_D1_8192;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
 	osDelay(20); // Max conversion time per datasheet
-	
-	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_ADC_READ,1,100);
+	CMD=MS5837_ADC_READ;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
-	HAL_I2C_Master_Receive(&_I2C,MS5837_ADDR,(uint8_t*)D1 ,3, 100);
+	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)&D1 ,3, 100);
 
 	// Request D2 conversion
-	HAL_I2C_Master_Transmit(&_I2C,MS5837_ADDR,(uint8_t*)MS5837_CONVERT_D2_8192,1,100);
+	CMD=MS5837_CONVERT_D2_8192;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
 	osDelay(20); // Max conversion time per datasheet
 	
-	HAL_I2C_Master_Receive(&_I2C,MS5837_ADDR,(uint8_t*)D1 ,3, 100);
+	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)&D1 ,3, 100);
 	calculate();
 }
 

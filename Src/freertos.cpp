@@ -122,7 +122,7 @@ osThreadId TempSensorTID;
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MS5837 TempSensor0(hi2c1,MS5837::MS5837_02BA);
+MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -222,11 +222,10 @@ void StartTempSensorThread(void const * argument) {
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
+
 	static uint32_t TempsensoreCaptureCount=0;
 	uint32_t SensorID3=configMan.getSensorBaseID(3);
 	TempSensor0.init(SensorID3);
-	AirPressSensor.begin();
-	/* Infinite loop */
 	for (;;) {
 		osDelay(2000);
 		DataMessage *mptr;
@@ -234,8 +233,8 @@ void StartTempSensorThread(void const * argument) {
 		uint64_t timestamp = TIM_Get_64Bit_TimeStamp_Base(&htim2);
 		struct timespec SampelPointUtc;
 		if (xSemaphoreGPS_REF != NULL) {
-			/* See if we can obtain the semaphore.  If the semaphore is not
-			 available wait 10 ticks to see if it becomes free. */
+			// See if we can obtain the semaphore.  If the semaphore is not
+			// available wait 10 ticks to see if it becomes free.
 			if ( xSemaphoreTake(xSemaphoreGPS_REF,
 					(TickType_t ) 10) == pdTRUE) {
 				uint32_t tmp_time_uncertainty = 0;
@@ -244,8 +243,8 @@ void StartTempSensorThread(void const * argument) {
 				mptr->time_uncertainty = tmp_time_uncertainty;
 				xSemaphoreGive(xSemaphoreGPS_REF);
 			} else {
-				/* We could not obtain the semaphore and can therefore not access
-				 the shared resource safely. */
+				//We could not obtain the semaphore and can therefore not access
+				// the shared resource safely.
 				SEGGER_RTT_printf(0,
 						"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
 				taskYIELD()
@@ -257,15 +256,35 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-		char delay = AirPressSensor.startMeasurment();
-		osDelay(delay);
-		double BMPPresure,BMPTemperature=0;
-		AirPressSensor.getTemperatureAndPressure(BMPTemperature,BMPPresure);
+	/*
+	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
+	HAL_StatusTypeDef result;
+ 	uint8_t i;
+ 	for (i=1; i<128; i++)
+ 	{
+ 	  /*
+ 	   // the HAL wants a left aligned i2c address
+ 	   // &hi2c1 is the handle
+ 	   // (uint16_t)(i<<1) is the i2c address left aligned
+ 	   // retries 2
+ 	   // timeout 2
+ 	   //
+ 	  result = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 2, 2);
+ 	  if (result != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
+ 	  {
+ 		 SEGGER_RTT_printf(0,"."); // No ACK received at that address
+ 	  }
+ 	  if (result == HAL_OK)
+ 	  {
+ 		 SEGGER_RTT_printf(0,"0x%X", i); // Received an ACK at that address
+ 	  }
+ 	}
+ 	SEGGER_RTT_printf(0,"\r\n");
+ 	*/
 		osDelay(1000);
 
 
 	}
-	/* USER CODE END StartDefaultTask */
 }
 
 void StartWebserverThread(void const * argument) {

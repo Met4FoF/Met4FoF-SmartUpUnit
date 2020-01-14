@@ -51,7 +51,7 @@ public:
 	static const uint8_t MS5837_30BA;
 	static const uint8_t MS5837_02BA;
 
-	MS5837(I2C_HandleTypeDef I2C,uint8_t model);
+	MS5837(I2C_HandleTypeDef* I2C,uint8_t model);
 
 	bool init(uint32_t BaseID);
 	/** Provide the density of the working fluid in kg/m^3. Default is for 
@@ -87,7 +87,7 @@ public:
 
 
 private:
-	I2C_HandleTypeDef _I2C;
+	I2C_HandleTypeDef * _I2C;
 	uint16_t C[8];
 	uint32_t D1, D2;
 	int32_t TEMP;
