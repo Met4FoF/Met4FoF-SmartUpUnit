@@ -40,7 +40,7 @@ _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE = _descriptor.EnumDescriptor(
             name="PHYSICAL_QUANTITY", index=0, number=0, options=None, type=None
         ),
         _descriptor.EnumValueDescriptor(
-            name="UINT", index=1, number=1, options=None, type=None
+            name="UNIT", index=1, number=1, options=None, type=None
         ),
         _descriptor.EnumValueDescriptor(
             name="UNCERTAINTY_TYPE", index=2, number=2, options=None, type=None

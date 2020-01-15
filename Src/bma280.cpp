@@ -35,14 +35,14 @@
 #include "gpio.h"
 #include "main.h"
 
-BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint16_t BaseID){
+BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID){
 		// INFORMATION remeber to set the PS pin on BMA 280 to SPi settings (LOW)
 		_SPICSTypeDef=SPICSTypeDef;
 		_SPICSPin=SPICSPin;
 		_bmaspi=bmaspi;
 		_BaseID=BaseID;
 		_SetingsID=0;
-		_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+		_ID=_BaseID+(uint32_t)_SetingsID;
 		_aRes=0;
 		_conversionfactor=*(float*) nanf;
 		_SetingsID=0;
@@ -131,10 +131,10 @@ void BMA280::fastCompensation() {
 	//printf("z-axis offset = %f mg", (float) (offsetZ) * FCres / 256.0f);
 }
 
-int BMA280::setBaseID(uint16_t BaseID)
+int BMA280::setBaseID(uint32_t BaseID)
 {
 	_BaseID=BaseID;
-	_ID=(uint32_t)_BaseID<<16+(uint32_t)_SetingsID;
+	_ID=_BaseID+(uint32_t)_SetingsID;
 	return 0;
 }
 
@@ -235,6 +235,7 @@ bool BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 }
 
 int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount){
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
@@ -263,42 +264,11 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Capture
 }
 
 int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	Message->id=_ID;
 	strncpy(Message->Sensor_name,"BMA 280\0",sizeof(Message->Sensor_name));
 	Message->Description_Type=DESCRIPTION_TYPE;
-	Message->has_str_Data_01=false;
-	Message->has_str_Data_02=false;
-	Message->has_str_Data_03=false;
-	Message->has_str_Data_04=false;
-	Message->has_str_Data_05=false;
-	Message->has_str_Data_06=false;
-	Message->has_str_Data_07=false;
-	Message->has_str_Data_08=false;
-	Message->has_str_Data_09=false;
-	Message->has_str_Data_10=false;
-	Message->has_str_Data_11=false;
-	Message->has_str_Data_12=false;
-	Message->has_str_Data_13=false;
-	Message->has_str_Data_14=false;
-	Message->has_str_Data_15=false;
-	Message->has_str_Data_16=false;
-	Message->has_f_Data_01=false;
-	Message->has_f_Data_02=false;
-	Message->has_f_Data_03=false;
-	Message->has_f_Data_04=false;
-	Message->has_f_Data_05=false;
-	Message->has_f_Data_06=false;
-	Message->has_f_Data_07=false;
-	Message->has_f_Data_08=false;
-	Message->has_f_Data_09=false;
-	Message->has_f_Data_10=false;
-	Message->has_f_Data_11=false;
-	Message->has_f_Data_12=false;
-	Message->has_f_Data_13=false;
-	Message->has_f_Data_14=false;
-	Message->has_f_Data_15=false;
-	Message->has_f_Data_16=false;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
 		Message->has_str_Data_01=true;
@@ -310,7 +280,7 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		strncpy(Message->str_Data_03,"Z Acceleration\0",sizeof(Message->str_Data_03));
 		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
 	}
-	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UINT)
+	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
@@ -353,43 +323,6 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->f_Data_02=8191*_conversionfactor*g_to_ms2;
 		Message->f_Data_03=8191*_conversionfactor*g_to_ms2;
 		Message->f_Data_10=86.5;
-	}
-	else
-	{
-		Message->has_str_Data_01=false;
-		Message->has_str_Data_02=false;
-		Message->has_str_Data_03=false;
-		Message->has_str_Data_04=false;
-		Message->has_str_Data_05=false;
-		Message->has_str_Data_06=false;
-		Message->has_str_Data_07=false;
-		Message->has_str_Data_08=false;
-		Message->has_str_Data_09=false;
-		Message->has_str_Data_10=false;
-		Message->has_str_Data_11=false;
-		Message->has_str_Data_12=false;
-		Message->has_str_Data_13=false;
-		Message->has_str_Data_14=false;
-		Message->has_str_Data_15=false;
-		Message->has_str_Data_16=false;
-		Message->has_f_Data_01=false;
-		Message->has_f_Data_02=false;
-		Message->has_f_Data_03=false;
-		Message->has_f_Data_04=false;
-		Message->has_f_Data_05=false;
-		Message->has_f_Data_06=false;
-		Message->has_f_Data_07=false;
-		Message->has_f_Data_08=false;
-		Message->has_f_Data_09=false;
-		Message->has_f_Data_10=false;
-		Message->has_f_Data_11=false;
-		Message->has_f_Data_12=false;
-		Message->has_f_Data_13=false;
-		Message->has_f_Data_14=false;
-		Message->has_f_Data_15=false;
-		Message->has_f_Data_16=false;
-
-
 	}
 	return retVal;
 }

@@ -21,7 +21,13 @@ import threading
 import time
 from multiprocessing import Queue
 import copy
+import json
+import copy
 
+#for profiling
+import yappi
+
+yappi.start()
 
 class DataReceiver:
     def __init__(self, IP, Port):
@@ -61,7 +67,7 @@ class DataReceiver:
         self.lastTimestamp = 0
         self.Datarate = 0
         self._stop_event = threading.Event()
-        thread = threading.Thread(target=self.run, args=())
+        thread = threading.Thread(target=self.run,name='Datareceiver_thread', args=())
         thread.start()
 
     def stop(self):
@@ -78,7 +84,7 @@ class DataReceiver:
     def run(self):
         # implement stop routine
         while not self._stop_event.is_set():
-            data, addr = self.socket.recvfrom(1024)  # buffer size is 1024 bytes
+            data, addr = self.socket.recvfrom(1500)  # buffer size is 1024 bytes
             wasValidData = False
             wasValidDescription = False
             ProtoData = messages_pb2.DataMessage()
@@ -136,6 +142,7 @@ class DataReceiver:
                     try:
                         msg_buf = data[new_pos : new_pos + msg_len]
                         ProtoDescription.ParseFromString(msg_buf)
+                        #print(msg_buf)
                         wasValidData = True
                         SensorID = ProtoDescription.id
                         message = {'ProtMsg':ProtoDescription,'Type':'Description'}
@@ -182,19 +189,116 @@ class DataReceiver:
         self.socket.close()
 
 
+### classes to proces sensor descriptions
+class AliasDict(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.aliases = {}
+
+    def __getitem__(self, key):
+        return dict.__getitem__(self, self.aliases.get(key, key))
+
+    def __setitem__(self, key, value):
+        return dict.__setitem__(self, self.aliases.get(key, key), value)
+
+    def add_alias(self, key, alias):
+        self.aliases[alias] = key
+
+class ChannelDescription:
+   def __init__(self,CHID):
+       self.Description={"CHID":CHID,
+                         "PHYSICAL_QUANTITY":False,
+                         "UNIT":False,
+                         "RESOLUTION":False,
+                         "MIN_SCALE":False,
+                         "MAX_SCALE":False}
+       self._complete=False
+   def __getitem__(self, key):
+       #if key='SpecialKey':
+       # self.Description['SpecialKey']
+       return self.Description[key]
+
+   def __str__(self):
+         return 'Channel: '+str(self.Description["CHID"])+' ==>'+str(self.Description["PHYSICAL_QUANTITY"])+' in '+str(self.Description["UNIT"])
+   #todo override set methode
+   def setDescription(self,key,value):
+       self.Description[key]=value
+       if(self.Description['PHYSICAL_QUANTITY']!=False and
+          self.Description['UNIT']!=False and
+          self.Description['RESOLUTION']!=False and
+          self.Description['MIN_SCALE']!=False and
+          self.Description['MAX_SCALE']!=False):
+               self._complete=True
+
+class SensorDescription:
+    def __init__(self,ID,SensorName):
+        self.ID=ID
+        self.SensorName=SensorName
+        self._complete=False
+        self.Channels=AliasDict([])
+        self.ChannelCount=0
+        self._ChannelsComplte=0
+
+    def setChannelParam(self,CHID,key,value):
+        wasComplete=False
+        if CHID in self.Channels:
+            wasComplete=self.Channels[CHID]._complete#read if channel was completed before
+            self.Channels[CHID].setDescription(key,value)
+            if(key=='PHYSICAL_QUANTITY'):
+                self.Channels.add_alias(CHID,value)#make channels callable by their Quantity
+        else:
+            if(key=='PHYSICAL_QUANTITY'):
+                self.Channels.add_alias(CHID,value)#make channels callable by their Quantity
+            self.Channels[CHID]=ChannelDescription(CHID)
+            self.Channels[CHID].setDescription(key,value)
+            self.Channels.add_alias(CHID,'Data_'+'{:02d}'.format(CHID))#make channels callable by ther Data_xx name
+            self.ChannelCount=self.ChannelCount+1
+        if(wasComplete==False and self.Channels[CHID]._complete):
+            self._ChannelsComplte=self._ChannelsComplte+1
+            if( self._ChannelsComplte==self.ChannelCount):
+                self._complete=True
+                print("Description completed")
+
+    def __getitem__(self, key):
+       #if key='SpecialKey':
+       # self.Description['SpecialKey']
+       return self.Channels[key]
+
+    def asDict(self):
+        RetunDict={'Name':self.SensorName}
+        for key in self.Channels:
+            print(self.Channels[key].Description)
+            RetunDict.update({self.Channels[key]['CHID']:self.Channels[key].Description})
+        return RetunDict
+
+
 class Sensor:
+    StrFieldNames=['str_Data_01','str_Data_02','str_Data_03','str_Data_04','str_Data_05','str_Data_06','str_Data_07','str_Data_08','str_Data_09',
+                                 'str_Data_10','str_Data_11','str_Data_12','str_Data_13','str_Data_14','str_Data_15','str_Data_16']
+    FFieldNames=['f_Data_01','f_Data_02','f_Data_03','f_Data_04','f_Data_05','f_Data_06','f_Data_07','f_Data_08','f_Data_09',
+                                 'f_Data_10','f_Data_11','f_Data_12','f_Data_13','f_Data_14','f_Data_15','f_Data_16']
+    DescriptionTypNames={0:"PHYSICAL_QUANTITY",1:"UNIT",2:"UNCERTAINTY_TYPE",3:"RESOLUTION",4:"MIN_SCALE",5:"MAX_SCALE"}
     # TODO implement multi therading and callbacks
     def __init__(self, ID, BufferSize=1e4):
+        self.Description=SensorDescription(ID,'Name not Set')
         self.buffer = Queue(int(BufferSize))
+        self.buffersize=BufferSize
         self.flags = {
             "DumpToFile": False,
             "PrintProcessedCounts": True,
             "callbackSet": False,
         }
         self.params = {"ID": ID, "BufferSize": BufferSize, "DumpFileName": ""}
-
+        self.DescriptionsProcessed=AliasDict({"PHYSICAL_QUANTITY":False,
+                         "UNIT":False,
+                         "UNCERTAINTY_TYPE":False,
+                         "RESOLUTION":False,
+                         "MIN_SCALE":False,
+                         "MAX_SCALE":False})
+        for i in range(6):
+            self.DescriptionsProcessed.add_alias(self.DescriptionTypNames[i],i)
         self._stop_event = threading.Event()
-        self.thread = threading.Thread(target=self.run, args=())
+        self.thread = threading.Thread(target=self.run,name='Sensor_'+str(ID)+'_thread',args=())
         # self.thread.daemon = True
         self.thread.start()
         self.ProcessedPacekts = 0
@@ -204,26 +308,48 @@ class Sensor:
         )  # will b 0 but has deltaTime type witch is intended
         self.datarate = 0
 
-    def StartDumpingToFile(self, filename):
+    def StartDumpingToFileASCII(self, filename=''):
         # check if the path is valid
         # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
-        self.Dumpfile = open(filename, "a")
-        self.params["DumpFileName"] = filename
-        self.flags["DumpToFile"] = True
+        if filename=='':
+            now=datetime.now()
+            filename='data/'+now.strftime("%Y%m%d%H%M%S")+'_'+str(self.Description.SensorName).replace(' ','_')+'_'+hex(self.Description.ID)+'.dump'
+        self.DumpfileASCII = open(filename, "a")
+        json.dump(self.Description.asDict(),self.DumpfileASCII)
+        self.DumpfileASCII.write('\n')
+        self.DumpfileASCII.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;Data_01;Data_02;Data_03;Data_04;Data_05;Data_06;Data_07;Data_08;Data_09;Data_10;Data_11;Data_12;Data_13;Data_14;Data_15;Data_16\n")
+        self.params["DumpFileNameASCII"] = filename
+        self.flags["DumpToFileASCII"] = True
 
-    def StopDumpingToFile(self):
-        self.flags["DumpToFile"] = False
-        self.params["DumpFileName"] = ""
-        self.Dumpfile.close()
+    def StopDumpingToFileASCII(self):
+        self.flags["DumpToFileASCII"] = False
+        self.params["DumpFileNameASCII"] = ""
+        self.DumpfileASCII.close()
+
+    def StartDumpingToFileProto(self, filename=''):
+        # check if the path is valid
+        # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
+        if filename=='':
+            now=datetime.now()
+            filename='data/'+now.strftime("%Y%m%d%H%M%S")+'_'+str(self.Description.SensorName).replace(' ','_')+'_'+hex(self.Description.ID)+'.protodump'
+        self.DumpfileProto = open(filename, 'a')
+        json.dump(self.Description.asDict(),self.DumpfileProto)
+        self.DumpfileProto.write('\n')
+        self.DumpfileProto = open(filename, 'ab')
+        self.params["DumpFileNameProto"] = filename
+        self.flags["DumpToFileProto"] = True
+
+    def StopDumpingToFileProto(self):
+        self.flags["DumpToFileProto"] = False
+        self.params["DumpFileNameProto"] = ""
+        self.DumpfileProto.close()
 
     def run(self):
-        lastpackedId=0
         while not self._stop_event.is_set():
             # problem when we are closing the queue this function is waiting for data and raises EOF error if we delet the q
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
             try:
                 message = self.buffer.get(timeout=0.1)
-                tmpTime = datetime.now()
                 #self.deltaT = (
                 #    tmpTime - self.lastPacketTimestamp
                 #)  # will b 0 but has deltaTime type witch is intended
@@ -234,14 +360,75 @@ class Sensor:
                     if self.ProcessedPacekts % 10000 == 0:
                         print(
                             "processed 10000 packets in receiver for Sensor ID:"
-                            + hex(self.params["ID"])
-                        )
+                            + hex(self.params["ID"])+' Packets in Que '+str(self.buffer.qsize())+' -->'+str((self.buffer.qsize()/self.buffersize)*100)+'%')
+                if message['Type']=='Description':
+                    Description=message['ProtMsg']
+                    try:
+                        if not any(self.DescriptionsProcessed.values())and Description.IsInitialized():
+                            #run only if no description packed has been procesed ever
+                            #self.Description.SensorName=message.Sensor_name
+                            print('Found new '+Description.Sensor_name+' sensor with ID:'+str(self.params['ID']))
+                            #print(str(Description.Description_Type))
+                        if self.DescriptionsProcessed[Description.Description_Type]==False :
+
+                            if( self.Description.SensorName=='Name not Set'):
+                                self.Description.SensorName=Description.Sensor_name
+                            #we havent processed thiss message before now do that
+                            if Description.Description_Type in [0,1,2]:#["PHYSICAL_QUANTITY","UNIT","UNCERTAINTY_TYPE"]
+                                #print(Description)
+                                #string Processing
+
+                                FieldNumber=1
+                                for StrField in self.StrFieldNames:
+                                    if Description.HasField(StrField):
+                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(StrField))
+                                        #print(str(FieldNumber)+' '+Description.__getattribute__(StrField))
+                                    FieldNumber=FieldNumber+1
+
+                                self.DescriptionsProcessed[Description.Description_Type]=True
+                                #print(self.DescriptionsProcessed)
+                            if Description.Description_Type in [3,4,5]:#["RESOLUTION","MIN_SCALE","MAX_SCALE"]
+                                self.DescriptionsProcessed[Description.Description_Type]=True
+                                FieldNumber=1
+                                for FloatField in self.FFieldNames:
+                                    if Description.HasField(FloatField):
+                                        self.Description.setChannelParam(FieldNumber,self.DescriptionTypNames[Description.Description_Type],Description.__getattribute__(FloatField))
+                                        #print(str(FieldNumber)+' '+str(Description.__getattribute__(FloatField)))
+                                    FieldNumber=FieldNumber+1
+                                #print(self.DescriptionsProcessed)
+                                #string Processing
+                    except Exception:
+                        print (" Sensor id:"+hex(self.params["ID"])+"Exception in user Description parsing:")
+                        print('-'*60)
+                        traceback.print_exc(file=sys.stdout)
+                        print('-'*60)
                 if self.flags["callbackSet"]:
                     if(message['Type']=='Data'):
                         try:
-                            self.callback(message['ProtMsg'])
+                            self.callback(message['ProtMsg'],self.Description)
                         except Exception:
                             print (" Sensor id:"+hex(self.params["ID"])+"Exception in user callback:")
+                            print('-'*60)
+                            traceback.print_exc(file=sys.stdout)
+                            print('-'*60)
+                            pass
+
+                # if self.flags["DumpToFileProto"]:
+                #     if(message['Type']=='Data'):
+                #         try:
+                #             self.dumMsgToFileProto(message['ProtMsg'])
+                #         except Exception:
+                #             print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
+                #             print('-'*60)
+                #             traceback.print_exc(file=sys.stdout)
+                #             print('-'*60)
+                #             pass
+                if self.flags["DumpToFileASCII"]:
+                    if(message['Type']=='Data'):
+                        try:
+                            self.dumMsgToFileASCII(message['ProtMsg'])
+                        except Exception:
+                            print (" Sensor id:"+hex(self.params["ID"])+"Exception in user datadump:")
                             print('-'*60)
                             traceback.print_exc(file=sys.stdout)
                             print('-'*60)
@@ -273,7 +460,43 @@ class Sensor:
     def join(self, *args, **kwargs):
         self.stop()
 
-def DumpDataMPU9250(message):
+    def dumMsgToFileASCII(self,message):
+        self.DumpfileASCII.write(str(message.id)+';'+
+                   str(message.sample_number)+';'+
+                   str(message.unix_time)+';'+
+                   str(message.unix_time_nsecs)+';'+
+                   str(message.time_uncertainty)+';'+
+                   str(message.Data_01)+';'+
+                   str(message.Data_02)+';'+
+                   str(message.Data_03)+';'+
+                   str(message.Data_04)+';'+
+                   str(message.Data_05)+';'+
+                   str(message.Data_06)+';'+
+                   str(message.Data_07)+';'+
+                   str(message.Data_08)+';'+
+                   str(message.Data_09)+';'+
+                   str(message.Data_10)+';'+
+                   str(message.Data_11)+';'+
+                   str(message.Data_12)+';'+
+                   str(message.Data_13)+';'+
+                   str(message.Data_14)+';'+
+                   str(message.Data_15)+';'+
+                   str(message.Data_16)+'\n')
+
+    def dumMsgToFileProto(self,message):
+        size=message.ByteSize()
+        self.DumpfileProto.write(_VarintBytes(size))
+        self.DumpfileProto.write(message.SerializeToString())
+
+
+def DumpDataMPU9250(message,Description):
+    filename='data(dumpfile.dump'
+    if not (os.path.exists(filename)):
+        dumpfile = open(filename, "a+")
+        json.dump(Description,filename)
+        dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
+    else:
+        dumpfile = open(filename, "a")        
     PRINTDEVIDER=10000
     dumpfile.write(str(message.id)+';'+
                    str(message.sample_number)+';'+
@@ -294,16 +517,16 @@ def DumpDataMPU9250(message):
                    str(message.Data_12)+';'+
                    str(message.Data_13)+';'+
                    "\n")
-    if(message.sample_number%PRINTDEVIDER==0):
-        print('=====DATA PACKET====','\n',
-          hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
-          '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
-          '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
-          '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
-          '\n TEMP:',message.Data_10,
-          '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
+    # if(message.sample_number%PRINTDEVIDER==0):
+    #     print('=====DATA PACKET====','\n',
+    #       hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
+    #       '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
+    #       '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
+    #       '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
+    #       '\n TEMP:',message.Data_10,
+    #       '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
 
-def DumpDataGPSDummySensor(message):
+def DumpDataGPSDummySensor(message,Description):
     if not (os.path.exists('data/GPSLog.log')):
         dumpfile = open('data/GPSLog.log', "a+")
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n")
@@ -318,7 +541,6 @@ def DumpDataGPSDummySensor(message):
                        str(message.unix_time_nsecs)+';'+
                        str(message.time_uncertainty)+';'+
                        str(gpscount)+"\n")
-    dumpfile.close()
 
 def doNothingCb():
     pass
@@ -330,3 +552,75 @@ def openDumpFile():
         dumpfile.write("id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n")
     else:
         dumpfile = open(filename, "a")
+
+def initRos():
+    #todo make the imports golbaly
+    import rospy
+    from std_msgs.msg import String
+    from sensor_msgs.msg import Imu
+    from sensor_msgs.msg import MagneticField
+    pub_imu = rospy.Publisher("IMU0", Imu, queue_size=20)
+    pub_mag = rospy.Publisher("MAG0", MagneticField, queue_size=20)
+    rospy.init_node("imu_publisher1", anonymous=True)
+
+def RosCallbackIMU(message,Description):
+    imu_msg = Imu()
+    imu_msg.header.frame_id = "IMU"
+    imu_msg.header.seq = message.sample_number
+    imu_msg.header.stamp = rospy.Time(
+        message.unix_time, message.unix_time_nsecs
+    )
+    imu_msg.linear_acceleration.x = message.Data_01
+    imu_msg.linear_acceleration.y = message.Data_02
+    imu_msg.linear_acceleration.z = message.Data_03
+    imu_msg.angular_velocity.x = message.Data_04
+    imu_msg.angular_velocity.y = message.Data_05
+    imu_msg.angular_velocity.z = message.Data_06
+    pub_imu.publish(imu_msg)
+
+    mag_msg = MagneticField()
+    mag_msg.header.frame_id = "IMU"
+    mag_msg.header.seq = message.sample_number
+    mag_msg.header.stamp = rospy.Time(
+        message.unix_time, message.unix_time_nsecs
+    )
+    mag_msg.magnetic_field.x = message.Data_07
+    mag_msg.magnetic_field.y = message.Data_08
+    mag_msg.magnetic_field.z = message.Data_09
+    pub_mag.publish(mag_msg)
+
+
+#USAGE
+#create Buffer instance with ExampleBuffer=DataBuffer(1000)
+# Bind Sensor Callback to Buffer PushData function
+# DR.AllSensors[$IDOFSENSOR].SetCallback(ExampleBuffer.PushData)
+# wait until buffer is Full
+# Data can be acessed over the atribute ExampleBuffer.Buffer[0]
+class DataBuffer():
+    def __init__(self, BufferLength):
+        self.BufferLength=BufferLength
+        self.Buffer=[None] * BufferLength
+        self.Datasetpushed=0
+        self.FullmesaggePrinted=False
+
+    def PushData(self,message,Description):
+        if self.Datasetpushed==0:
+            self.Description=copy.deepcopy(Description)
+        if self.Datasetpushed<self.BufferLength:
+            self.Buffer[self.Datasetpushed]=message
+            self.Datasetpushed=self.Datasetpushed+1
+        else:
+            if self.FullmesaggePrinted==False:
+                print("Buffer full")
+                self.FullmesaggePrinted=True
+
+#Example for DSCP Messages
+# Quant b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x00"\x0eX Acceleration*\x0eY Acceleration2\x0eZ Acceleration:\x12X Angular velocityB\x12Y Angular velocityJ\x12Z Angular velocityR\x17X Magnetic flux densityZ\x17Y Magnetic flux densityb\x17Z Magnetic flux densityj\x0bTemperature'
+# Unit  b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x01"\x17\\metre\\second\\tothe{-2}*\x17\\metre\\second\\tothe{-2}2\x17\\metre\\second\\tothe{-2}:\x18\\radian\\second\\tothe{-1}B\x18\\radian\\second\\tothe{-1}J\x18\\radian\\second\\tothe{-1}R\x0c\\micro\\teslaZ\x0c\\micro\\teslab\x0c\\micro\\teslaj\rdegreecelsius'
+# Res   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x03\xa5\x01\x00\x00\x80G\xad\x01\x00\x00\x80G\xb5\x01\x00\x00\x80G\xbd\x01\x00\x00\x80G\xc5\x01\x00\x00\x80G\xcd\x01\x00\x00\x80G\xd5\x01\x00\xf0\x7fG\xdd\x01\x00\xf0\x7fG\xe5\x01\x00\xf0\x7fG\xed\x01\x00\x00\x80G'
+# Min   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x04\xa5\x01\x16\xea\x1c\xc3\xad\x01\x16\xea\x1c\xc3\xb5\x01\x16\xea\x1c\xc3\xbd\x01\xe3\xa0\x0b\xc2\xc5\x01\xe3\xa0\x0b\xc2\xcd\x01\xe3\xa0\x0b\xc2\xd5\x01\x00\x00\x00\x80\xdd\x01\x00\x00\x00\x80\xe5\x01\x00\x00\x00\x80\xed\x01\xf3j\x9a\xc2'
+# Max   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x05\xa5\x01\xdc\xe8\x1cC\xad\x01\xdc\xe8\x1cC\xb5\x01\xdc\xe8\x1cC\xbd\x01\xcc\x9f\x0bB\xc5\x01\xcc\x9f\x0bB\xcd\x01\xcc\x9f\x0bB\xd5\x01\x00\x00\x00\x00\xdd\x01\x00\x00\x00\x00\xe5\x01\x00\x00\x00\x00\xed\x01\x02)\xeeB'
+
+DR=DataReceiver("",7654)
+#func_stats = yappi.get_func_stats()
+#func_stats.save('./callgrind.out.', 'CALLGRIND')

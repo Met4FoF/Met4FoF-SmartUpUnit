@@ -30,7 +30,7 @@ message DescriptionMessage {
   required string Sensor_name = 2 [(nanopb).max_size = 40];
   enum  DESCRIPTION_TYPE{
   PHYSICAL_QUANTITY = 0;
-  UINT = 1;
+  UNIT = 1;
   UNCERTAINTY_TYPE = 2;
   RESOLUTION = 3;
   MIN_SCALE = 4;

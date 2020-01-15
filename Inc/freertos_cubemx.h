@@ -80,7 +80,7 @@ extern "C" {
 #include "tim64extender.h"
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 2
-#define VERSION_PATCH 0
+#define VERSION_PATCH 8
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -121,11 +121,14 @@ void StartWebserverThread(void const * argument);
 extern void StartBlinkThread(void const * argument);
 void StartLCDThread(void const * argument);
 void StartDataStreamerThread(void const * argument);
+void StartTempSensorThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
 void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
+//TODO move to configmanager
+uint16_t gen_crc16(const uint8_t *data, uint16_t size);
 
 
 /* (MISRA C 2004 rule 8.1) */

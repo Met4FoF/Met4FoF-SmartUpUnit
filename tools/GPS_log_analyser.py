@@ -11,11 +11,24 @@ import pandas as pd
 from scipy import signal
 from scipy.stats import norm
 
-LANG = "DE"
+#plt.rc('font', family='serif')
+#plt.rc('text', usetex=True)
+SMALL_SIZE = 12
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 18
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+LANG = "EN"
 DF=pd.read_csv('data/timing0_7.log',sep=';',skiprows=range(1,5))
 
-#splipostion = np.array([2702,16896,74829,156910,163527])
-splipostion = np.array([])
+splipostion = np.array([2702,16896,74829,156910,163527])
+#splipostion = np.array([])
 for i in np.arange(splipostion.size):
     DF["unix_time_nsecs"][splipostion[i] :]+=100
 DF["nSecDev"] = DF["unix_time_nsecs"] - DF["unix_time_nsecs"][0]
@@ -72,7 +85,7 @@ if LANG == "EN":
     ax2.set_xlabel("time deviation $t_{(is)}-t_{(should)}$in ns")
     ax2.set_ylabel("Frequency ")
     ax2.set_title(
-        r"$\mathrm{Histogram\ of\ time deviation:}\ 2\sigma=%.3f ~ns,\ \sigma = %.3f$ ~ns n = $%i$"
+        r"$\mathrm{Histogram\ of\ time deviation:}\ 2\sigma=%.3f ns,\ \sigma = %.3f$ ns n = $%i$"
         % (2 * sigma, sigma, DF["nSecDev"].size)
     )
 if LANG == "DE":

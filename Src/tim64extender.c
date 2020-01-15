@@ -105,6 +105,8 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 }
 
 uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
+
+	//TODO add channel mapping
 		uint64_t timestamp=0;
 		// RACE CONDITION CECKING !!
 		// this code occures as well in  void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim) in stm32f7xx_hal_tim.c

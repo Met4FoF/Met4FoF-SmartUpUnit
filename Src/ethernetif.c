@@ -219,9 +219,10 @@ static void low_level_init(struct netif *netif)
   heth.Instance = ETH;
   heth.Init.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE;
   heth.Init.PhyAddress = LAN8742A_PHY_ADDRESS;
+  //TODO add crc from config manager here to avid colison
   MACAddr[0] = 0x00;
   MACAddr[1] = 0x80;
-  MACAddr[2] = 0xE1;
+  MACAddr[2] = UDID_Read8(8);
   MACAddr[3] = UDID_Read8(9);
   MACAddr[4] = UDID_Read8(10);
   MACAddr[5] = UDID_Read8(11);
