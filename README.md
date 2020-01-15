@@ -1,4 +1,6 @@
 # Software for the Met4FoF Smartup Unit V2
+
+[See this publication as well](https://doi.org/10.1051/metrology/201922003)
 ## Setup
 1. Download this repo
 2. install Python dependencies [add needed deps]
