@@ -1116,6 +1116,7 @@ int MPU9250::whoAmIAK8963(){
 }
 
 int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount){
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
@@ -1158,42 +1159,11 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 }
 
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	strncpy(Message->Sensor_name,"MPU 9250\0",sizeof(Message->Sensor_name));
 	Message->id=_ID;
 	Message->Description_Type=DESCRIPTION_TYPE;
-	Message->has_str_Data_01=false;
-	Message->has_str_Data_02=false;
-	Message->has_str_Data_03=false;
-	Message->has_str_Data_04=false;
-	Message->has_str_Data_05=false;
-	Message->has_str_Data_06=false;
-	Message->has_str_Data_07=false;
-	Message->has_str_Data_08=false;
-	Message->has_str_Data_09=false;
-	Message->has_str_Data_10=false;
-	Message->has_str_Data_11=false;
-	Message->has_str_Data_12=false;
-	Message->has_str_Data_13=false;
-	Message->has_str_Data_14=false;
-	Message->has_str_Data_15=false;
-	Message->has_str_Data_16=false;
-	Message->has_f_Data_01=false;
-	Message->has_f_Data_02=false;
-	Message->has_f_Data_03=false;
-	Message->has_f_Data_04=false;
-	Message->has_f_Data_05=false;
-	Message->has_f_Data_06=false;
-	Message->has_f_Data_07=false;
-	Message->has_f_Data_08=false;
-	Message->has_f_Data_09=false;
-	Message->has_f_Data_10=false;
-	Message->has_f_Data_11=false;
-	Message->has_f_Data_12=false;
-	Message->has_f_Data_13=false;
-	Message->has_f_Data_14=false;
-	Message->has_f_Data_15=false;
-	Message->has_f_Data_16=false;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
 		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
