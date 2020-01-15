@@ -256,13 +256,14 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-	/*
+		/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
+
 	HAL_StatusTypeDef result;
  	uint8_t i;
  	for (i=1; i<128; i++)
  	{
- 	  /*
+
  	   // the HAL wants a left aligned i2c address
  	   // &hi2c1 is the handle
  	   // (uint16_t)(i<<1) is the i2c address left aligned
@@ -280,9 +281,8 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
- 	*/
 		osDelay(1000);
-
+*/
 
 	}
 }
@@ -475,7 +475,7 @@ void StartDataStreamerThread(void const * argument) {
 
 	while (1) {
 		DataMessage *Datarptr;
-		static uint32_t lastMessageId = 0;
+		//static uint32_t lastMessageId = 0;
 		osEvent DataEvent = osMailGet(DataMail, 200);
 		struct timespec SampelPointUtc;
 		if (DataEvent.status == osEventMail) {
@@ -509,7 +509,7 @@ void StartDataStreamerThread(void const * argument) {
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
 			}
-			if (lastMessageId < Datarptr->sample_number) {
+			//if (lastMessageId < Datarptr->sample_number) {
 				//this check is just for extra security in normal operation this should never happen
 				if (ProtoStreamData.bytes_written
 						> (MTU_SIZE - (DataMessage_size))) {
@@ -530,8 +530,8 @@ void StartDataStreamerThread(void const * argument) {
 				pb_encode_ex(&ProtoStreamData, DataMessage_fields, Datarptr,
 				PB_ENCODE_DELIMITED);
 				i++;
-				lastMessageId = Datarptr->sample_number;
-			}
+				//lastMessageId = Datarptr->sample_number;
+			//}
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
 		}

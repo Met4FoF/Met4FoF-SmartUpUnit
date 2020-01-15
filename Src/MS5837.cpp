@@ -38,11 +38,25 @@ bool MS5837::init(uint32_t BaseID) {
 	//Write Adress the read calldata in one block
 
 	// Read calibration values and CRC
-	CMD=MS5837_PROM_READ;
-	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
-	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)C ,16, 100);
 
+	HAL_StatusTypeDef result;
+	for (uint8_t i=0;i<8;i++){
+		CMD=MS5837_PROM_READ+(2*i);
+		uint8_t Data[2]={0};
+		HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
+		result=HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)&Data[0],2, 100);
+		C[i]=(Data[0]<<8)|Data[1];
+	}
+	/* TODO REMOVE THIS DEBUGIG HACK constans read out with arduino
+	11:42:53.152 -> 1Int 42162 HEX A4B2RAW Hex A4 B2
+	11:42:53.185 -> 2Int 41771 HEX A32BRAW Hex A3 2B
+	11:42:53.218 -> 3Int 25569 HEX 63E1RAW Hex 63 E1
+	11:42:53.251 -> 4Int 26543 HEX 67AFRAW Hex 67 AF
+	11:42:53.284 -> 5Int 31473 HEX 7AF1RAW Hex 7A F1
+	11:42:53.317 -> 6Int 26888 HEX 6908RAW Hex 69 8
+	11:42:53.350 -> 7Int 0 HEX 0RAW Hex0 0
+	*/
 	// Verify that data is correct with CRC
 	uint8_t crcRead = C[0] >> 12;
 	uint8_t crcCalculated = crc4(C);
@@ -68,16 +82,19 @@ void MS5837::read() {
 	osDelay(20); // Max conversion time per datasheet
 	CMD=MS5837_ADC_READ;
 	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
-
-	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)&D1 ,3, 100);
-
+	uint8_t Data[3];
+	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,Data,3, 100);
+	D1=(Data[0]<<16)|(Data[1]<<8)|Data[2];
 	// Request D2 conversion
 	CMD=MS5837_CONVERT_D2_8192;
 	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 
 	osDelay(20); // Max conversion time per datasheet
+	CMD=MS5837_ADC_READ;
+	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);
 	
-	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,(uint8_t*)&D1 ,3, 100);
+	HAL_I2C_Master_Receive(_I2C,MS5837_ADDR,Data ,3, 100);
+	D2=(Data[0]<<16)|(Data[1]<<8)|Data[2];
 	calculate();
 }
 
@@ -167,22 +184,23 @@ float MS5837::altitude() {
 }
 
 int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount){
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
 	Message->id=_ID;
 	Message->unix_time=unix_time;
-	Message->time_uncertainty=unix_time_nsecs;
-	Message->unix_time_nsecs=time_uncertainty;
+	Message->time_uncertainty=time_uncertainty;
+	Message->unix_time_nsecs=unix_time_nsecs;
 	Message->sample_number=CaptureCount;
 	MS5837::read();
 	MS5837::calculate();
-	Message->Data_01=TEMP;
+	Message->Data_01=MS5837::temperature();
 	Message->has_Data_02=true;
-	Message->Data_02=P*MS5837::Pa;
+	Message->Data_02=MS5837::pressure()*MS5837::Pa;
 	return result;
 }
 
-
 int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	if(_model==MS5837::MS5837_30BA){
 	strncpy(Message->Sensor_name,"MS5837_30BA\0",sizeof(Message->Sensor_name));
@@ -192,38 +210,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	}
 	Message->id=_ID;
 	Message->Description_Type=DESCRIPTION_TYPE;
-	Message->has_str_Data_01=false;
-	Message->has_str_Data_02=false;
-	Message->has_str_Data_03=false;
-	Message->has_str_Data_04=false;
-	Message->has_str_Data_05=false;
-	Message->has_str_Data_06=false;
-	Message->has_str_Data_07=false;
-	Message->has_str_Data_08=false;
-	Message->has_str_Data_09=false;
-	Message->has_str_Data_10=false;
-	Message->has_str_Data_11=false;
-	Message->has_str_Data_12=false;
-	Message->has_str_Data_13=false;
-	Message->has_str_Data_14=false;
-	Message->has_str_Data_15=false;
-	Message->has_str_Data_16=false;
-	Message->has_f_Data_01=false;
-	Message->has_f_Data_02=false;
-	Message->has_f_Data_03=false;
-	Message->has_f_Data_04=false;
-	Message->has_f_Data_05=false;
-	Message->has_f_Data_06=false;
-	Message->has_f_Data_07=false;
-	Message->has_f_Data_08=false;
-	Message->has_f_Data_09=false;
-	Message->has_f_Data_10=false;
-	Message->has_f_Data_11=false;
-	Message->has_f_Data_12=false;
-	Message->has_f_Data_13=false;
-	Message->has_f_Data_14=false;
-	Message->has_f_Data_15=false;
-	Message->has_f_Data_16=false;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
 		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
