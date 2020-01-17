@@ -9,17 +9,17 @@
   ```
 3. Flash the µC with the newest release [see this link] (doc/flash_stm32_fimware.md)
 4. Connect µC an PC directly via Lan (or over an switch with DHCP anabled to 192.168.2.x Subnet)
-5. Set ip Adress of pc to 192.168.2.100
+5. Set ip Adress of pc to 192.168.0.200
 6. Power on µC Board
 7. Observe Display and LEDS see Picture
 8. Start Python Interpreter and run /tools/MET4FOFDataReceiver.py
 9. Start data Receiver node with:
 ```python
-DR=DataReceiver("192.168.2.100",7654)
+DR=DataReceiver("192.168.0.200",7654)
 ```
 If every thing works correctly you will see that a new sensor is found
 ```python
-DR=DataReceiver("192.168.2.100",7654)
+DR=DataReceiver("192.168.0.200",7654)
 FOUND NEW SENSOR WITH ID=hex0x37300000==>dec:925892608
 ```
 Attach your callback function to Sensor
