@@ -985,7 +985,26 @@ void MPU9250::setMagCalZ(float bias,float scaleFactor) {
   _hzb = bias;
   _hzs = scaleFactor;
 }
-
+/* Sets the Acc selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
+void MPU9250::setAccSelfTest(uint8_t SelftestStatus){
+	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+	_AccSeftestStatus=0x07 & SelftestStatus;
+	uint8_t accStatusToSet=_AccSeftestStatus<<5;
+	uint8_t configOLD=0;
+	readRegisters(ACCEL_CONFIG,1,&configOLD);
+	uint8_t configNew=(configOLD&0x1F) |accStatusToSet;
+	writeRegister(ACCEL_CONFIG,configNew);
+}
+/* Sets the Gyro selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
+void MPU9250::setGyroSelfTest(uint8_t SelftestStatus){
+	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+	_GyroSeftestStatus=0x07 & SelftestStatus;
+	uint8_t accStatusToSet=_GyroSeftestStatus<<5;
+	uint8_t configOLD=0;
+	readRegisters(GYRO_CONFIG,1,&configOLD);
+	uint8_t configNew=(configOLD&&0x1F) ||accStatusToSet;
+	writeRegister(GYRO_CONFIG,configNew);
+}
 /* writes a byte to MPU9250 register given a register address and data */
 int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
   /* write data to device */

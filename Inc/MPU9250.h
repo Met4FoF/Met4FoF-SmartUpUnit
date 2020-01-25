@@ -43,6 +43,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "pb.h"
 #include "message.pb.h"
 
+//extern DescriptionMessage empty_DescriptionMessage;
+//extern DataMessage empty_DataMessage;
+
 class MPU9250{
   public:
     enum GyroRange
@@ -132,6 +135,8 @@ class MPU9250{
     void setMagCalX(float bias,float scaleFactor);
     void setMagCalY(float bias,float scaleFactor);
     void setMagCalZ(float bias,float scaleFactor);
+    void setAccSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+    void setGyroSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
     int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   protected:
@@ -202,6 +207,8 @@ class MPU9250{
     float _hys = 1.0f;
     float _hzs = 1.0f;
     float _avgs;
+    uint8_t _AccSeftestStatus=0; //bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+    uint8_t _GyroSeftestStatus=0; //bytemask 0x00000xyz 1=selftest active 0=normal mesurment
     // transformation matrix
     /* transform the accel and gyro axes to match the magnetometer axes */
     const int16_t tX[3] = {0,  1,  0}; 
