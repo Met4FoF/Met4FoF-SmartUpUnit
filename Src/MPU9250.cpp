@@ -999,10 +999,10 @@ void MPU9250::setAccSelfTest(uint8_t SelftestStatus){
 void MPU9250::setGyroSelfTest(uint8_t SelftestStatus){
 	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 	_GyroSeftestStatus=0x07 & SelftestStatus;
-	uint8_t accStatusToSet=_GyroSeftestStatus<<5;
+	uint8_t gyroStatusToSet=_GyroSeftestStatus<<5;
 	uint8_t configOLD=0;
 	readRegisters(GYRO_CONFIG,1,&configOLD);
-	uint8_t configNew=(configOLD&&0x1F) ||accStatusToSet;
+	uint8_t configNew=(configOLD&0x1F) ||gyroStatusToSet;
 	writeRegister(GYRO_CONFIG,configNew);
 }
 /* writes a byte to MPU9250 register given a register address and data */
