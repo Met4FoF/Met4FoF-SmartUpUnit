@@ -987,6 +987,7 @@ void MPU9250::setMagCalZ(float bias,float scaleFactor) {
 }
 /* Sets the Acc selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
 void MPU9250::setAccSelfTest(uint8_t SelftestStatus){
+	// mutex not nesseary since isr can interrupt this routine but not the write regisrer routine since SPi will beblocked
 	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 	_AccSeftestStatus=0x07 & SelftestStatus;
 	uint8_t accStatusToSet=_AccSeftestStatus<<5;
@@ -998,11 +999,12 @@ void MPU9250::setAccSelfTest(uint8_t SelftestStatus){
 /* Sets the Gyro selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
 void MPU9250::setGyroSelfTest(uint8_t SelftestStatus){
 	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+	// mutex not nesseary since isr can interrupt this routine but not the write regisrer routine since SPi will beblocked
 	_GyroSeftestStatus=0x07 & SelftestStatus;
 	uint8_t gyroStatusToSet=_GyroSeftestStatus<<5;
 	uint8_t configOLD=0;
 	readRegisters(GYRO_CONFIG,1,&configOLD);
-	uint8_t configNew=(configOLD&0x1F) ||gyroStatusToSet;
+	uint8_t configNew=(configOLD&0x1F) |gyroStatusToSet;
 	writeRegister(GYRO_CONFIG,configNew);
 }
 /* writes a byte to MPU9250 register given a register address and data */
