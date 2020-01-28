@@ -52,6 +52,11 @@ int MPU9250::begin(){
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
 	    return -1;
 	  }
+
+	  //read selftest data
+	  readRegisters(ACC_ST_X, 3, _AccST);
+	  readRegisters(GYRO_ST_X, 3, _GyroST);
+
 	  // enable I2C master mode
 	  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
 	    return -2;
