@@ -24,6 +24,10 @@ import copy
 import json
 import copy
 
+#for live plotting
+import matplotlib.pyplot as plt
+import matplotlib.animation
+import numpy as np
 #for profiling
 import yappi
 
@@ -597,11 +601,26 @@ def RosCallbackIMU(message,Description):
 # wait until buffer is Full
 # Data can be acessed over the atribute ExampleBuffer.Buffer[0]
 class DataBuffer():
+
+
     def __init__(self, BufferLength):
         self.BufferLength=BufferLength
         self.Buffer=[None] * BufferLength
         self.Datasetpushed=0
         self.FullmesaggePrinted=False
+        self.x=np.arange(BufferLength)
+        self.y1=np.zeros(BufferLength)
+        self.y2=np.zeros(BufferLength)
+        self.y3=np.zeros(BufferLength)
+        self.y4=np.zeros(BufferLength)
+        self.y5=np.zeros(BufferLength)
+        self.y6=np.zeros(BufferLength)
+        self.y7=np.zeros(BufferLength)
+        self.y8=np.zeros(BufferLength)
+        self.fig, self.ax = plt.subplots()
+        self.ax.set_xlim(0,self.BufferLength)
+        self.ax.set_ylim(-160,160)
+        plt.show()
 
     def PushData(self,message,Description):
         if self.Datasetpushed==0:
@@ -610,9 +629,29 @@ class DataBuffer():
             self.Buffer[self.Datasetpushed]=message
             self.Datasetpushed=self.Datasetpushed+1
         else:
-            if self.FullmesaggePrinted==False:
-                print("Buffer full")
-                self.FullmesaggePrinted=True
+            for i in range(self.BufferLength):
+                self.y1[i]=self.Buffer[i].Data_01
+                self.y2[i]=self.Buffer[i].Data_02
+                self.y3[i]=self.Buffer[i].Data_03
+                self.y4[i]=self.Buffer[i].Data_04
+                self.y5[i]=self.Buffer[i].Data_05
+                self.y6[i]=self.Buffer[i].Data_06
+                self.y7[i]=self.Buffer[i].Data_11
+                self.y8[i]=self.Buffer[i].Data_13
+            self.ax.clear()
+            self.ax.plot(self.x, self.y1)
+            self.ax.plot(self.x, self.y2)
+            self.ax.plot(self.x, self.y3)
+            self.ax.plot(self.x, self.y4)
+            self.ax.plot(self.x, self.y5)
+            self.ax.plot(self.x, self.y6)
+            self.ax.plot(self.x, self.y7)
+            self.ax.plot(self.x, self.y8)
+            self.fig.canvas.draw()
+            #flush Buffer
+            self.Buffer=[None] * self.BufferLength
+            self.Datasetpushed=0
+
 
 #Example for DSCP Messages
 # Quant b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x00"\x0eX Acceleration*\x0eY Acceleration2\x0eZ Acceleration:\x12X Angular velocityB\x12Y Angular velocityJ\x12Z Angular velocityR\x17X Magnetic flux densityZ\x17Y Magnetic flux densityb\x17Z Magnetic flux densityj\x0bTemperature'
