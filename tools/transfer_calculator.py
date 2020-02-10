@@ -16,6 +16,8 @@ import scipy as scp
 from scipy.optimize import curve_fit
 import SineTools as st
 import csv
+import timeit
+
 # from termcolor import colored
 plt.rcParams.update({"font.size": 30})
 plt.rc("text", usetex=True)
@@ -141,7 +143,7 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self, EndCutOut, Methode="SineTools1"):
+    def SinFit(self, EndCutOut, Methode="SineTools1",SimulateTimingErrors=False):
         """
         
 
@@ -157,6 +159,18 @@ class CalTimeSeries:
         None.
 
         """
+        if SimulateTimingErrors=='1000Hz':
+            print("WARNING SIMULATING TIMING ERROR 100Hz")
+            starttime=self.Data[0, 4]
+            self.Data[:,4]=np.arange(self.Data.shape[0])*1e-3+starttime
+
+        if SimulateTimingErrors=='constdist':
+            print("WARNING SIMULATING TIMING ERROR CONST dist")
+            starttime=self.Data[0, 4]
+            endtime=self.Data[-1, 4]
+            deltaT=endtime-starttime
+            step=deltaT/(self.Data.shape[0]-1)
+            self.Data[:,4]=np.arange(self.Data.shape[0])*step+starttime
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
         self.sinFitEndCutOut = EndCutOut
@@ -869,7 +883,7 @@ if __name__ == "__main__":
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    DataReaderGYROdumpLARGE(DB1,"/data/191617_MPU_9250_Y_Rot_100_Wdh/20191217100017_MPU_9250_0x1fe40000.dump")
+    DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     DB1.setRefGroupDelay(220e-6)
     # DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
@@ -877,4 +891,5 @@ if __name__ == "__main__":
     DB1.getTransferFunction(1,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
+    end = timeit.timeit()
     # callculate all the ffts
