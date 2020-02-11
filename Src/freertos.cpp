@@ -119,8 +119,8 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
-//BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
@@ -306,6 +306,7 @@ void StartBlinkThread(void const * argument) {
 	osDelay(10000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -314,6 +315,7 @@ void StartBlinkThread(void const * argument) {
 		Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		*/
 		osDelay(500);
 	}
 	osThreadTerminate(NULL);
@@ -404,19 +406,19 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
-	uint32_t SensorID0=configMan.getSensorBaseID(0);
+	//uint32_t SensorID0=configMan.getSensorBaseID(0);
 
-	Sensor0.setBaseID(SensorID0);
-	Sensor0.begin();
-	Sensor0.enableDataReadyInterrupt();
+	//Sensor0.setBaseID(SensorID0);
+	//Sensor0.begin();
+	//Sensor0.enableDataReadyInterrupt();
 
-	/*//BMA280
+	//BMA280
 	 // SET PS pin low
-	  * uint32_t SensorID2=configMan.getSensorBaseID(2);
+	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	 Sensor2.setBaseID(SensorID);
-	 Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	 */
+	 Sensor0.setBaseID(SensorID0);
+	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+
 	//Dummy Sensor
 	/*
 	 Sensor0.setBaseID(0);
