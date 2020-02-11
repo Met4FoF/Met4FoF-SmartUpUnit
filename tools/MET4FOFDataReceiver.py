@@ -612,41 +612,82 @@ class DataBuffer():
         self.y1=np.zeros(BufferLength)
         self.y2=np.zeros(BufferLength)
         self.y3=np.zeros(BufferLength)
+
         self.y4=np.zeros(BufferLength)
         self.y5=np.zeros(BufferLength)
         self.y6=np.zeros(BufferLength)
+
         self.y7=np.zeros(BufferLength)
         self.y8=np.zeros(BufferLength)
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_xlim(0,self.BufferLength)
-        self.ax.set_ylim(-160,160)
+        self.y9=np.zeros(BufferLength)
+
+        self.y10=np.zeros(BufferLength)
+
+        self.y11=np.zeros(BufferLength)
+        self.y12=np.zeros(BufferLength)
+        self.y13=np.zeros(BufferLength)
+        plt.ion()
+        self.fig, self.ax = plt.subplots(5,1,sharex=True)
+        self.ax[0].set_xlim(0,self.BufferLength)
+        self.ax[1].set_xlim(0,self.BufferLength)
+        self.ax[2].set_xlim(0,self.BufferLength)
+        self.ax[3].set_xlim(0,self.BufferLength)
+        self.ax[4].set_xlim(0,self.BufferLength)
+        self.ax[0].set_ylabel('Acceleration in m/s²')
+        self.ax[1].set_ylabel('Rotational speed in rad/s')
+        self.ax[2].set_ylabel('Mag. flux dens in µT')
+        self.ax[3].set_ylabel('Temp. in °C')
+        self.ax[4].set_ylabel('Analog V in V')
+        #self.line1, = self.ax[0].plot(self.x,np.zeros(BufferLength))
+        #self.line1.set_xdata(self.x)
+        #self.ax.set_ylim(-160,160)
         plt.show()
 
     def PushData(self,message,Description):
         if self.Datasetpushed==0:
             self.Description=copy.deepcopy(Description)
         if self.Datasetpushed<self.BufferLength:
-            self.Buffer[self.Datasetpushed]=message
+            i=self.Datasetpushed
+            self.Buffer[i]=message
+            self.y1[i]=self.Buffer[i].Data_01
+            self.y2[i]=self.Buffer[i].Data_02
+            self.y3[i]=self.Buffer[i].Data_03
+            self.y4[i]=self.Buffer[i].Data_04
+            self.y5[i]=self.Buffer[i].Data_05
+            self.y6[i]=self.Buffer[i].Data_06
+            self.y7[i]=self.Buffer[i].Data_07
+            self.y8[i]=self.Buffer[i].Data_08
+            self.y9[i]=self.Buffer[i].Data_09
+            self.y10[i]=self.Buffer[i].Data_10
+            self.y11[i]=self.Buffer[i].Data_11
+            self.y12[i]=self.Buffer[i].Data_12
+            self.y13[i]=self.Buffer[i].Data_13
             self.Datasetpushed=self.Datasetpushed+1
         else:
-            for i in range(self.BufferLength):
-                self.y1[i]=self.Buffer[i].Data_01
-                self.y2[i]=self.Buffer[i].Data_02
-                self.y3[i]=self.Buffer[i].Data_03
-                self.y4[i]=self.Buffer[i].Data_04
-                self.y5[i]=self.Buffer[i].Data_05
-                self.y6[i]=self.Buffer[i].Data_06
-                self.y7[i]=self.Buffer[i].Data_11
-                self.y8[i]=self.Buffer[i].Data_13
-            self.ax.clear()
-            self.ax.plot(self.x, self.y1)
-            self.ax.plot(self.x, self.y2)
-            self.ax.plot(self.x, self.y3)
-            self.ax.plot(self.x, self.y4)
-            self.ax.plot(self.x, self.y5)
-            self.ax.plot(self.x, self.y6)
-            self.ax.plot(self.x, self.y7)
-            self.ax.plot(self.x, self.y8)
+            self.ax[0].clear()
+            self.ax[1].clear()
+            self.ax[2].clear()
+            self.ax[3].clear()
+            self.ax[4].clear()
+            self.ax[0].set_ylabel('Acceleration in m/s²')
+            self.ax[1].set_ylabel('Rotational speed in rad/s')
+            self.ax[2].set_ylabel('Mag. flux dens in µT')
+            self.ax[3].set_ylabel('Temp. in °C')
+            self.ax[4].set_ylabel('Analog V in V')
+            #self.line1.set_ydata(self.y1)
+            self.ax[0].plot(self.x, self.y1)
+            self.ax[0].plot(self.x, self.y2)
+            self.ax[0].plot(self.x, self.y3)
+            self.ax[1].plot(self.x, self.y4)
+            self.ax[1].plot(self.x, self.y5)
+            self.ax[1].plot(self.x, self.y6)
+            self.ax[2].plot(self.x, self.y7)
+            self.ax[2].plot(self.x, self.y8)
+            self.ax[2].plot(self.x, self.y9)
+            self.ax[3].plot(self.x, self.y10)
+            self.ax[4].plot(self.x, self.y11)
+            self.ax[4].plot(self.x, self.y12)
+            self.ax[4].plot(self.x, self.y13)
             self.fig.canvas.draw()
             #flush Buffer
             self.Buffer=[None] * self.BufferLength
