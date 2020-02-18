@@ -143,7 +143,7 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self, EndCutOut, Methode="SineTools1",SimulateTimingErrors=False):
+    def SinFit(self, EndCutOut, Methode="SineTools",SimulateTimingErrors=False):
         """
         
 
@@ -204,17 +204,18 @@ class CalTimeSeries:
                     self.flags["SineFitCalculated"][i] = False
                 print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 print(tmpp0)
-            if Methode == "SineTools1":
+            if Methode == "SineTools":
                 print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
-                tmpparams = st.fourparsinefit1(
+                try:
+                    tmpparams = st.fourparsinefit(
                     self.Data[:-EndCutOut, i],
                     self.Data[:-EndCutOut, 4],
-                    self.FFTFreqPeak,
-                    df_max=None,
-                    max_iter=20,
-                    eps=1.0e-6,
+                    self.FFTFreqPeak
                 )
-                Complex = tmpparams[0] + 1j * tmpparams[1]
+                except AssertionError as error:
+                    print(error)
+                    print("Skipping this fit")
+                Complex = tmpparams[1] + 1j * tmpparams[0]
                 DC = tmpparams[2]
                 Freq = tmpparams[3]
                 print(Complex)
