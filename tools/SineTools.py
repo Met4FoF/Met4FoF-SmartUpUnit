@@ -10,7 +10,6 @@ auxiliary functions related to sine-approximation
 import scipy as sp
 from scipy import linalg as la
 
-
 def sampletimes(Fs, T):  #
     """
     generate a t_i vector with \n
