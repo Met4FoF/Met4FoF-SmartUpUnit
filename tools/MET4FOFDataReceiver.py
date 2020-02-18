@@ -29,9 +29,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import numpy as np
 #for profiling
-import yappi
+#import yappi
 
-yappi.start()
+#yappi.start()
 
 class DataReceiver:
     def __init__(self, IP, Port):
@@ -612,17 +612,13 @@ class DataBuffer():
         self.y1=np.zeros(BufferLength)
         self.y2=np.zeros(BufferLength)
         self.y3=np.zeros(BufferLength)
-
         self.y4=np.zeros(BufferLength)
         self.y5=np.zeros(BufferLength)
         self.y6=np.zeros(BufferLength)
-
         self.y7=np.zeros(BufferLength)
         self.y8=np.zeros(BufferLength)
         self.y9=np.zeros(BufferLength)
-
         self.y10=np.zeros(BufferLength)
-
         self.y11=np.zeros(BufferLength)
         self.y12=np.zeros(BufferLength)
         self.y13=np.zeros(BufferLength)
@@ -701,6 +697,6 @@ class DataBuffer():
 # Min   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x04\xa5\x01\x16\xea\x1c\xc3\xad\x01\x16\xea\x1c\xc3\xb5\x01\x16\xea\x1c\xc3\xbd\x01\xe3\xa0\x0b\xc2\xc5\x01\xe3\xa0\x0b\xc2\xcd\x01\xe3\xa0\x0b\xc2\xd5\x01\x00\x00\x00\x80\xdd\x01\x00\x00\x00\x80\xe5\x01\x00\x00\x00\x80\xed\x01\xf3j\x9a\xc2'
 # Max   b'\x08\x80\x80\xac\xe6\x0b\x12\x08MPU 9250\x18\x05\xa5\x01\xdc\xe8\x1cC\xad\x01\xdc\xe8\x1cC\xb5\x01\xdc\xe8\x1cC\xbd\x01\xcc\x9f\x0bB\xc5\x01\xcc\x9f\x0bB\xcd\x01\xcc\x9f\x0bB\xd5\x01\x00\x00\x00\x00\xdd\x01\x00\x00\x00\x00\xe5\x01\x00\x00\x00\x00\xed\x01\x02)\xeeB'
 
-DR=DataReceiver("",7654)
+#DR=DataReceiver("",7654)
 #func_stats = yappi.get_func_stats()
 #func_stats.save('./callgrind.out.', 'CALLGRIND')
