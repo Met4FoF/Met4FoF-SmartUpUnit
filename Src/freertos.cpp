@@ -758,6 +758,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim2CaptureCount++;
 		if (Channel3Tim2CaptureCount % 1 == 0) {
 			timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
+			HAL_ADC_PollForConversion(&hadc1, 0);
+			float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
+			float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
+			float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
 			DataMessage *mptr0;
 			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
 			Sensor0.getData(mptr0, timestamp23, Channel3Tim2CaptureCount);
@@ -768,17 +772,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			//Sensor0.addData(int Channel,float value)
 
 			mptr0->has_Data_11 = true;
-			HAL_ADC_PollForConversion(&hadc1, 0);
-			float adcVal = (float) HAL_ADC_GetValue(&hadc1);
-			mptr0->Data_11 = configMan.getADCVoltage(0, adcVal);
+			mptr0->Data_11 = configMan.getADCVoltage(0, adcVal1);
 			mptr0->has_Data_12 = true;
-			HAL_ADC_PollForConversion(&hadc2, 0);
-			adcVal = (float) HAL_ADC_GetValue(&hadc2);
-			mptr0->Data_12 = configMan.getADCVoltage(1, adcVal);
+			mptr0->Data_12 = configMan.getADCVoltage(1, adcVal2);
 			mptr0->has_Data_13 = true;
-			HAL_ADC_PollForConversion(&hadc3, 0);
-			adcVal = (float) HAL_ADC_GetValue(&hadc3);
-			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal);
+			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal3);
 			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}
