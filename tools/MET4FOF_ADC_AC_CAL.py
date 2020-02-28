@@ -42,9 +42,13 @@ class Met4FOFADCCall:
             self.buffer[i] = Message
             self.bufferCount = i + 1
 
-    def CallFreq(self, Freq, Ampl, Channel, offset=0, phase=0, SamplingFreq=2002):
-        Samplingcycles = SamplingFreq * 10 - 1
-        cycles = Freq * 10
+    def CallFreq(self, Freq, Ampl, Channel, offset=0, phase=0, SamplingFreq=2002,duration=10):
+        cycles = Freq * duration
+        if(Freq* duration>1e6):#DG4000 can not generate more than 1e6 N-Cyclebursts
+            duration=1e6/Freq
+            cycles=1e6
+            print("To Many cycles planend actual mesurement time in s will be :"+str(duration))
+        Samplingcycles = int(SamplingFreq * duration) - 1
         # flush Buffer
         self.BufferFlush()
         # arm fgen for burst generation
@@ -107,7 +111,7 @@ if __name__ == "__main__":
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100, 1e5, SigDigts=2)
+    testfreqs = FGEN.generateDIN266Freqs(100, 5e6, SigDigts=2)
     nptestfreqs = np.array(testfreqs)
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     ADC1FreqRespons = []

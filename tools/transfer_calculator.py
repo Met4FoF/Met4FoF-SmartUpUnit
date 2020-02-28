@@ -802,6 +802,7 @@ def DataReaderPROTOdump(ProtoCSVFilename):
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
+
 def DataReaderGYROdump(ProtoCSVFilename):
     sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False,skiprows=1)
     print(sdf.columns.values)
