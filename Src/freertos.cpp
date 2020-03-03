@@ -408,11 +408,11 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
-	//uint32_t SensorID0=configMan.getSensorBaseID(0);
+	uint32_t SensorID0=configMan.getSensorBaseID(0);
 
-	//Sensor0.setBaseID(SensorID0);
-	//Sensor0.begin();
-	//Sensor0.enableDataReadyInterrupt();
+	Sensor0.setBaseID(SensorID0);
+	Sensor0.begin();
+	Sensor0.enableDataReadyInterrupt();
 
 	//BMA280
 	 // SET PS pin low
