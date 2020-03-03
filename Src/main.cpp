@@ -73,10 +73,6 @@
 
 //Protbuff
 #include "pb.h"
-
-//Sensor
-#include "MPU9250.h"
-
 //BACKUP SRAM
 #include "backupsram.h"
 /* Private includes ----------------------------------------------------------*/
@@ -150,6 +146,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+
   MX_DMA_Init();
   MX_USART3_UART_Init();
   //MX_USB_DEVICE_Init(); USb usage results in hardfault needs to be debugged but has low priority
