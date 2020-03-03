@@ -26,7 +26,7 @@ class Met4FOFADCCall:
         self.buffer = [None] * int(self.bufferSizeMax)
         self.bufferCount = 0
         self.Scope.single()
-        self.fitResults = []
+        self.fitResults = {}#will store lists with fit results
 
     def BufferFlush(self):
         self.buffer = [None] * int(self.bufferSizeMax)
@@ -102,7 +102,10 @@ class Met4FOFADCCall:
             "Phase": phaseFit,
             "TestAmplVPP.": Ampl,
         }
-        self.fitResults.append(retVal)
+        if Freq in self.fitResults:
+            self.fitResults[Freq].append(retVal)
+        else:
+            self.fitResults[Freq]=[retVal]
         return retVal
 
 
@@ -111,15 +114,18 @@ if __name__ == "__main__":
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100, 5e6, SigDigts=2)
-    nptestfreqs = np.array(testfreqs)
+    testfreqs = FGEN.generateDIN266Freqs(100,5e6, SigDigts=2)
+    loops=30
+    nptestfreqs=np.array([])
+    for i in np.arange(loops):
+        nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     ADC1FreqRespons = []
-    ampls = np.zeros(len(testfreqs))
-    phase = np.zeros(len(testfreqs))
+    ampls = np.zeros_like(nptestfreqs)
+    phase = np.zeros_like(nptestfreqs)
     i = 0
-    for freqs in testfreqs:
-        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 20, "ADC1"))
+    for freqs in nptestfreqs:
+        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 19.5, "ADC1"))
         ampls[i] = ADC1FreqRespons[i]["Amplitude"]
         phase[i] = ADC1FreqRespons[i]["Phase"]
         i = i + 1
