@@ -26,7 +26,8 @@ class Met4FOFADCCall:
         self.buffer = [None] * int(self.bufferSizeMax)
         self.bufferCount = 0
         self.Scope.single()
-        self.fitResults = {}#will store lists with fit results
+        self.fitResults = {}#will store lists with fit results for the according channel
+        self.TransferFunctions={}
 
     def BufferFlush(self):
         self.buffer = [None] * int(self.bufferSizeMax)
@@ -102,19 +103,41 @@ class Met4FOFADCCall:
             "Phase": phaseFit,
             "TestAmplVPP.": Ampl,
         }
-        if Freq in self.fitResults:
-            self.fitResults[Freq].append(retVal)
+        if Channel in self.fitResults:
+            if Freq in self.fitResults[Channel]:
+                self.fitResults[Channel][Freq].append(retVal)
+            else:
+                self.fitResults[Channel][Freq]=[retVal]
         else:
-            self.fitResults[Freq]=[retVal]
+            self.fitResults[Channel]={Freq:[retVal]}
         return retVal
 
+    def GetTransferFunction(self,Channel):
+        FreqNum=len(self.fitResults[Channel].keys())
+        Transferfunction={'Frequencys':np.zeros(FreqNum),
+                          'AmplitudeCoefficent':np.zeros(FreqNum),
+                          'AmplitudeCoefficentUncer':np.zeros(FreqNum),
+                          'Phase':np.zeros(FreqNum),
+                          'PhaseUncer':np.zeros(FreqNum),
+                          'N':np.zeros(FreqNum)}
+        i=0
+        for freq in self.fitResults[Channel]:
+            Transferfunction['Frequencys'][i]=freq
+            Transferfunction['AmplitudeCoefficent'][i]=np.mean([d['Amplitude'] for d in self.fitResults[Channel][freq]])
+            Transferfunction['AmplitudeCoefficentUncer'][i]=2*np.std([d['Amplitude'] for d in self.fitResults[Channel][freq]])
+            Transferfunction['Phase'][i]=np.mean([d['Phase'] for d in self.fitResults[Channel][freq]])
+            Transferfunction['PhaseUncer'][i]=2*np.std([d['Phase'] for d in self.fitResults[Channel][freq]])
+            Transferfunction['N'][i]=len([d['Phase'] for d in self.fitResults[Channel][freq]])
+            i=i+1
+        self.TransferFunctions[Channel]=Transferfunction
+        return Transferfunction
 
 if __name__ == "__main__":
     DR = Datareceiver.DataReceiver("", 7654)
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,5e6, SigDigts=2)
+    testfreqs = FGEN.generateDIN266Freqs(100,10000, SigDigts=2)
     loops=30
     nptestfreqs=np.array([])
     for i in np.arange(loops):
@@ -129,3 +152,8 @@ if __name__ == "__main__":
         ampls[i] = ADC1FreqRespons[i]["Amplitude"]
         phase[i] = ADC1FreqRespons[i]["Phase"]
         i = i + 1
+
+
+
+
+
