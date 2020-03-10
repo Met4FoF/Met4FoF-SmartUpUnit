@@ -11,6 +11,7 @@ import MET4FOFDataReceiver as Datareceiver
 import MSO5xxx as MSO
 import DG4xxx as FGEN
 import time
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import SineTools as st
@@ -23,7 +24,10 @@ class Met4FOFADCCall:
 
         if Filename!=None:
             with open(Filename) as json_file:
-                self.fitResults = json.load(json_file)
+                tmp= json.load(json_file)
+            self.metadata=tmp['MeataData']
+            self.fitResults=tmp['FitResults']
+
         else:
             self.fitResults = {}#will store lists with fit results for the according channel
             self.Scope = Scope
@@ -34,6 +38,10 @@ class Met4FOFADCCall:
             self.buffer = [None] * int(self.bufferSizeMax)
             self.bufferCount = 0
             self.Scope.single()
+            self.metadata={'BordID':SensorID&0xFFFF0000,
+                           'Date':datetime.now().isoformat(' ', 'seconds'),
+                           'ScopeParams':self.Scope.params,
+                           'FGenParams':self.FGen.params}
         self.TransferFunctions= {}
 
 
@@ -103,7 +111,7 @@ class Met4FOFADCCall:
             self.DeltaTime = self.DeltaTime[pos + 1 :]
         self.DeltaTime = self.DeltaTime - self.DeltaTime[0] + (0.5 * 1 / (SamplingFreq))
         FIT = st.threeparsinefit(self.ADCdata, self.DeltaTime, Freq)
-        phaseFit = st.phase(FIT)
+        phaseFit = -st.phase(FIT)
         amplFit = st.amplitude(FIT)
         amplTrans = 2 * amplFit / Ampl
         retVal = {
@@ -132,7 +140,6 @@ class Met4FOFADCCall:
                           'N':np.zeros(FreqNum)}
         i=0
         for freq in self.fitResults[Channel].keys():
-            print(freq)
             Transferfunction['Frequencys'][i]=freq
             Transferfunction['AmplitudeCoefficent'][i]=np.mean([d['Amplitude'] for d in self.fitResults[Channel][freq]])
             Transferfunction['AmplitudeCoefficentUncer'][i]=2*np.std([d['Amplitude'] for d in self.fitResults[Channel][freq]])
@@ -145,16 +152,38 @@ class Met4FOFADCCall:
 
     def SaveFitresults(self,Filename):
         with open(Filename, 'w') as fp:
-            json.dump(self.fitResults, fp)
+            tmp={'MeataData':self.metadata,'FitResults':self.fitResults}
+            json.dump(tmp, fp)
+
+    def PlotTransferfunction(self,Channel,PlotType='lin'):
+        tf=self.GetTransferFunction(Channel)
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        if PlotType=='log':
+            ax1.set_xscale("log")
+            ax2.set_xscale("log")
+        ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer']*2, marker=".", markersize=2)
+        fig.suptitle("Transfer function of "+str(Channel)+" of Board with ID"+hex(BoardID))
+        ax1.set_ylabel("Relative magnitude $|S|$")
+        ax1.grid(True)
+        ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']*2/ np.pi * 180,marker='.', markersize=2)
+        ax2.set_xlabel(r"Frequency $f$ in Hz")
+        ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
+        ax2.grid(True)
+        ax1.legend(numpoints=1, fontsize=8,ncol=3)
+        ax2.legend(numpoints=1, fontsize=8,ncol=3)
+        plt.show()
+
 
 if __name__ == "__main__":
-    # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/200309_ADC1_AC_CAL_19V5_100HZ_5MHZ.json')
+    # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/200310_ADC1_AC_cal.json')
+    # ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
+    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     DR = Datareceiver.DataReceiver("", 7654)
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
-    loops=10
+    testfreqs = FGEN.generateDIN266Freqs(100,1e4, SigDigts=2)
+    loops=1
     nptestfreqs=np.array([])
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
