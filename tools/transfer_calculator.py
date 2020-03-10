@@ -22,6 +22,20 @@ import timeit
 plt.rcParams.update({"font.size": 30})
 plt.rc("text", usetex=True)
 
+class ReferencTransferFunction:
+    def __init__(self,typ='hf_ref',filename='filename'):
+        self.CSVData=pd.read_csv(filename,delimiter=';').set_index(['loop', 'frequency'])
+    def __GetNearestData(self,loop,freq):
+        freqs=self.CSVData.loc[loop].index.values
+        frqIDX=abs(freqs-freq).argmin()
+        Nearestfreq=freqs[frqIDX]
+        return self.CSVData.loc[loop,Nearestfreq]
+    def __getitem__(self, key):
+        if len(key)==2:
+            return self.__GetNearestData(key[0],key[1])
+        if len(key)==3:
+            return self.__GetNearestData(key[0],key[1])[key[2]]
+
 
 class CalTimeSeries:
     def SinFunc(self, x, A, B, f, phi):
@@ -215,6 +229,7 @@ class CalTimeSeries:
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
+                    tmpparams=[0,0,0,0]
                 Complex = tmpparams[1] + 1j * tmpparams[0]
                 DC = tmpparams[2]
                 Freq = tmpparams[3]
@@ -293,7 +308,7 @@ class Databuffer:
 
         """
         self.params = {
-            "IntegrationLength": 1024,
+            "IntegrationLength": 64,
             "MaxChunks": 100000,
             "axixofintest": 1,
             "stdvalidaxis": 3,
@@ -847,6 +862,35 @@ def  DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
             print(e)
             break
     return
+
+def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
+    reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
+    print("reading first to rows")
+    print(next(reader))
+    print(next(reader))
+    #we sacrifice a line to set the start time stamp
+    line=next(reader)
+    startsec=float(line[2])
+    i=0
+    if(i==0):
+        linestoread=Databuffer.params["IntegrationLength"]*Databuffer.params["MaxChunks"]
+    #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
+    while i<linestoread:
+        #['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+        try:
+            line=next(reader)
+            time=float(line[2])-startsec+(float(line[3])*1e-9)
+            #pushData(self, x, y, z, REF, t)
+            Databuffer.pushData(float(line[5])*(180/np.pi),
+                                float(line[6])*(180/np.pi),
+                                float(line[7])*(180/np.pi),
+                                float(line[15])*100,
+                                time)
+            i=i+1
+        except Exception as e:
+            print(e)
+            break
+    return
 # Column Names
 # 'id'
 # 'sample_number'
@@ -885,12 +929,13 @@ if __name__ == "__main__":
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
     DB1.setRefGroupDelay(220e-6)
     # DB1.setRefTransferFunction("data/messkette_cal.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(1,RefPhaseDC=-np.pi)
+    DB1.getTransferFunction(2,RefPhaseDC=0)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     end = timeit.timeit()
