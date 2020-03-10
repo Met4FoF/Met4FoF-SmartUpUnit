@@ -14,20 +14,29 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import SineTools as st
+import json as json
+
 
 
 class Met4FOFADCCall:
-    def __init__(self, Scope, FGen, Datareceiver, SensorID):
-        self.Scope = Scope
-        self.FGen = FGen
-        self.DR = Datareceiver
-        self.SensorID = SensorID
-        self.bufferSizeMax = 1e5
-        self.buffer = [None] * int(self.bufferSizeMax)
-        self.bufferCount = 0
-        self.Scope.single()
-        self.fitResults = {}#will store lists with fit results for the according channel
-        self.TransferFunctions={}
+    def __init__(self, Scope,FGen,Datareceiver,SensorID,Filename=None):
+
+        if Filename!=None:
+            with open(Filename) as json_file:
+                self.fitResults = json.load(json_file)
+        else:
+            self.fitResults = {}#will store lists with fit results for the according channel
+            self.Scope = Scope
+            self.FGen = FGen
+            self.DR = Datareceiver
+            self.SensorID = SensorID
+            self.bufferSizeMax = 1e5
+            self.buffer = [None] * int(self.bufferSizeMax)
+            self.bufferCount = 0
+            self.Scope.single()
+        self.TransferFunctions= {}
+
+
 
     def BufferFlush(self):
         self.buffer = [None] * int(self.bufferSizeMax)
@@ -109,7 +118,8 @@ class Met4FOFADCCall:
             else:
                 self.fitResults[Channel][Freq]=[retVal]
         else:
-            self.fitResults[Channel]={Freq:[retVal]}
+            self.fitResults[Channel]={}
+            self.fitResults[Channel][Freq]=[retVal]
         return retVal
 
     def GetTransferFunction(self,Channel):
@@ -121,7 +131,8 @@ class Met4FOFADCCall:
                           'PhaseUncer':np.zeros(FreqNum),
                           'N':np.zeros(FreqNum)}
         i=0
-        for freq in self.fitResults[Channel]:
+        for freq in self.fitResults[Channel].keys():
+            print(freq)
             Transferfunction['Frequencys'][i]=freq
             Transferfunction['AmplitudeCoefficent'][i]=np.mean([d['Amplitude'] for d in self.fitResults[Channel][freq]])
             Transferfunction['AmplitudeCoefficentUncer'][i]=2*np.std([d['Amplitude'] for d in self.fitResults[Channel][freq]])
@@ -132,13 +143,18 @@ class Met4FOFADCCall:
         self.TransferFunctions[Channel]=Transferfunction
         return Transferfunction
 
+    def SaveFitresults(self,Filename):
+        with open(Filename, 'w') as fp:
+            json.dump(self.fitResults, fp)
+
 if __name__ == "__main__":
+    # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/200309_ADC1_AC_CAL_19V5_100HZ_5MHZ.json')
     DR = Datareceiver.DataReceiver("", 7654)
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,10000, SigDigts=2)
-    loops=30
+    testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
+    loops=10
     nptestfreqs=np.array([])
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
