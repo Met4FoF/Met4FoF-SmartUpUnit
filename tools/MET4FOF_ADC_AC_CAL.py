@@ -156,6 +156,7 @@ class Met4FOFADCCall:
             json.dump(tmp, fp)
 
     def PlotTransferfunction(self,Channel,PlotType='lin'):
+        BoardID=self.metadata['BordID']
         tf=self.GetTransferFunction(Channel)
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType=='log':
@@ -176,14 +177,12 @@ class Met4FOFADCCall:
 
 if __name__ == "__main__":
     # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/200310_ADC1_AC_cal.json')
-    # ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
-    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     DR = Datareceiver.DataReceiver("", 7654)
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,1e4, SigDigts=2)
-    loops=1
+    testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
+    loops=20
     nptestfreqs=np.array([])
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
@@ -197,6 +196,9 @@ if __name__ == "__main__":
         ampls[i] = ADC1FreqRespons[i]["Amplitude"]
         phase[i] = ADC1FreqRespons[i]["Phase"]
         i = i + 1
+
+    ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
 
 
 
