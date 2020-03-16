@@ -312,14 +312,14 @@ class Databuffer:
             "MaxChunks": 100000,
             "axixofintest": 1,
             "stdvalidaxis": 3,
-            "minValidChunksInRow": 3,
+            "minValidChunksInRow": 10,
             "minSTDforVailid": 5,
             "defaultEndCutOut": 750,
         }
         self.flags = {
             "AllSinFitCalculated": False,
             "AllFFTCalculated": False,
-            "RefTrnaferFunctionSet": False,
+            "RefTransFunctionSet": False,
         }
         self.DataLoopBuffer = np.zeros([self.params["IntegrationLength"], 5])
         self.i = 0
@@ -330,7 +330,7 @@ class Databuffer:
         )
         self.STDArray = np.zeros([self.params["MaxChunks"], 4])
         # min STD to be an vaild chunk (there is AC-Component in the Signal)
-        self.params["minValidChunksInRow"] = 5
+        self.params["minValidChunksInRow"] = 10
         # at least this amount of chunks in a row have to be vaild to create an
         # CalTimeSeries object in CalData
         self.isValidCalChunk = np.zeros([self.params["MaxChunks"], 4])
@@ -465,29 +465,24 @@ class Databuffer:
             item.CalcFFT()
         self.flags["AllFFTCalculated"] = True
 
-
-    def setRefTransferFunction(self, transferCSV):
-        #'STM32Toolchain/projects/Met4FoF-SmartUpUnit/tools/data/messkette_cal.csv'
-        self.RefTransferFunction = pd.read_csv(
-            transferCSV, sep="\t", skiprows=[1, 2, 3], decimal=","
-        )
-        self.flags["RefTrnaferFunctionSet"] = True
+    def setRefTransferFunction(self, transferCSV,typ='ref_hf'):
+        tmptype=typ
+        self.RefTransferFunction = ReferencTransferFunction(typ=tmptype,filename=transferCSV)
+        self.flags["RefTransFunctionSet"] = True
         self.flags["RefGroupDelaySet"] = False
 
     def setRefGroupDelay(self,GropuDelay):
         # TODO improve selection between Ref Freq an group delay
-        self.flags["RefTrnaferFunctionSet"] = True
+        self.flags["RefTransFunctionSet"] = False
         self.flags["RefGroupDelaySet"] = True
         self.params["RefGroupDelay"]=GropuDelay
 
     def getNearestReFTPoint(self, freq):
-        if self.flags["RefTrnaferFunctionSet"] == True:
+        if self.flags["RefTransFunctionSet"] == True:
             if not self.flags['RefGroupDelaySet']:
-                tmp = abs(self.RefTransferFunction["Frequenz"] - freq)
-                IDX = np.where(tmp == np.amin(tmp))[0]
                 return (
-                        self.RefTransferFunction["Spannungs-ÜTK"][IDX] / 100,
-                        self.RefTransferFunction["Phasenverschiebung"][IDX] / 180 * np.pi,
+                        self.RefTransferFunction[0,freq,'acceleration'],
+                        self.RefTransferFunction[0,freq,'phase'],
                         )
             else:
                 #print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
@@ -517,7 +512,7 @@ class Databuffer:
         self.TransferRunCount = np.zeros(len(self.CalData))
         i = 0 #number of packets processed
         Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
-        if self.flags["RefTrnaferFunctionSet"] == False:
+        if self.flags["RefTransFunctionSet"] == False:
             for item in self.CalData:
                 print(
                     "WARING REFTransferFunction NOT SET USE THIS RESULTS JUST FOR DEBUGGING!!!"
@@ -542,23 +537,31 @@ class Databuffer:
                         self.TransferRunCount[i]=Runcount
                 i = i + 1
 
-        if self.flags["RefTrnaferFunctionSet"] == True:
+        if self.flags["RefTransFunctionSet"] == True:
             for item in self.CalData:
-                self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
+                Freq=self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
                 AmplTF = self.getNearestReFTPoint(self.TransferFreqs[i])[0]
                 PhaseTF = self.getNearestReFTPoint(self.TransferFreqs[i])[1]
-                print(PhaseTF)
-                self.TransferAmpl[i] = (self.CalData[i].popt[axisDUT, 0]) / (
-                    (self.CalData[i].popt[AxisRef, 0] * RefScalefactor) / AmplTF
-                )
-                self.TransferPhase[i] = (
+
+                #self.TransferAmpl[i] = (self.CalData[i].popt[axisDUT, 0]) / (
+                #    (self.CalData[i].popt[AxisRef, 0] * RefScalefactor) / AmplTF
+                #)
+                #self.TransferPhase[i] = (
+                #     self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
+                #)
+                #self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
+                #self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF +RefPhaseDC
+
+                self.TransferAmpl[i]=self.CalData[i].popt[axisDUT, 0]/AmplTF
+                TransferPhasetmp = (
                      self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
                 )
-                self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
-                self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF + RefPhaseDC
+                self.TransferPhase[i] = TransferPhasetmp - PhaseTF/180*np.pi +RefPhaseDC
                                 #detect run count based on frequency drop to do right unwraping
                 self.TransferRunCount[i]=Runcount
                 self.TransferPhaseDEBUG2[i]=self.TransferPhase[i]
+                #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
+                print("Freq:"+str(Freq)+"Phase Fit: "+str(TransferPhasetmp)+"phase Ref: "+str(PhaseTF/180*np.pi))
                 if(i>0):
                     if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
                         #ok the freq now is smaller the the last freq we have enterd a new loop
@@ -877,13 +880,14 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
     #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
     while i<linestoread:
         #['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+        #  0      1                2               3                    4               5           6          7         8          9         10
         try:
             line=next(reader)
             time=float(line[2])-startsec+(float(line[3])*1e-9)
             #pushData(self, x, y, z, REF, t)
-            Databuffer.pushData(float(line[5])*(180/np.pi),
-                                float(line[6])*(180/np.pi),
-                                float(line[7])*(180/np.pi),
+            Databuffer.pushData(float(line[5]),
+                                float(line[6]),
+                                float(line[7]),
                                 float(line[15])*100,
                                 time)
             i=i+1
@@ -930,13 +934,25 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
-    DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
+    DataReaderACCdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
+    #DataReaderACCdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
     DB1.setRefGroupDelay(220e-6)
-    # DB1.setRefTransferFunction("data/messkette_cal.csv")
+    DB1.setRefTransferFunction("/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(2,RefPhaseDC=0)
+    DB1.getTransferFunction(0,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
-    end = timeit.timeit()
+
+
+    DB2 = Databuffer()
+    DataReaderACCdumpLARGE(DB2,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
+    DB2.setRefTransferFunction("/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
+    # reading data from file and proces all Data
+    DB2.DoAllFFT()
+    DB2.getTransferFunction(0,RefPhaseDC=-np.pi)
+    DB2.PlotTransferFunction()
+    DB2.PlotTransferFunction(PlotType="logx")
+
+
     # callculate all the ffts
