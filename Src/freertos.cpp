@@ -119,9 +119,9 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
-//BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+MPU9250 Sensor1(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -408,18 +408,18 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
-	uint32_t SensorID0=configMan.getSensorBaseID(0);
+	uint32_t SensorID1=configMan.getSensorBaseID(1);
 
-	Sensor0.setBaseID(SensorID0);
-	Sensor0.begin();
-	Sensor0.enableDataReadyInterrupt();
+	Sensor1.setBaseID(SensorID1);
+	Sensor1.begin();
+	Sensor1.enableDataReadyInterrupt();
 
 	//BMA280
 	 // SET PS pin low
-	 //uint32_t SensorID0=configMan.getSensorBaseID(0);
-	 //HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	 //Sensor0.setBaseID(SensorID0);
-	 //Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+	 uint32_t SensorID0=configMan.getSensorBaseID(0);
+	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
+	 Sensor0.setBaseID(SensorID0);
+	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
 	//Dummy Sensor
 	/*
@@ -583,6 +583,30 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
+
+
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Sensor1.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+
+
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				TempSensor0.getDescription(&Descriptionmsg,
@@ -747,14 +771,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		/*
+
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp, Channel1Tim2CaptureCount);
+		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
 		 //mptr->has_Data_11 = true;
 		 //mptr->Data_11 = (float) HAL_ADC_PollForConversion(&hadc1, 1);
 		 osStatus result = osMailPut(DataMail, mptr);
-		 */
+
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;

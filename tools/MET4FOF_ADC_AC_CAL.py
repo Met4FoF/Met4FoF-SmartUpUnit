@@ -182,20 +182,29 @@ if __name__ == "__main__":
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
     testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
-    loops=20
+    loops=3
     nptestfreqs=np.array([])
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     ADC1FreqRespons = []
-    ampls = np.zeros_like(nptestfreqs)
-    phase = np.zeros_like(nptestfreqs)
+    ampls = np.zeros(nptestfreqs.size*4)
+    phase = np.zeros(nptestfreqs.size*4)
     i = 0
     for freqs in nptestfreqs:
         ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 19.5, "ADC1"))
         ampls[i] = ADC1FreqRespons[i]["Amplitude"]
         phase[i] = ADC1FreqRespons[i]["Phase"]
-        i = i + 1
+        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 1.95, "ADC1"))
+        ampls[i+1] = ADC1FreqRespons[i+1]["Amplitude"]
+        phase[i+1] = ADC1FreqRespons[i+1]["Phase"]
+        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 0.195, "ADC1"))
+        ampls[i+2] = ADC1FreqRespons[i+1]["Amplitude"]
+        phase[i+2] = ADC1FreqRespons[i+1]["Phase"]
+        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 5.0, "ADC1"))
+        ampls[i+3] = ADC1FreqRespons[i+1]["Amplitude"]
+        phase[i+3] = ADC1FreqRespons[i+1]["Phase"]
+        i = i + 4
 
     ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
