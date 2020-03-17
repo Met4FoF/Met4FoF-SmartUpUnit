@@ -162,49 +162,62 @@ class Met4FOFADCCall:
         if PlotType=='log':
             ax1.set_xscale("log")
             ax2.set_xscale("log")
-        ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer']*2, marker=".", markersize=2)
+        ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer']*2, fmt='o', markersize=2)
         fig.suptitle("Transfer function of "+str(Channel)+" of Board with ID"+hex(BoardID))
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
-        ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']*2/ np.pi * 180,marker='.', markersize=2)
+        ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']*2/ np.pi * 180,fmt='o', markersize=2)
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
         ax1.legend(numpoints=1, fontsize=8,ncol=3)
         ax2.legend(numpoints=1, fontsize=8,ncol=3)
         plt.show()
+    def getNearestTF(self,Channel,freq):
+        Freqs=self.TransferFunctions[Channel]['Frequencys']
+        testFreqIDX=np.argmin(abs(Freqs-freq))
+        return {'Frequency':self.TransferFunctions[Channel]['Frequencys'][testFreqIDX],
+                'AmplitudeCoefficent':self.TransferFunctions[Channel]['AmplitudeCoefficent'][testFreqIDX],
+                'AmplitudeCoefficentUncer':self.TransferFunctions[Channel]['AmplitudeCoefficentUncer'][testFreqIDX],
+                'Phase':self.TransferFunctions[Channel]['Phase'][testFreqIDX],
+                'PhaseUncer':self.TransferFunctions[Channel]['PhaseUncer'][testFreqIDX],
+                'N':self.TransferFunctions[Channel]['N'][testFreqIDX]}
+
+    def __getitem__(self, key):
+        return self.getNearestTF(key[0],key[1])
+
 
 
 if __name__ == "__main__":
-    # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/200310_ADC1_AC_cal.json')
-    DR = Datareceiver.DataReceiver("", 7654)
-    Fgen = FGEN.DG4xxx("192.168.0.62")
-    Scope = MSO.MSO5xxx("192.168.0.72")
-    time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
-    loops=3
-    nptestfreqs=np.array([])
-    for i in np.arange(loops):
-        nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
-    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
-    ADC1FreqRespons = []
-    ampls = np.zeros(nptestfreqs.size*4)
-    phase = np.zeros(nptestfreqs.size*4)
-    i = 0
-    for freqs in nptestfreqs:
-        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 19.5, "ADC1"))
-        ampls[i] = ADC1FreqRespons[i]["Amplitude"]
-        phase[i] = ADC1FreqRespons[i]["Phase"]
-        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 1.95, "ADC1"))
-        ampls[i+1] = ADC1FreqRespons[i+1]["Amplitude"]
-        phase[i+1] = ADC1FreqRespons[i+1]["Phase"]
-        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 0.195, "ADC1"))
-        ampls[i+2] = ADC1FreqRespons[i+1]["Amplitude"]
-        phase[i+2] = ADC1FreqRespons[i+1]["Phase"]
-        ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 5.0, "ADC1"))
-        ampls[i+3] = ADC1FreqRespons[i+1]["Amplitude"]
-        phase[i+3] = ADC1FreqRespons[i+1]["Phase"]
-        i = i + 4
+    ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/20200311_1FE4_ADC1_AC_CAL.json')
+    # DR = Datareceiver.DataReceiver("", 7654)
+    # Fgen = FGEN.DG4xxx("192.168.0.62")
+    # Scope = MSO.MSO5xxx("192.168.0.72")
+    # time.sleep(5)
+    # testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
+    # loops=3
+    # nptestfreqs=np.array([])
+    # for i in np.arange(loops):
+    #     nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
+    # ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    # ADC1FreqRespons = []
+    # ampls = np.zeros(nptestfreqs.size*4)
+    # phase = np.zeros(nptestfreqs.size*4)
+    # i = 0
+    # for freqs in nptestfreqs:
+    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 19.5, "ADC1"))
+    #     ampls[i] = ADC1FreqRespons[i]["Amplitude"]
+    #     phase[i] = ADC1FreqRespons[i]["Phase"]
+    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 1.95, "ADC1"))
+    #     ampls[i+1] = ADC1FreqRespons[i+1]["Amplitude"]
+    #     phase[i+1] = ADC1FreqRespons[i+1]["Phase"]
+    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 0.195, "ADC1"))
+    #     ampls[i+2] = ADC1FreqRespons[i+1]["Amplitude"]
+    #     phase[i+2] = ADC1FreqRespons[i+1]["Phase"]
+    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 5.0, "ADC1"))
+    #     ampls[i+3] = ADC1FreqRespons[i+1]["Amplitude"]
+    #     phase[i+3] = ADC1FreqRespons[i+1]["Phase"]
+    #     i = i + 4
 
     ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
