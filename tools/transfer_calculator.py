@@ -568,7 +568,7 @@ class Databuffer:
                         Runcount=Runcount+1
                         self.TransferRunCount[i]=Runcount
                 i = i + 1
-        for run in range(Runcount):
+        for run in range(Runcount+1):
             runIDX=self.TransferRunCount==run
             transferfunctionunwraped=np.unwrap(DB1.TransferPhase[runIDX])
             if all (transferfunctionunwraped<=(-2*np.pi)):
@@ -580,24 +580,24 @@ class Databuffer:
     def PlotTransferFunction(self, PlotType="lin"):
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType == "lin":
-             for run in range(int(np.max(self.TransferRunCount))):
+             for run in range(int(np.max(self.TransferRunCount))+1):
                  runIDX=self.TransferRunCount==run
                  ax1.plot(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
         if PlotType == "logx":
-            for run in range(int(np.max(self.TransferRunCount))):
+            for run in range(int(np.max(self.TransferRunCount))+1):
                 runIDX=self.TransferRunCount==run
                 ax1.semilogx(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
         fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
         if PlotType == "lin":
-            for run in range(int(np.max(self.TransferRunCount))):
+            for run in range(int(np.max(self.TransferRunCount))+1):
                 runIDX=self.TransferRunCount==run
                 ax2.plot(
                      self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
         if PlotType == "logx":
-            for run in range(int(np.max(self.TransferRunCount))):
+            for run in range(int(np.max(self.TransferRunCount))+1):
                 runIDX=self.TransferRunCount==run
                 ax2.semilogx(
                      self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
@@ -934,23 +934,23 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
-    DataReaderACCdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
+    DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
     #DataReaderACCdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
     DB1.setRefGroupDelay(220e-6)
-    DB1.setRefTransferFunction("/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
+    DB1.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(0,RefPhaseDC=-np.pi)
+    DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
 
 
     DB2 = Databuffer()
-    DataReaderACCdumpLARGE(DB2,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-    DB2.setRefTransferFunction("/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
+    DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
+    DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
     # reading data from file and proces all Data
     DB2.DoAllFFT()
-    DB2.getTransferFunction(0,RefPhaseDC=-np.pi)
+    DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
     DB2.PlotTransferFunction()
     DB2.PlotTransferFunction(PlotType="logx")
 
