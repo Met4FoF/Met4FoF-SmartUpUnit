@@ -19,6 +19,8 @@ import json as json
 from scipy import stats ## for Student T Coverragefactor
 from scipy.optimize import curve_fit #for fiting of Groupdelay
 from scipy import interpolate #for 1D amplitude estimation
+import math
+
 import logging
 def PhaseFunc(f, GD):
     return GD*f*2*np.pi
@@ -166,22 +168,32 @@ class Met4FOFADCCall:
         tf=self.GetTransferFunction(Channel)
         XInterPol=np.linspace(np.min(tf['Frequencys']),np.max(tf['Frequencys']),interpolSteps)
         interPolAmp=np.zeros(interpolSteps)
+        interPolAmpErrMin=np.zeros(interpolSteps)
+        interPolAmpErrMax=np.zeros(interpolSteps)
         interPolPhase=np.zeros(interpolSteps)
+        interPolPhaseErrMin=np.zeros(interpolSteps)
+        interPolPhaseErrMax=np.zeros(interpolSteps)
         for i in range(interpolSteps):
             tmp=self.getNearestTF(Channel,XInterPol[i])
             interPolAmp[i]=tmp['AmplitudeCoefficent']
+            interPolAmpErrMin[i]=interPolAmp[i]-tmp['AmplitudeCoefficentUncer']
+            interPolAmpErrMax[i]=interPolAmp[i]+tmp['AmplitudeCoefficentUncer']
             interPolPhase[i]=tmp['Phase']
+            interPolPhaseErrMin[i]=interPolPhase[i]-tmp['PhaseUncer']
+            interPolPhaseErrMax[i]=interPolPhase[i]+tmp['PhaseUncer']
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType=='log':
             ax1.set_xscale("log")
             ax2.set_xscale("log")
+        ax1.plot(XInterPol,interPolAmp,label='Interpolated')
+        ax1.fill_between(XInterPol, interPolAmpErrMin, interPolAmpErrMax,alpha=0.5)
         ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer'], fmt='o', markersize=2,label='Mesured Values')
-        ax1.plot(XInterPol,interPolAmp)
         fig.suptitle("Transfer function of "+str(Channel)+" of Board with ID"+hex(BoardID))
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
+        ax2.plot(XInterPol,interPolPhase/ np.pi * 180,label='Interpolated')
+        ax2.fill_between(XInterPol, interPolPhaseErrMin/ np.pi * 180, interPolPhaseErrMax/ np.pi * 180,alpha=0.5)
         ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']/ np.pi * 180,fmt='o', markersize=2,label='Mesured Values')
-        ax2.plot(XInterPol,interPolPhase/ np.pi * 180)
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
@@ -201,19 +213,13 @@ class Met4FOFADCCall:
                     'N':self.TransferFunctions[Channel]['N'][testFreqIDX]}
         else:
             #interpolate
-            tmp=self.getInterPolatedAmplitude(Channel,freq)
-            A=tmp[0]
-            AErr=tmp[1]
-            tmp=self.getGroupDelay(Channel)
-            GD=tmp[0]
-            GDErr=tmp[1]
-            Phase=PhaseFunc(freq,GD)
-            PhaseErr=PhaseFunc(freq,GDErr)
+            A,AErr=self.getInterPolatedAmplitude(Channel,freq)
+            P,PErr=self.getInterPolatedPhase(Channel,freq)
             return {'Frequency':freq,
-                    'AmplitudeCoefficent':A,
-                    'AmplitudeCoefficentUncer':AErr,
-                    'Phase':Phase,
-                    'PhaseUncer':PhaseErr,
+                    'AmplitudeCoefficent':np.asscalar(A),
+                    'AmplitudeCoefficentUncer':np.asscalar(AErr),
+                    'Phase':np.asscalar(P),
+                    'PhaseUncer':np.asscalar(PErr),
                     'N':0}
 
     def __getitem__(self, key):
@@ -227,9 +233,9 @@ class Met4FOFADCCall:
     def getGroupDelay(self,Channel):
         freqs=self.TransferFunctions[Channel]['Frequencys']
         phases=self.TransferFunctions[Channel]['Phase']
-        phaseUncer=self.TransferFunctions[Channel]['Phase']
+        phaseUncer=self.TransferFunctions[Channel]['PhaseUncer']
         popt, pcov = curve_fit(PhaseFunc, freqs, phases,sigma=phaseUncer,absolute_sigma=True)
-        return[popt[0],pcov[0]]
+        return[popt,pcov]
 
     def getInterPolatedAmplitude(self,Channel,freq):
         Freqs=self.TransferFunctions[Channel]['Frequencys']
@@ -261,6 +267,34 @@ class Met4FOFADCCall:
         fAErr = interpolate.interp1d(x, AErr)
         logging.info('Interpolateded transferfunction for Channel '+str(Channel)+'at Freq '+str(freq))  # will not print anything
         return[fA(freq),fAErr(freq)]
+
+    def getInterPolatedPhase(self,Channel,freq):
+        Freqs=self.TransferFunctions[Channel]['Frequencys']
+        Phases=self.TransferFunctions[Channel]['Phase']
+        PhasesErr=self.TransferFunctions[Channel]['PhaseUncer']
+        testFreqIDX=np.argmin(abs(Freqs-freq))
+        DeltaInterpolIDX=0
+        if freq-Freqs[testFreqIDX]<0:
+            DeltaInterpolIDX=-1
+        if freq-Freqs[testFreqIDX]>0:
+            DeltaInterpolIDX=1
+        if testFreqIDX+DeltaInterpolIDX<0:
+            raise ValueError("Extrapolation not supported! minimal Frequency is"+Freqs[0])
+        if testFreqIDX+DeltaInterpolIDX>=Freqs.size:
+            raise ValueError("Extrapolation not supported! maximal Frequency is"+Freqs[-1])
+        if DeltaInterpolIDX==0:
+            return [self.TransferFunctions[Channel]['AmplitudeCoefficent'][testFreqIDX],self.TransferFunctions[Channel]['AmplitudeCoefficentUncer'][testFreqIDX]]
+        elif DeltaInterpolIDX ==-1:
+            IDX=[testFreqIDX-1,testFreqIDX]
+        elif DeltaInterpolIDX==1:
+            IDX=[testFreqIDX,testFreqIDX+1]
+        x=Freqs[IDX]
+        P=Phases[IDX]
+        PErr=PhasesErr[IDX]
+        fP = interpolate.interp1d(x, P)
+        fPErr = interpolate.interp1d(x, PErr)
+        logging.info('Interpolateded transferfunction for Channel '+str(Channel)+'at Freq '+str(freq))  # will not print anything
+        return[fP(freq),fPErr(freq)]
 
 
 
