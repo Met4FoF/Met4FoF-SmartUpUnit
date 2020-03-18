@@ -306,25 +306,30 @@ if __name__ == "__main__":
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(100,250, SigDigts=2)
-    testfreqs = [1,10]
-    loops=1
+    testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
+    loops=20
     nptestfreqs=np.array([])
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test.json")
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test2.json")
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_1HZ_1MHZ.json')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
-        #ADCCall.CallFreq(freqs, 5.0, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test2.json")
-    ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
 
 
 
