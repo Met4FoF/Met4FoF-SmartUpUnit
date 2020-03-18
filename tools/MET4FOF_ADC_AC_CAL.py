@@ -66,7 +66,7 @@ class Met4FOFADCCall:
             self.buffer[i] = Message
             self.bufferCount = i + 1
 
-    def CallFreq(self, Freq, Ampl, Channel, offset=0, phase=0, SamplingFreq=2002,duration=10):
+    def CallFreq(self, Freq, Ampl, Channels, offset=0, phase=0, SamplingFreq=2002,duration=10):
         cycles = Freq * duration
         if(Freq* duration>1e6):#DG4000 can not generate more than 1e6 N-Cyclebursts
             duration=1e6/Freq
@@ -82,16 +82,16 @@ class Met4FOFADCCall:
         # fire Scope
         self.Scope.single()
         # atach buffer to Sensor data callback
-        DR.AllSensors[self.SensorID].SetCallback(self.BufferPushCB)
+        self.DR.AllSensors[self.SensorID].SetCallback(self.BufferPushCB)
         time.sleep(2)
         self.Scope.forceTrigger()
         # disable callback
         time.sleep(15)
         self.DR.AllSensors[self.SensorID].UnSetCallback()
-        self.ADCdata = np.zeros(self.bufferCount)
         self.DeltaTime = np.zeros(self.bufferCount)
         unix_time_start = self.buffer[0].unix_time
         unix_nsecs_start = self.buffer[0].unix_time_nsecs
+        self.ADCdata=np.zeros([3,self.bufferCount])
         for i in range(self.bufferCount):
             self.DeltaTime[i] = (
                 self.buffer[i].unix_time
@@ -99,12 +99,10 @@ class Met4FOFADCCall:
                 + (0 - (unix_nsecs_start - self.buffer[i].unix_time_nsecs) * 1e-9)
             )
             # self.DeltaTime[i]=i*(1/SamplingFreq)+0.5
-            if Channel == "ADC1":
-                self.ADCdata[i] = self.buffer[i].Data_11
-            if Channel == "ADC2":
-                self.ADCdata[i] = self.buffer[i].Data_12
-            if Channel == "ADC3":
-                self.ADCdata[i] = self.buffer[i].Data_13
+            self.ADCdata[0,i] = self.buffer[i].Data_11
+            self.ADCdata[1,i] = self.buffer[i].Data_12
+            self.ADCdata[2,i] = self.buffer[i].Data_13
+        ADCDataIDXByName={'ADC1':0,'ADC2':1,'ADC3':2}
         # detect glitches due to message packing in stm32 board
         maxDeltaT = 1 / SamplingFreq * 1.25  # 25% more than set sampling clock
         deltaDeltaT = np.diff(ADCCall.DeltaTime)
@@ -113,28 +111,31 @@ class Met4FOFADCCall:
         if DeltaDeltaTmax > maxDeltaT:
             print("oldPackets found")
             pos = deltaDeltaT.argmax()
-            self.ADCdata = self.ADCdata[pos + 1 :]
+            self.ADCdata = self.ADCdata[:,pos + 1 :]
             self.DeltaTime = self.DeltaTime[pos + 1 :]
         self.DeltaTime = self.DeltaTime - self.DeltaTime[0] + (0.5 * 1 / (SamplingFreq))
-        FIT = st.threeparsinefit(self.ADCdata, self.DeltaTime, Freq)
-        phaseFit = -st.phase(FIT)
-        amplFit = st.amplitude(FIT)
-        amplTrans = 2 * amplFit / Ampl
-        retVal = {
-            "Freq": Freq,
-            "Amplitude": amplTrans,
-            "Phase": phaseFit,
-            "TestAmplVPP.": Ampl,
-        }
-        if Channel in self.fitResults:
-            if Freq in self.fitResults[Channel]:
-                self.fitResults[Channel][Freq].append(retVal)
+        retVals=[]
+        for Channel in Channels:
+            tmp=self.ADCdata[ADCDataIDXByName[Channel],:]
+            FIT = st.threeparsinefit(tmp, self.DeltaTime, Freq)
+            phaseFit = -st.phase(FIT)
+            amplFit = st.amplitude(FIT)
+            amplTrans = 2 * amplFit / Ampl
+            retVal = {
+                    "Freq": Freq,
+                    "Amplitude": amplTrans,
+                    "Phase": phaseFit,
+                    "TestAmplVPP.": Ampl,
+                    }
+            if Channel in self.fitResults:
+                if Freq in self.fitResults[Channel]:
+                    self.fitResults[Channel][Freq].append(retVal)
+                else:
+                    self.fitResults[Channel][Freq]=[retVal]
             else:
+                self.fitResults[Channel]={}
                 self.fitResults[Channel][Freq]=[retVal]
-        else:
-            self.fitResults[Channel]={}
-            self.fitResults[Channel][Freq]=[retVal]
-        return retVal
+        return
 
     def GetTransferFunction(self,Channel):
         FreqNum=len(self.fitResults[Channel].keys())
@@ -300,36 +301,28 @@ class Met4FOFADCCall:
 
 
 if __name__ == "__main__":
-    ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/20200311_1FE4_ADC1_AC_CAL.json')
-    # DR = Datareceiver.DataReceiver("", 7654)
-    # Fgen = FGEN.DG4xxx("192.168.0.62")
-    # Scope = MSO.MSO5xxx("192.168.0.72")
-    # time.sleep(5)
-    # testfreqs = FGEN.generateDIN266Freqs(100,1e6, SigDigts=2)
-    # loops=3
-    # nptestfreqs=np.array([])
-    # for i in np.arange(loops):
-    #     nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
-    # ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
-    # ADC1FreqRespons = []
-    # ampls = np.zeros(nptestfreqs.size*4)
-    # phase = np.zeros(nptestfreqs.size*4)
-    # i = 0
-    # for freqs in nptestfreqs:
-    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 19.5, "ADC1"))
-    #     ampls[i] = ADC1FreqRespons[i]["Amplitude"]
-    #     phase[i] = ADC1FreqRespons[i]["Phase"]
-    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 1.95, "ADC1"))
-    #     ampls[i+1] = ADC1FreqRespons[i+1]["Amplitude"]
-    #     phase[i+1] = ADC1FreqRespons[i+1]["Phase"]
-    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 0.195, "ADC1"))
-    #     ampls[i+2] = ADC1FreqRespons[i+1]["Amplitude"]
-    #     phase[i+2] = ADC1FreqRespons[i+1]["Phase"]
-    #     ADC1FreqRespons.append(ADCCall.CallFreq(freqs, 5.0, "ADC1"))
-    #     ampls[i+3] = ADC1FreqRespons[i+1]["Amplitude"]
-    #     phase[i+3] = ADC1FreqRespons[i+1]["Phase"]
-    #     i = i + 4
-
+    #ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/20200311_1FE4_ADC1_AC_CAL.json')
+    DR = Datareceiver.DataReceiver("", 7654)
+    Fgen = FGEN.DG4xxx("192.168.0.62")
+    Scope = MSO.MSO5xxx("192.168.0.72")
+    time.sleep(5)
+    testfreqs = FGEN.generateDIN266Freqs(100,250, SigDigts=2)
+    testfreqs = [1,10]
+    loops=1
+    nptestfreqs=np.array([])
+    for i in np.arange(loops):
+        nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test.json")
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test2.json")
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
+        #ADCCall.CallFreq(freqs, 5.0, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults("cal_data/1FE4_AC_CAL/test2.json")
     ADCCall.PlotTransferfunction('ADC1',PlotType='lin')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
 
