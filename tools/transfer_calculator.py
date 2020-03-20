@@ -17,10 +17,11 @@ from scipy.optimize import curve_fit
 import SineTools as st
 import csv
 import timeit
+from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
 
 # from termcolor import colored
-plt.rcParams.update({"font.size": 30})
-plt.rc("text", usetex=True)
+# plt.rcParams.update({"font.size": 30})
+# plt.rc("text", usetex=True)
 
 class ReferencTransferFunction:
     def __init__(self,typ='hf_ref',filename='filename'):
@@ -55,7 +56,7 @@ class CalTimeSeries:
             "timeCalculated": False,
             "FFTCalculated": False,
             "BlockPushed": 0,
-            "SineFitCalculated": [False, False, False, False],
+            "SineFitCalculated": [False, False, False, False]
         }
 
     def pushBlock(self, Datablock):
@@ -320,6 +321,7 @@ class Databuffer:
             "AllSinFitCalculated": False,
             "AllFFTCalculated": False,
             "RefTransFunctionSet": False,
+            "ADCTFSet":False
         }
         self.DataLoopBuffer = np.zeros([self.params["IntegrationLength"], 5])
         self.i = 0
@@ -471,6 +473,19 @@ class Databuffer:
         self.flags["RefTransFunctionSet"] = True
         self.flags["RefGroupDelaySet"] = False
 
+    def setRefADCTF(self,CaldataFileList,ADCChannel='ADC1'):
+        self.ADCTF =ADCCal(None,None,None,None,Filenames=CaldataFileList)
+        self.flags["ADCTFSet"] = True
+        self.ADCChannel=ADCChannel
+
+    def getADCPhase(self,freq):
+        if self.flags["ADCTFSet"] == False:
+            print("WARN!!!! ADC TF NOT SET USEFOR DEBUGGING ONLY")
+            return 0,0
+        else:
+            Freqpoint=self.ADCTF[self.ADCChannel,freq]
+            return Freqpoint['Phase'],Freqpoint['PhaseUncer']
+
     def setRefGroupDelay(self,GropuDelay):
         # TODO improve selection between Ref Freq an group delay
         self.flags["RefTransFunctionSet"] = False
@@ -512,6 +527,7 @@ class Databuffer:
         self.TransferRunCount = np.zeros(len(self.CalData))
         i = 0 #number of packets processed
         Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
+        #todo remove this block and implement get RefPhasefunction
         if self.flags["RefTransFunctionSet"] == False:
             for item in self.CalData:
                 print(
@@ -556,12 +572,11 @@ class Databuffer:
                 TransferPhasetmp = (
                      self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
                 )
-                self.TransferPhase[i] = TransferPhasetmp - PhaseTF/180*np.pi +RefPhaseDC
+                ADCPhase,ADCPhaseErr=self.getADCPhase(Freq)
+                self.TransferPhase[i] = TransferPhasetmp - PhaseTF/180*np.pi+ADCPhase+RefPhaseDC
                                 #detect run count based on frequency drop to do right unwraping
                 self.TransferRunCount[i]=Runcount
-                self.TransferPhaseDEBUG2[i]=self.TransferPhase[i]
                 #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
-                print("Freq:"+str(Freq)+"Phase Fit: "+str(TransferPhasetmp)+"phase Ref: "+str(PhaseTF/180*np.pi))
                 if(i>0):
                     if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
                         #ok the freq now is smaller the the last freq we have enterd a new loop
@@ -864,6 +879,7 @@ def  DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
         except Exception as e:
             print(e)
             break
+    print(str(i)+" Lines read Data Parsing finsihed")
     return
 
 def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
@@ -894,6 +910,7 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
         except Exception as e:
             print(e)
             break
+    print(str(i)+"for a max of "+str(linestoread)+" Lines read Data Parsing finsihed")
     return
 # Column Names
 # 'id'
@@ -920,6 +937,8 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
 
 if __name__ == "__main__":
     DB1 = Databuffer()
+    DB1.setRefADCTF(['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'],ADCChannel='ADC1')
+    DB1.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
     # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
     # DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
@@ -935,9 +954,8 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
-    #DataReaderACCdumpLARGE(DB1,"/media/seeger01/Part1/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-    DB1.setRefGroupDelay(220e-6)
-    DB1.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
+    # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
+
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
@@ -945,14 +963,14 @@ if __name__ == "__main__":
     DB1.PlotTransferFunction(PlotType="logx")
 
 
-    DB2 = Databuffer()
-    DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-    DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
+    #DB2 = Databuffer()
+    #DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
+    #DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
     # reading data from file and proces all Data
-    DB2.DoAllFFT()
-    DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
-    DB2.PlotTransferFunction()
-    DB2.PlotTransferFunction(PlotType="logx")
+    #DB2.DoAllFFT()
+    #DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
+    #DB2.PlotTransferFunction()
+    #DB2.PlotTransferFunction(PlotType="logx")
 
 
     # callculate all the ffts

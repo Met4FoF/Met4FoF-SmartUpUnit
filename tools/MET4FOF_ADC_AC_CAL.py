@@ -52,6 +52,10 @@ class Met4FOFADCCall:
                         raise RuntimeWarning("BoardIDs"+self.metadata['BordID']+'and'+tmp.metadata['BordID']+'DO Not Match ignoring File'+CalFile)
                     i=i+1
                     json_file.close()
+            self.TransferFunctions= {}
+            for Channels in self.fitResults:
+                self.GetTransferFunction(Channels)
+
         else:
             self.fitResults = {}#will store lists with fit results for the according channel
             self.Scope = Scope
@@ -66,7 +70,7 @@ class Met4FOFADCCall:
                            'Date':datetime.now().isoformat(' ', 'seconds'),
                            'ScopeParams':self.Scope.params,
                            'FGenParams':self.FGen.params}
-        self.TransferFunctions= {}
+            self.TransferFunctions= {}
 
 
 
