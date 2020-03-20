@@ -21,19 +21,37 @@ from scipy.optimize import curve_fit #for fiting of Groupdelay
 from scipy import interpolate #for 1D amplitude estimation
 import math
 
+
+
 import logging
 def PhaseFunc(f, GD):
     return GD*f*2*np.pi
 
 class Met4FOFADCCall:
-    def __init__(self, Scope,FGen,Datareceiver,SensorID,Filename=None):
+    def __init__(self, Scope,FGen,Datareceiver,SensorID,Filenames=[None]):
 
-        if Filename!=None:
-            with open(Filename) as json_file:
-                tmp= json.load(json_file)
-            self.metadata=tmp['MeataData']
-            self.fitResults=tmp['FitResults']
-
+        if Filenames!=[None]:
+            i=0
+            for CalFile in Filenames:
+                print(CalFile)
+                if i==0:
+                    with open(CalFile ) as json_file:
+                        tmp= json.load(json_file)
+                    self.metadata=tmp['MeataData']
+                    self.fitResults=tmp['FitResults']
+                    i=i+1
+                    json_file.close()
+                else:
+                    with open(CalFile) as json_file:
+                        tmp= json.load(json_file)
+                    if(self.metadata['BordID']==tmp['MeataData']['BordID']):
+                        for Channel in tmp['FitResults']:
+                            for Freqs in tmp['FitResults'][Channel]:
+                                self.fitResults[Channel][Freqs]+=(tmp['FitResults'][Channel][Freqs])
+                    else:
+                        raise RuntimeWarning("BoardIDs"+self.metadata['BordID']+'and'+tmp.metadata['BordID']+'DO Not Match ignoring File'+CalFile)
+                    i=i+1
+                    json_file.close()
         else:
             self.fitResults = {}#will store lists with fit results for the according channel
             self.Scope = Scope
@@ -164,7 +182,7 @@ class Met4FOFADCCall:
             tmp={'MeataData':self.metadata,'FitResults':self.fitResults}
             json.dump(tmp, fp)
 
-    def PlotTransferfunction(self,Channel,PlotType='lin',interpolSteps=1000):
+    def PlotTransferfunction(self,Channel,PlotType='lin',interpolSteps=1000,fig=None,ax=[None,None],LabelExtension='',TitleExtension=''):
         BoardID=self.metadata['BordID']
         tf=self.GetTransferFunction(Channel)
         if PlotType=='log':
@@ -185,25 +203,32 @@ class Met4FOFADCCall:
             interPolPhase[i]=tmp['Phase']
             interPolPhaseErrMin[i]=interPolPhase[i]-tmp['PhaseUncer']
             interPolPhaseErrMax[i]=interPolPhase[i]+tmp['PhaseUncer']
-        fig, (ax1, ax2) = plt.subplots(2, 1)
+        if fig==None and ax==[None,None]:
+            Fig, (ax1, ax2) = plt.subplots(2, 1)
+        else:
+            Fig=fig
+            ax1=ax[0]
+            ax2=ax[1]
         if PlotType=='log':
             ax1.set_xscale("log")
             ax2.set_xscale("log")
-        ax1.plot(XInterPol,interPolAmp,label='Interpolated')
-        ax1.fill_between(XInterPol, interPolAmpErrMin, interPolAmpErrMax,alpha=0.5)
-        ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer'], fmt='o', markersize=2,label='Mesured Values')
-        fig.suptitle("Transfer function of "+str(Channel)+" of Board with ID"+hex(BoardID))
+        ax1.plot(XInterPol,interPolAmp,label='Interpolated'+LabelExtension)
+        lastcolor=ax1.get_lines()[-1].get_color()
+        ax1.fill_between(XInterPol, interPolAmpErrMin, interPolAmpErrMax,alpha=0.3,color=lastcolor)
+        ax1.errorbar(tf['Frequencys'], tf['AmplitudeCoefficent'],yerr=tf['AmplitudeCoefficentUncer'], fmt='o', markersize=4,label='Mesured Values'+LabelExtension, uplims=True, lolims=True,color=lastcolor)
+        Fig.suptitle("Transfer function of "+str(Channel)+" of Board with ID"+hex(BoardID)+TitleExtension)
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
-        ax2.plot(XInterPol,interPolPhase/ np.pi * 180,label='Interpolated')
-        ax2.fill_between(XInterPol, interPolPhaseErrMin/ np.pi * 180, interPolPhaseErrMax/ np.pi * 180,alpha=0.5)
-        ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']/ np.pi * 180,fmt='o', markersize=2,label='Mesured Values')
+        ax2.plot(XInterPol,interPolPhase/ np.pi * 180,label='Interpolated'+LabelExtension)
+        ax2.fill_between(XInterPol, interPolPhaseErrMin/ np.pi * 180, interPolPhaseErrMax/ np.pi * 180,alpha=0.3,color=lastcolor)
+        ax2.errorbar(tf['Frequencys'], tf['Phase'] / np.pi * 180,yerr=tf['PhaseUncer']/ np.pi * 180,fmt='o', markersize=3,label='Mesured Values'+LabelExtension, uplims=True, lolims=True,color=lastcolor)
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
         ax1.legend(numpoints=1, fontsize=8,ncol=3)
         ax2.legend(numpoints=1, fontsize=8,ncol=3)
         plt.show()
+        return Fig,[ax1,ax2]
 
     def getNearestTF(self,Channel,freq):
         Freqs=self.TransferFunctions[Channel]['Frequencys']
@@ -304,10 +329,29 @@ class Met4FOFADCCall:
 
 
 if __name__ == "__main__":
-    ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
-    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    SMALL_SIZE = 12
+    MEDIUM_SIZE = 15
+    BIGGER_SIZE = 18
+
+    plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+    plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+    ADCCall = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
+    PLTADC1=ADCCall.PlotTransferfunction('ADC1',PlotType='log',LabelExtension=' Run 1')
+    PLTADC2=ADCCall.PlotTransferfunction('ADC2',PlotType='log',LabelExtension=' Run 1')
+    PLTADC3=ADCCall.PlotTransferfunction('ADC3',PlotType='log',LabelExtension=' Run 1')
+    ADCCall2 = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
+    ADCCall2.PlotTransferfunction('ADC1',PlotType='log',fig=PLTADC1[0],ax=PLTADC1[1],LabelExtension=' Run 2',TitleExtension='+ Run 2')
+    ADCCall2.PlotTransferfunction('ADC2',PlotType='log',fig=PLTADC2[0],ax=PLTADC2[1],LabelExtension=' Run 2 ',TitleExtension='+ Run 2')
+    ADCCall2.PlotTransferfunction('ADC3',PlotType='log',fig=PLTADC3[0],ax=PLTADC3[1],LabelExtension=' Run 2',TitleExtension='+ Run 2')
+    ADCCallCombined = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
+    ADCCallCombined.PlotTransferfunction('ADC1',PlotType='log',fig=PLTADC1[0],ax=PLTADC1[1],LabelExtension=' Combined',TitleExtension='+ Run 2+Combined')
+    ADCCallCombined.PlotTransferfunction('ADC2',PlotType='log',fig=PLTADC2[0],ax=PLTADC2[1],LabelExtension=' Combined',TitleExtension=' Run 2+Combined')
+    ADCCallCombined.PlotTransferfunction('ADC3',PlotType='log',fig=PLTADC3[0],ax=PLTADC3[1],LabelExtension=' Combined',TitleExtension=' Run 2+Combined')
     # DR = Datareceiver.DataReceiver("", 7654)
     # Fgen = FGEN.DG4xxx("192.168.0.62")
     # Scope = MSO.MSO5xxx("192.168.0.72")
