@@ -18,6 +18,9 @@ import SineTools as st
 import csv
 import timeit
 from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
+import yappi
+import time
+
 
 # from termcolor import colored
 # plt.rcParams.update({"font.size": 30})
@@ -122,18 +125,18 @@ class CalTimeSeries:
         self.REFFfftPeakIndex = (
             np.argmax(abs(self.FFTData[1:fftPeakindexiposfreq, 3])) + 1
         )
-        print(self.REFFfftPeakIndex)
+        #print(self.REFFfftPeakIndex)
         # +1 is needed sice we use relative index in the array passed to np.argmax
         # ingnore dc idx>0 only positive freqs idx<int(length/2)
-        print("Max peak at axis 3 has index " + str(self.REFFfftPeakIndex))
+        #print("Max peak at axis 3 has index " + str(self.REFFfftPeakIndex))
         self.FFTFreqPeak = self.fftFreqs[self.REFFfftPeakIndex]
         # für OW der index wird richtig berechnent
         self.FFTAmplitudePeak = abs(self.FFTData[self.REFFfftPeakIndex, :])
         self.FFTPhiPeak = np.angle(self.FFTData[self.REFFfftPeakIndex, :])
         # für OW diese atribute haben ikorrekte werte
-        print("Found Peak at " + str(self.FFTFreqPeak) + " Hz")
-        print("Amplidues for all channels are" + str(self.FFTAmplitudePeak))
-        print("Phase angle for all channels are" + str(self.FFTPhiPeak))
+        #print("Found Peak at " + str(self.FFTFreqPeak) + " Hz")
+        #print("Amplidues for all channels are" + str(self.FFTAmplitudePeak))
+        #print("Phase angle for all channels are" + str(self.FFTPhiPeak))
 
     def PlotFFT(self):
         """
@@ -217,10 +220,9 @@ class CalTimeSeries:
                 except RuntimeError as ErrorCode:
                     print("Runtime Error:" + str(ErrorCode))
                     self.flags["SineFitCalculated"][i] = False
-                print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
-                print(tmpp0)
+                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
             if Methode == "SineTools":
-                print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 try:
                     tmpparams = st.fourparsinefit(
                     self.Data[:-EndCutOut, i],
@@ -234,9 +236,7 @@ class CalTimeSeries:
                 Complex = tmpparams[1] + 1j * tmpparams[0]
                 DC = tmpparams[2]
                 Freq = tmpparams[3]
-                print(Complex)
                 self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
-            print(self.popt)
 
         self.flags["SineFitCalculated"] = True
 
@@ -312,7 +312,7 @@ class Databuffer:
             "IntegrationLength": 64,
             "MaxChunks": 100000,
             "axixofintest": 1,
-            "stdvalidaxis": 3,
+            "stdvalidaxis": 2,
             "minValidChunksInRow": 10,
             "minSTDforVailid": 5,
             "defaultEndCutOut": 750,
@@ -362,15 +362,15 @@ class Databuffer:
 
         """
         if self.i < self.params["IntegrationLength"]:
-            self.DataLoopBuffer[self.i, 0] = x
-            self.DataLoopBuffer[self.i, 1] = y
-            self.DataLoopBuffer[self.i, 2] = z
-            self.DataLoopBuffer[self.i, 3] = REF
-            self.DataLoopBuffer[self.i, 4] = t
+            self.DataLoopBuffer[self.i]=[x,y,z,REF,t]
+            #self.DataLoopBuffer[self.i, 0] = x
+            #self.DataLoopBuffer[self.i, 1] = y
+            #self.DataLoopBuffer[self.i, 2] = z
+            #self.DataLoopBuffer[self.i, 3] = REF
+            #self.DataLoopBuffer[self.i, 4] = t
             self.i = self.i + 1
             if self.i == self.params["IntegrationLength"]:
                 self.calc()
-                print()
 
     def pushBlock(self, arrayx, arrayy, arrayz, arrayREF, arrayt):
         """
@@ -492,22 +492,27 @@ class Databuffer:
         self.flags["RefGroupDelaySet"] = True
         self.params["RefGroupDelay"]=GropuDelay
 
-    def getNearestReFTPoint(self, freq):
+    def getNearestReFTPoint(self, freq,loop=0):
         if self.flags["RefTransFunctionSet"] == True:
             if not self.flags['RefGroupDelaySet']:
                 return (
-                        self.RefTransferFunction[0,freq,'acceleration'],
-                        self.RefTransferFunction[0,freq,'phase'],
+                        self.RefTransferFunction[loop,freq,'acceleration'],
+                        self.RefTransferFunction[loop,freq,'acceleration_std'],
+                        self.RefTransferFunction[loop,freq,'phase']/180*np.pi,
+                        self.RefTransferFunction[loop,freq,'phase_std']/180*np.pi,
+
                         )
             else:
                 #print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
                 return (
                         1,#Asume Amplitude as One
+                        0,# No amplitude Error asumed
                         freq*self.params["RefGroupDelay"]*2*np.pi*-1,#-1 because we are seeing this aus transferfunction of the Ref Mesurment
                                                                     # so an positiv grouddelay results in in linear increasing negative phase
-                                                                    )
+                        0)# No Phase Error asumed
         else:
-            raise RuntimeError("REFTransferFunction NOT SET RETURNING 0,0")
+            raise RuntimeWarning("REFTransferFunction NOT SET RETURNING 0,0")
+            return(1,0,0,0)
 
 
     def getTransferFunction(
@@ -528,61 +533,30 @@ class Databuffer:
         i = 0 #number of packets processed
         Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
         #todo remove this block and implement get RefPhasefunction
-        if self.flags["RefTransFunctionSet"] == False:
-            for item in self.CalData:
-                print(
-                    "WARING REFTransferFunction NOT SET USE THIS RESULTS JUST FOR DEBUGGING!!!"
-                )
-                self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
-                #
-                self.TransferAmpl[i] = (self.CalData[i].popt[axisDUT, 0]) / (
-                    self.CalData[i].popt[AxisRef, 0] * RefScalefactor
-                )
-                self.TransferPhase[i] = (
-                  self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
-                )
-                self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
-                self.TransferPhase[i] = self.TransferPhase[i] + RefPhaseDC
-                #detect run count based on frequency drop to do right unwraping
-                self.TransferRunCount[i]=Runcount
-                self.TransferPhaseDEBUG2[i]=self.TransferPhase[i]
-                if(i>0):
-                    if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
-                        #ok the freq now is smaller the the last freq we have enterd a new loop
-                        Runcount=Runcount+1
-                        self.TransferRunCount[i]=Runcount
-                i = i + 1
-
-        if self.flags["RefTransFunctionSet"] == True:
-            for item in self.CalData:
-                Freq=self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
-                AmplTF = self.getNearestReFTPoint(self.TransferFreqs[i])[0]
-                PhaseTF = self.getNearestReFTPoint(self.TransferFreqs[i])[1]
-
-                #self.TransferAmpl[i] = (self.CalData[i].popt[axisDUT, 0]) / (
-                #    (self.CalData[i].popt[AxisRef, 0] * RefScalefactor) / AmplTF
-                #)
-                #self.TransferPhase[i] = (
-                #     self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
-                #)
-                #self.TransferPhaseDEBUG[i]=self.TransferPhase[i]
-                #self.TransferPhase[i] = self.TransferPhase[i] + PhaseTF +RefPhaseDC
-
-                self.TransferAmpl[i]=self.CalData[i].popt[axisDUT, 0]/AmplTF
-                TransferPhasetmp = (
-                     self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3]
-                )
-                ADCPhase,ADCPhaseErr=self.getADCPhase(Freq)
-                self.TransferPhase[i] = TransferPhasetmp - PhaseTF/180*np.pi+ADCPhase+RefPhaseDC
-                                #detect run count based on frequency drop to do right unwraping
-                self.TransferRunCount[i]=Runcount
-                #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
-                if(i>0):
-                    if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
-                        #ok the freq now is smaller the the last freq we have enterd a new loop
-                        Runcount=Runcount+1
-                        self.TransferRunCount[i]=Runcount
-                i = i + 1
+        for item in self.CalData:
+            Freq=self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
+            print(Freq)
+            RefData=self.getNearestReFTPoint(Freq,loop=self.TransferRunCount[i])
+            print(RefData)
+            print(self.CalData[i].popt)
+            print("---------------------")
+            AmplTF =RefData[0]
+            AmplTFErr =RefData[1]
+            PhaseTF =RefData[2]
+            PhaseTFErr = RefData[3]
+            self.TransferAmpl[i]=self.CalData[i].popt[axisDUT, 0]/AmplTF
+            TransferPhasetmp = (self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3])
+            ADCPhase,ADCPhaseErr=self.getADCPhase(Freq)
+            self.TransferPhase[i] = TransferPhasetmp - PhaseTF+ADCPhase+RefPhaseDC
+            #detect run count based on frequency drop to do right unwraping
+            self.TransferRunCount[i]=Runcount
+            #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
+            if(i>0):
+                if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
+                    #ok the freq now is smaller the the last freq we have enterd a new loop
+                    Runcount=Runcount+1
+                    self.TransferRunCount[i]=Runcount
+            i = i + 1
         for run in range(Runcount+1):
             runIDX=self.TransferRunCount==run
             transferfunctionunwraped=np.unwrap(DB1.TransferPhase[runIDX])
@@ -852,7 +826,7 @@ def DataReaderGYROdump(ProtoCSVFilename):
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
-def  DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
+def DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
     reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
     print("reading first to rows")
     print(next(reader))
@@ -883,6 +857,7 @@ def  DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
     return
 
 def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
+    chunksize=Databuffer.params["IntegrationLength"]
     reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
     print("reading first to rows")
     print(next(reader))
@@ -890,7 +865,14 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
     #we sacrifice a line to set the start time stamp
     line=next(reader)
     startsec=float(line[2])
+    j=0
     i=0
+    x=np.zeros(chunksize)
+    y=np.zeros(chunksize)
+    z=np.zeros(chunksize)
+    REF=np.zeros(chunksize)
+    t=np.zeros(chunksize)
+
     if(i==0):
         linestoread=Databuffer.params["IntegrationLength"]*Databuffer.params["MaxChunks"]
     #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
@@ -901,11 +883,34 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
             line=next(reader)
             time=float(line[2])-startsec+(float(line[3])*1e-9)
             #pushData(self, x, y, z, REF, t)
-            Databuffer.pushData(float(line[5]),
-                                float(line[6]),
-                                float(line[7]),
-                                float(line[15])*100,
-                                time)
+            if(j<chunksize):
+                x[j]=float(line[5])
+                y[j]=float(line[6])
+                z[j]=float(line[7])
+                REF[j]=float(line[15])*100
+                t[j]=time
+                j=j+1
+            if(j==chunksize):
+                Databuffer.pushBlock(x,y,z,REF,t)
+                j=0
+                x=np.zeros(chunksize)
+                y=np.zeros(chunksize)
+                z=np.zeros(chunksize)
+                REF=np.zeros(chunksize)
+                t=np.zeros(chunksize)
+                x[j]=float(line[5])
+                y[j]=float(line[6])
+                z[j]=float(line[7])
+                REF[j]=float(line[15])*100.0
+                t[j]=time
+                j=j+1
+
+
+            # Databuffer.pushData(float(line[5]),
+            #                     float(line[6]),
+            #                     float(line[7]),
+            #                     float(line[15])*100,
+            #                     time)
             i=i+1
         except Exception as e:
             print(e)
@@ -936,6 +941,8 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
 # 'stimtype'
 
 if __name__ == "__main__":
+    yappi.start()
+    start_time = time.time()
     DB1 = Databuffer()
     DB1.setRefADCTF(['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'],ADCChannel='ADC1')
     DB1.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
@@ -961,8 +968,9 @@ if __name__ == "__main__":
     DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
-
-
+    print("--- %s seconds ---" % (time.time() - start_time))
+    fstats=yappi.get_func_stats()
+    #fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
     #DB2 = Databuffer()
     #DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
     #DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
