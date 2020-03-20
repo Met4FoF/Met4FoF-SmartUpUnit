@@ -167,7 +167,10 @@ class Met4FOFADCCall:
     def PlotTransferfunction(self,Channel,PlotType='lin',interpolSteps=1000):
         BoardID=self.metadata['BordID']
         tf=self.GetTransferFunction(Channel)
-        XInterPol=np.linspace(np.min(tf['Frequencys']),np.max(tf['Frequencys']),interpolSteps)
+        if PlotType=='log':
+            XInterPol=np.power(10,np.linspace(np.log10(np.min(tf['Frequencys'])),np.log10(np.max(tf['Frequencys'])-1),interpolSteps))
+        else:
+            XInterPol=np.logspace(np.min(tf['Frequencys']),np.max(tf['Frequencys']),interpolSteps)
         interPolAmp=np.zeros(interpolSteps)
         interPolAmpErrMin=np.zeros(interpolSteps)
         interPolAmpErrMax=np.zeros(interpolSteps)
@@ -249,9 +252,9 @@ class Met4FOFADCCall:
         if freq-Freqs[testFreqIDX]>0:
             DeltaInterpolIDX=1
         if testFreqIDX+DeltaInterpolIDX<0:
-            raise ValueError("Extrapolation not supported! minimal Frequency is"+Freqs[0])
+            raise ValueError(str(freq)+" is to SMALL->Extrapolation not supported! minimal Frequency is "+str(Freqs[0]))
         if testFreqIDX+DeltaInterpolIDX>=Freqs.size:
-            raise ValueError("Extrapolation not supported! maximal Frequency is"+Freqs[-1])
+            raise ValueError(str(freq)+" is to BIG->Extrapolation not supported! maximal Frequency is "+str(Freqs[-1]))
         if DeltaInterpolIDX==0:
             return [self.TransferFunctions[Channel]['AmplitudeCoefficent'][testFreqIDX],self.TransferFunctions[Channel]['AmplitudeCoefficentUncer'][testFreqIDX]]
         elif DeltaInterpolIDX ==-1:
@@ -301,35 +304,38 @@ class Met4FOFADCCall:
 
 
 if __name__ == "__main__":
-    #ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/20200311_1FE4_ADC1_AC_CAL.json')
-    DR = Datareceiver.DataReceiver("", 7654)
-    Fgen = FGEN.DG4xxx("192.168.0.62")
-    Scope = MSO.MSO5xxx("192.168.0.72")
-    time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
-    loops=20
-    nptestfreqs=np.array([])
-    for i in np.arange(loops):
-        nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
-    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
-    for freqs in nptestfreqs:
-        ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json')
+    ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
-    for freqs in nptestfreqs:
-        ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_1HZ_1MHZ.json')
-    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
-    for freqs in nptestfreqs:
-        ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
-    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
-    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    # DR = Datareceiver.DataReceiver("", 7654)
+    # Fgen = FGEN.DG4xxx("192.168.0.62")
+    # Scope = MSO.MSO5xxx("192.168.0.72")
+    # time.sleep(5)
+    # testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
+    # loops=20
+    # nptestfreqs=np.array([])
+    # for i in np.arange(loops):
+    #     nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
+    # ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    # for freqs in nptestfreqs:
+    #     ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
+    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json')
+    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    # for freqs in nptestfreqs:
+    #     ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
+    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_1HZ_1MHZ.json')
+    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    # for freqs in nptestfreqs:
+    #     ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
+    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
+    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
 
 
 
