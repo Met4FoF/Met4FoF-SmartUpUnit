@@ -272,7 +272,7 @@ endfunction
 """
 
 # periodical sinefit at known frequency
-def seq_fourparsinefit(y, t, f0, tol=1.0e-7, nmax=1000, debug_plot=False):
+def seq_fourparsinefit(y, t, f0, tol=1.0e-7, nmax=1000, debug_plot=False,periods=1):
     """
     period-wise sine-fit at a known frequency\n
     y vector of sample values \n
@@ -286,7 +286,7 @@ def seq_fourparsinefit(y, t, f0, tol=1.0e-7, nmax=1000, debug_plot=False):
     """
     Tau = 1.0 / f0
     dt = t[1] - t[0]
-    N = int(sp.floor(Tau / dt))  ## samples per section
+    N = int(sp.floor(Tau / dt))*periods  ## samples per section
     M = int(sp.floor(t.size / N))  ## number of sections or periods
 
     abcd = sp.zeros((M, 4))

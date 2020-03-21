@@ -161,7 +161,7 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self, EndCutOut, Methode="SineTools",SimulateTimingErrors=False):
+    def SinFit(self, EndCutOut, Methode="ST4SEQ",SimulateTimingErrors=False):
         """
         
 
@@ -170,7 +170,7 @@ class CalTimeSeries:
         EndCutOut : TYPE
             DESCRIPTION.
         Methode : TYPE, optional
-            DESCRIPTION. The default is 'SineTools1'.
+            DESCRIPTION. The default is 'ST4'.
 
         Returns
         -------
@@ -221,7 +221,7 @@ class CalTimeSeries:
                     print("Runtime Error:" + str(ErrorCode))
                     self.flags["SineFitCalculated"][i] = False
                 #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
-            if Methode == "SineTools":
+            if Methode == "ST4":
                 #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 try:
                     tmpparams = st.fourparsinefit(
@@ -237,6 +237,29 @@ class CalTimeSeries:
                 DC = tmpparams[2]
                 Freq = tmpparams[3]
                 self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
+            if Methode == "ST4SEQ":
+                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                try:
+                    tmpparams = st.seq_fourparsinefit(
+                    self.Data[:-EndCutOut, i],
+                    self.Data[:-EndCutOut, 4],
+                    self.FFTFreqPeak,
+                    tol=1.0e-7,
+                    nmax=1000,
+                    periods=20
+                )
+                except AssertionError as error:
+                    print(error)
+                    print("Skipping this fit")
+                    tmpparams=[[0,0,0,0],[0,0,0,0]]
+                print(tmpparams)
+                tmpParamsMean=np.mean(tmpparams,axis=0)
+                tmpParamsSTD=np.std(tmpparams,axis=0)
+                Complex = tmpParamsMean[1] + 1j * tmpParamsMean[0]
+                DC = tmpParamsMean[2]
+                Freq = tmpParamsMean[3]
+                self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
+                np.fill_diagonal(self.pcov,tmpParamsSTD)
 
         self.flags["SineFitCalculated"] = True
 
@@ -535,11 +558,7 @@ class Databuffer:
         #todo remove this block and implement get RefPhasefunction
         for item in self.CalData:
             Freq=self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
-            print(Freq)
             RefData=self.getNearestReFTPoint(Freq,loop=self.TransferRunCount[i])
-            print(RefData)
-            print(self.CalData[i].popt)
-            print("---------------------")
             AmplTF =RefData[0]
             AmplTFErr =RefData[1]
             PhaseTF =RefData[2]
