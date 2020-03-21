@@ -246,20 +246,19 @@ class CalTimeSeries:
                     self.FFTFreqPeak,
                     tol=1.0e-7,
                     nmax=1000,
-                    periods=20
+                    periods=50
                 )
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
                     tmpparams=[[0,0,0,0],[0,0,0,0]]
-                print(tmpparams)
                 tmpParamsMean=np.mean(tmpparams,axis=0)
                 tmpParamsSTD=np.std(tmpparams,axis=0)
                 Complex = tmpParamsMean[1] + 1j * tmpParamsMean[0]
                 DC = tmpParamsMean[2]
                 Freq = tmpParamsMean[3]
                 self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
-                np.fill_diagonal(self.pcov,tmpParamsSTD)
+                np.fill_diagonal(self.pcov[i],tmpParamsSTD)
 
         self.flags["SineFitCalculated"] = True
 
@@ -567,6 +566,9 @@ class Databuffer:
             TransferPhasetmp = (self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3])
             ADCPhase,ADCPhaseErr=self.getADCPhase(Freq)
             self.TransferPhase[i] = TransferPhasetmp - PhaseTF+ADCPhase+RefPhaseDC
+
+            #TODO IMPLEMNT REAL UNCER CALCULATION THIS IS JUST FOR DEBUGGING
+            self.TransferAmplErr[i]=self.CalData[i].pcov[axisDUT, 0,0]/AmplTF
             #detect run count based on frequency drop to do right unwraping
             self.TransferRunCount[i]=Runcount
             #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
@@ -587,28 +589,17 @@ class Databuffer:
 
     def PlotTransferFunction(self, PlotType="lin"):
         fig, (ax1, ax2) = plt.subplots(2, 1)
-        if PlotType == "lin":
-             for run in range(int(np.max(self.TransferRunCount))+1):
-                 runIDX=self.TransferRunCount==run
-                 ax1.plot(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
         if PlotType == "logx":
-            for run in range(int(np.max(self.TransferRunCount))+1):
-                runIDX=self.TransferRunCount==run
-                ax1.semilogx(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX], ".", markersize=20,label=str(run))
+            ax1.set_xscale("log")
+            ax2.set_xscale("log")
         fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
-        if PlotType == "lin":
-            for run in range(int(np.max(self.TransferRunCount))+1):
-                runIDX=self.TransferRunCount==run
-                ax2.plot(
-                     self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
-            )
-        if PlotType == "logx":
-            for run in range(int(np.max(self.TransferRunCount))+1):
-                runIDX=self.TransferRunCount==run
-                ax2.semilogx(
-                     self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
+        for run in range(int(np.max(self.TransferRunCount))+1):
+            runIDX=self.TransferRunCount==run
+            ax1.errorbar(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX],yerr=self.TransferAmplErr[runIDX],fmt=".", markersize=20,label=str(run))
+            ax2.plot(
+                self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
