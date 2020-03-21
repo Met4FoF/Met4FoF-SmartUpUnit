@@ -314,7 +314,7 @@ class Databuffer:
             "axixofintest": 1,
             "stdvalidaxis": 2,
             "minValidChunksInRow": 10,
-            "minSTDforVailid": 5,
+            "minSTDforVailid": 1,
             "defaultEndCutOut": 750,
         }
         self.flags = {
@@ -526,9 +526,9 @@ class Databuffer:
             self.DoAllSinFit(self.params["defaultEndCutOut"])
         self.TransferFreqs = np.zeros(len(self.CalData))
         self.TransferAmpl = np.zeros(len(self.CalData))
+        self.TransferAmplErr= np.zeros(len(self.CalData))
         self.TransferPhase = np.zeros(len(self.CalData))
-        self.TransferPhaseDEBUG = np.zeros(len(self.CalData))
-        self.TransferPhaseDEBUG2 = np.zeros(len(self.CalData))
+        self.TransferPhaseErr = np.zeros(len(self.CalData))
         self.TransferRunCount = np.zeros(len(self.CalData))
         i = 0 #number of packets processed
         Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
