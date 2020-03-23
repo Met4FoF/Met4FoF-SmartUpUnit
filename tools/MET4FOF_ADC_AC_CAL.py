@@ -336,7 +336,6 @@ if __name__ == "__main__":
     SMALL_SIZE = 12
     MEDIUM_SIZE = 15
     BIGGER_SIZE = 18
-
     plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
     plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
     plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
@@ -344,46 +343,43 @@ if __name__ == "__main__":
     plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
     plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-    ADCCall = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
-    PLTADC1=ADCCall.PlotTransferfunction('ADC1',PlotType='log',LabelExtension=' Run 1')
-    PLTADC2=ADCCall.PlotTransferfunction('ADC2',PlotType='log',LabelExtension=' Run 1')
-    PLTADC3=ADCCall.PlotTransferfunction('ADC3',PlotType='log',LabelExtension=' Run 1')
-    ADCCall2 = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
-    ADCCall2.PlotTransferfunction('ADC1',PlotType='log',fig=PLTADC1[0],ax=PLTADC1[1],LabelExtension=' Run 2',TitleExtension='+ Run 2')
-    ADCCall2.PlotTransferfunction('ADC2',PlotType='log',fig=PLTADC2[0],ax=PLTADC2[1],LabelExtension=' Run 2 ',TitleExtension='+ Run 2')
-    ADCCall2.PlotTransferfunction('ADC3',PlotType='log',fig=PLTADC3[0],ax=PLTADC3[1],LabelExtension=' Run 2',TitleExtension='+ Run 2')
-    ADCCallCombined = Met4FOFADCCall(None,None,None,None,Filenames=['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'])
-    ADCCallCombined.PlotTransferfunction('ADC1',PlotType='log',fig=PLTADC1[0],ax=PLTADC1[1],LabelExtension=' Combined',TitleExtension='+ Run 2+Combined')
-    ADCCallCombined.PlotTransferfunction('ADC2',PlotType='log',fig=PLTADC2[0],ax=PLTADC2[1],LabelExtension=' Combined',TitleExtension=' Run 2+Combined')
-    ADCCallCombined.PlotTransferfunction('ADC3',PlotType='log',fig=PLTADC3[0],ax=PLTADC3[1],LabelExtension=' Combined',TitleExtension=' Run 2+Combined')
-    # DR = Datareceiver.DataReceiver("", 7654)
-    # Fgen = FGEN.DG4xxx("192.168.0.62")
-    # Scope = MSO.MSO5xxx("192.168.0.72")
-    # time.sleep(5)
-    # testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
-    # loops=20
-    # nptestfreqs=np.array([])
-    # for i in np.arange(loops):
-    #     nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
-    # ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
-    # for freqs in nptestfreqs:
-    #     ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
-    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json')
+    # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
     # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
-    # for freqs in nptestfreqs:
-    #     ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
-    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_1HZ_1MHZ.json')
-    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
-    # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
-    # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
-    # for freqs in nptestfreqs:
-    #     ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
-    # ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
-    # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
-    # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
-    # ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    DR = Datareceiver.DataReceiver("", 7654)
+    Fgen = FGEN.DG4xxx("192.168.0.62")
+    Scope = MSO.MSO5xxx("192.168.0.72")
+    time.sleep(5)
+    testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
+    loops=20
+    nptestfreqs=np.array([])
+    for i in np.arange(loops):
+        nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    del ADCCall
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
+    del ADCCall
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    for freqs in nptestfreqs:
+        ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CYCLES_V195_1HZ_1MHZ.json')
+    ADCCall.PlotTransferfunction('ADC1',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC2',PlotType='log')
+    ADCCall.PlotTransferfunction('ADC3',PlotType='log')
 
 
 
+CYCL
