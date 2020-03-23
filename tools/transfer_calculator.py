@@ -191,6 +191,7 @@ class CalTimeSeries:
             self.Data[:,4]=np.arange(self.Data.shape[0])*step+starttime
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
+        #self.poptRaw=[None,None,None,None]
         self.sinFitEndCutOut = EndCutOut
         if not (self.flags["FFTCalculated"]):  # recusive calling
             self.CalcFFT()
@@ -251,14 +252,15 @@ class CalTimeSeries:
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
-                    tmpparams=[[0,0,0,0],[0,0,0,0]]
-                tmpParamsMean=np.mean(tmpparams,axis=0)
-                tmpParamsSTD=np.std(tmpparams,axis=0)
-                Complex = tmpParamsMean[1] + 1j * tmpParamsMean[0]
-                DC = tmpParamsMean[2]
-                Freq = tmpParamsMean[3]
-                self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
-                np.fill_diagonal(self.pcov[i],tmpParamsSTD)
+                    tmpparams=np.zeros((4,4))
+                Complex = tmpparams[:,1] + 1j * tmpparams[:,0]
+                DC = tmpparams[:,2]
+                Freq = tmpparams[:,3]
+                self.popt[i] = [np.mean(abs(Complex)), np.mean(DC), np.mean(Freq), np.mean(np.unwrap(np.angle(Complex)))]
+                #np.fill_diagonal(self.pcov[i],tmpParamsSTD)
+                #self.poptRaw[i]=CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
+                CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
+                self.pcov[i]=np.cov(CoVarData,bias=True)#bias=True Nomation With N like np.std
 
         self.flags["SineFitCalculated"] = True
 
@@ -568,7 +570,7 @@ class Databuffer:
             self.TransferPhase[i] = TransferPhasetmp - PhaseTF+ADCPhase+RefPhaseDC
 
             #TODO IMPLEMNT REAL UNCER CALCULATION THIS IS JUST FOR DEBUGGING
-            self.TransferAmplErr[i]=self.CalData[i].pcov[axisDUT, 0,0]/AmplTF
+            self.TransferAmplErr[i]=np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0,0]))/AmplTF
             #detect run count based on frequency drop to do right unwraping
             self.TransferRunCount[i]=Runcount
             #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
@@ -598,6 +600,7 @@ class Databuffer:
         for run in range(int(np.max(self.TransferRunCount))+1):
             runIDX=self.TransferRunCount==run
             ax1.errorbar(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX],yerr=self.TransferAmplErr[runIDX],fmt=".", markersize=20,label=str(run))
+            ax1.errorbar(self.TransferFreqs[runIDX]+0.01, self.TransferAmpl[runIDX],yerr=self.TransferAmplErr2[runIDX],fmt=".", markersize=20,label='STD'+str(run))
             ax2.plot(
                 self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
