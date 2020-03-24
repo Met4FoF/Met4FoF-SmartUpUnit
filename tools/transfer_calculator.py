@@ -25,19 +25,24 @@ import time
 # plt.rcParams.update({"font.size": 30})
 # plt.rc("text", usetex=True)
 
+
 class ReferencTransferFunction:
-    def __init__(self,typ='hf_ref',filename='filename'):
-        self.CSVData=pd.read_csv(filename,delimiter=';').set_index(['loop', 'frequency'])
-    def __GetNearestData(self,loop,freq):
-        freqs=self.CSVData.loc[loop].index.values
-        frqIDX=abs(freqs-freq).argmin()
-        Nearestfreq=freqs[frqIDX]
-        return self.CSVData.loc[loop,Nearestfreq]
+    def __init__(self, typ="hf_ref", filename="filename"):
+        self.CSVData = pd.read_csv(filename, delimiter=";").set_index(
+            ["loop", "frequency"]
+        )
+
+    def __GetNearestData(self, loop, freq):
+        freqs = self.CSVData.loc[loop].index.values
+        frqIDX = abs(freqs - freq).argmin()
+        Nearestfreq = freqs[frqIDX]
+        return self.CSVData.loc[loop, Nearestfreq]
+
     def __getitem__(self, key):
-        if len(key)==2:
-            return self.__GetNearestData(key[0],key[1])
-        if len(key)==3:
-            return self.__GetNearestData(key[0],key[1])[key[2]]
+        if len(key) == 2:
+            return self.__GetNearestData(key[0], key[1])
+        if len(key) == 3:
+            return self.__GetNearestData(key[0], key[1])[key[2]]
 
 
 class CalTimeSeries:
@@ -58,7 +63,7 @@ class CalTimeSeries:
             "timeCalculated": False,
             "FFTCalculated": False,
             "BlockPushed": 0,
-            "SineFitCalculated": [False, False, False, False]
+            "SineFitCalculated": [False, False, False, False],
         }
 
     def pushBlock(self, Datablock):
@@ -124,18 +129,18 @@ class CalTimeSeries:
         self.REFFfftPeakIndex = (
             np.argmax(abs(self.FFTData[1:fftPeakindexiposfreq, 3])) + 1
         )
-        #print(self.REFFfftPeakIndex)
+        # print(self.REFFfftPeakIndex)
         # +1 is needed sice we use relative index in the array passed to np.argmax
         # ingnore dc idx>0 only positive freqs idx<int(length/2)
-        #print("Max peak at axis 3 has index " + str(self.REFFfftPeakIndex))
+        # print("Max peak at axis 3 has index " + str(self.REFFfftPeakIndex))
         self.FFTFreqPeak = self.fftFreqs[self.REFFfftPeakIndex]
         # für OW der index wird richtig berechnent
         self.FFTAmplitudePeak = abs(self.FFTData[self.REFFfftPeakIndex, :])
         self.FFTPhiPeak = np.angle(self.FFTData[self.REFFfftPeakIndex, :])
         # für OW diese atribute haben ikorrekte werte
-        #print("Found Peak at " + str(self.FFTFreqPeak) + " Hz")
-        #print("Amplidues for all channels are" + str(self.FFTAmplitudePeak))
-        #print("Phase angle for all channels are" + str(self.FFTPhiPeak))
+        # print("Found Peak at " + str(self.FFTFreqPeak) + " Hz")
+        # print("Amplidues for all channels are" + str(self.FFTAmplitudePeak))
+        # print("Phase angle for all channels are" + str(self.FFTPhiPeak))
 
     def PlotFFT(self):
         """
@@ -160,7 +165,7 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self, EndCutOut, Methode="ST4SEQ",SimulateTimingErrors=False):
+    def SinFit(self, EndCutOut, Methode="ST4SEQ", SimulateTimingErrors=False):
         """
         
 
@@ -176,21 +181,21 @@ class CalTimeSeries:
         None.
 
         """
-        if SimulateTimingErrors=='1000Hz':
+        if SimulateTimingErrors == "1000Hz":
             print("WARNING SIMULATING TIMING ERROR 100Hz")
-            starttime=self.Data[0, 4]
-            self.Data[:,4]=np.arange(self.Data.shape[0])*1e-3+starttime
+            starttime = self.Data[0, 4]
+            self.Data[:, 4] = np.arange(self.Data.shape[0]) * 1e-3 + starttime
 
-        if SimulateTimingErrors=='constdist':
+        if SimulateTimingErrors == "constdist":
             print("WARNING SIMULATING TIMING ERROR CONST dist")
-            starttime=self.Data[0, 4]
-            endtime=self.Data[-1, 4]
-            deltaT=endtime-starttime
-            step=deltaT/(self.Data.shape[0]-1)
-            self.Data[:,4]=np.arange(self.Data.shape[0])*step+starttime
+            starttime = self.Data[0, 4]
+            endtime = self.Data[-1, 4]
+            deltaT = endtime - starttime
+            step = deltaT / (self.Data.shape[0] - 1)
+            self.Data[:, 4] = np.arange(self.Data.shape[0]) * step + starttime
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
-        #self.poptRaw=[None,None,None,None]
+        # self.poptRaw=[None,None,None,None]
         self.sinFitEndCutOut = EndCutOut
         if not (self.flags["FFTCalculated"]):  # recusive calling
             self.CalcFFT()
@@ -220,46 +225,55 @@ class CalTimeSeries:
                 except RuntimeError as ErrorCode:
                     print("Runtime Error:" + str(ErrorCode))
                     self.flags["SineFitCalculated"][i] = False
-                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
             if Methode == "ST4":
-                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 try:
                     tmpparams = st.fourparsinefit(
-                    self.Data[:-EndCutOut, i],
-                    self.Data[:-EndCutOut, 4],
-                    self.FFTFreqPeak
-                )
+                        self.Data[:-EndCutOut, i],
+                        self.Data[:-EndCutOut, 4],
+                        self.FFTFreqPeak,
+                    )
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
-                    tmpparams=[0,0,0,0]
+                    tmpparams = [0, 0, 0, 0]
                 Complex = tmpparams[1] + 1j * tmpparams[0]
                 DC = tmpparams[2]
                 Freq = tmpparams[3]
                 self.popt[i] = [abs(Complex), DC, Freq, np.angle(Complex)]
             if Methode == "ST4SEQ":
-                #print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 try:
                     tmpparams = st.seq_fourparsinefit(
-                    self.Data[:-EndCutOut, i],
-                    self.Data[:-EndCutOut, 4],
-                    self.FFTFreqPeak,
-                    tol=1.0e-7,
-                    nmax=1000,
-                    periods=50
-                )
+                        self.Data[:-EndCutOut, i],
+                        self.Data[:-EndCutOut, 4],
+                        self.FFTFreqPeak,
+                        tol=1.0e-7,
+                        nmax=1000,
+                        periods=50,
+                    )
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
-                    tmpparams=np.zeros((4,4))
-                Complex = tmpparams[:,1] + 1j * tmpparams[:,0]
-                DC = tmpparams[:,2]
-                Freq = tmpparams[:,3]
-                self.popt[i] = [np.mean(abs(Complex)), np.mean(DC), np.mean(Freq), np.mean(np.unwrap(np.angle(Complex)))]
-                #np.fill_diagonal(self.pcov[i],tmpParamsSTD)
-                #self.poptRaw[i]=CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
-                CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
-                self.pcov[i]=np.cov(CoVarData,bias=True)#bias=True Nomation With N like np.std
+                    tmpparams = np.zeros((4, 4))
+                Complex = tmpparams[:, 1] + 1j * tmpparams[:, 0]
+                DC = tmpparams[:, 2]
+                Freq = tmpparams[:, 3]
+                self.popt[i] = [
+                    np.mean(abs(Complex)),
+                    np.mean(DC),
+                    np.mean(Freq),
+                    np.mean(np.unwrap(np.angle(Complex))),
+                ]
+                # np.fill_diagonal(self.pcov[i],tmpParamsSTD)
+                # self.poptRaw[i]=CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
+                CoVarData = np.stack(
+                    (abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0
+                )
+                self.pcov[i] = np.cov(
+                    CoVarData, bias=True
+                )  # bias=True Nomation With N like np.std
 
         self.flags["SineFitCalculated"] = True
 
@@ -344,7 +358,7 @@ class Databuffer:
             "AllSinFitCalculated": False,
             "AllFFTCalculated": False,
             "RefTransFunctionSet": False,
-            "ADCTFSet":False
+            "ADCTFSet": False,
         }
         self.DataLoopBuffer = np.zeros([self.params["IntegrationLength"], 5])
         self.i = 0
@@ -385,12 +399,12 @@ class Databuffer:
 
         """
         if self.i < self.params["IntegrationLength"]:
-            self.DataLoopBuffer[self.i]=[x,y,z,REF,t]
-            #self.DataLoopBuffer[self.i, 0] = x
-            #self.DataLoopBuffer[self.i, 1] = y
-            #self.DataLoopBuffer[self.i, 2] = z
-            #self.DataLoopBuffer[self.i, 3] = REF
-            #self.DataLoopBuffer[self.i, 4] = t
+            self.DataLoopBuffer[self.i] = [x, y, z, REF, t]
+            # self.DataLoopBuffer[self.i, 0] = x
+            # self.DataLoopBuffer[self.i, 1] = y
+            # self.DataLoopBuffer[self.i, 2] = z
+            # self.DataLoopBuffer[self.i, 3] = REF
+            # self.DataLoopBuffer[self.i, 4] = t
             self.i = self.i + 1
             if self.i == self.params["IntegrationLength"]:
                 self.calc()
@@ -490,53 +504,58 @@ class Databuffer:
             item.CalcFFT()
         self.flags["AllFFTCalculated"] = True
 
-    def setRefTransferFunction(self, transferCSV,typ='ref_hf'):
-        tmptype=typ
-        self.RefTransferFunction = ReferencTransferFunction(typ=tmptype,filename=transferCSV)
+    def setRefTransferFunction(self, transferCSV, typ="ref_hf"):
+        tmptype = typ
+        self.RefTransferFunction = ReferencTransferFunction(
+            typ=tmptype, filename=transferCSV
+        )
         self.flags["RefTransFunctionSet"] = True
         self.flags["RefGroupDelaySet"] = False
 
-    def setRefADCTF(self,CaldataFileList,ADCChannel='ADC1'):
-        self.ADCTF =ADCCal(None,None,None,None,Filenames=CaldataFileList)
+    def setRefADCTF(self, CaldataFileList, ADCChannel="ADC1"):
+        self.ADCTF = ADCCal(None, None, None, None, Filenames=CaldataFileList)
         self.flags["ADCTFSet"] = True
-        self.ADCChannel=ADCChannel
+        self.ADCChannel = ADCChannel
 
-    def getADCPhase(self,freq):
+    def getADCPhase(self, freq):
         if self.flags["ADCTFSet"] == False:
             print("WARN!!!! ADC TF NOT SET USEFOR DEBUGGING ONLY")
-            return 0,0
+            return 0, 0
         else:
-            Freqpoint=self.ADCTF[self.ADCChannel,freq]
-            return Freqpoint['Phase'],Freqpoint['PhaseUncer']
+            Freqpoint = self.ADCTF[self.ADCChannel, freq]
+            return Freqpoint["Phase"], Freqpoint["PhaseUncer"]
 
-    def setRefGroupDelay(self,GropuDelay):
+    def setRefGroupDelay(self, GropuDelay):
         # TODO improve selection between Ref Freq an group delay
         self.flags["RefTransFunctionSet"] = False
         self.flags["RefGroupDelaySet"] = True
-        self.params["RefGroupDelay"]=GropuDelay
+        self.params["RefGroupDelay"] = GropuDelay
 
-    def getNearestReFTPoint(self, freq,loop=0):
+    def getNearestReFTPoint(self, freq, loop=0):
         if self.flags["RefTransFunctionSet"] == True:
-            if not self.flags['RefGroupDelaySet']:
+            if not self.flags["RefGroupDelaySet"]:
                 return (
-                        self.RefTransferFunction[loop,freq,'acceleration'],
-                        self.RefTransferFunction[loop,freq,'acceleration_std'],
-                        self.RefTransferFunction[loop,freq,'phase']/180*np.pi,
-                        self.RefTransferFunction[loop,freq,'phase_std']/180*np.pi,
-
-                        )
+                    self.RefTransferFunction[loop, freq, "acceleration"],
+                    self.RefTransferFunction[loop, freq, "acceleration_std"],
+                    self.RefTransferFunction[loop, freq, "phase"] / 180 * np.pi,
+                    self.RefTransferFunction[loop, freq, "phase_std"] / 180 * np.pi,
+                )
             else:
-                #print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
+                # print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
                 return (
-                        1,#Asume Amplitude as One
-                        0,# No amplitude Error asumed
-                        freq*self.params["RefGroupDelay"]*2*np.pi*-1,#-1 because we are seeing this aus transferfunction of the Ref Mesurment
-                                                                    # so an positiv grouddelay results in in linear increasing negative phase
-                        0)# No Phase Error asumed
+                    1,  # Asume Amplitude as One
+                    0,  # No amplitude Error asumed
+                    freq
+                    * self.params["RefGroupDelay"]
+                    * 2
+                    * np.pi
+                    * -1,  # -1 because we are seeing this aus transferfunction of the Ref Mesurment
+                    # so an positiv grouddelay results in in linear increasing negative phase
+                    0,
+                )  # No Phase Error asumed
         else:
             raise RuntimeWarning("REFTransferFunction NOT SET RETURNING 0,0")
-            return(1,0,0,0)
-
+            return (1, 0, 0, 0)
 
     def getTransferFunction(
         self, axisDUT, AxisRef=3, RefScalefactor=1, RefPhaseDC=-np.pi
@@ -549,42 +568,50 @@ class Databuffer:
             self.DoAllSinFit(self.params["defaultEndCutOut"])
         self.TransferFreqs = np.zeros(len(self.CalData))
         self.TransferAmpl = np.zeros(len(self.CalData))
-        self.TransferAmplErr= np.zeros(len(self.CalData))
+        self.TransferAmplErr = np.zeros(len(self.CalData))
         self.TransferPhase = np.zeros(len(self.CalData))
         self.TransferPhaseErr = np.zeros(len(self.CalData))
         self.TransferRunCount = np.zeros(len(self.CalData))
-        i = 0 #number of packets processed
-        Runcount = 0 #number of loops processed so far loop is an series of rising frequencys
-        #todo remove this block and implement get RefPhasefunction
+        i = 0  # number of packets processed
+        Runcount = (
+            0  # number of loops processed so far loop is an series of rising frequencys
+        )
+        # todo remove this block and implement get RefPhasefunction
         for item in self.CalData:
-            Freq=self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
-            RefData=self.getNearestReFTPoint(Freq,loop=self.TransferRunCount[i])
-            AmplTF =RefData[0]
-            AmplTFErr =RefData[1]
-            PhaseTF =RefData[2]
+            Freq = self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
+            RefData = self.getNearestReFTPoint(Freq, loop=self.TransferRunCount[i])
+            AmplTF = RefData[0]
+            AmplTFErr = RefData[1]
+            PhaseTF = RefData[2]
             PhaseTFErr = RefData[3]
-            self.TransferAmpl[i]=self.CalData[i].popt[axisDUT, 0]/AmplTF
-            TransferPhasetmp = (self.CalData[i].popt[axisDUT, 3]-self.CalData[i].popt[AxisRef, 3])
-            ADCPhase,ADCPhaseErr=self.getADCPhase(Freq)
-            self.TransferPhase[i] = TransferPhasetmp - PhaseTF+ADCPhase+RefPhaseDC
+            self.TransferAmpl[i] = self.CalData[i].popt[axisDUT, 0] / AmplTF
+            TransferPhasetmp = (
+                self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
+            )
+            ADCPhase, ADCPhaseErr = self.getADCPhase(Freq)
+            self.TransferPhase[i] = TransferPhasetmp - PhaseTF + ADCPhase + RefPhaseDC
 
-            #TODO IMPLEMNT REAL UNCER CALCULATION THIS IS JUST FOR DEBUGGING
-            self.TransferAmplErr[i]=np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0,0]))/AmplTF
-            #detect run count based on frequency drop to do right unwraping
-            self.TransferRunCount[i]=Runcount
-            #print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
-            if(i>0):
-                if self.TransferFreqs[i]*1.01<self.TransferFreqs[i-1]:#multiply with 1.01 in case of same freqs
-                    #ok the freq now is smaller the the last freq we have enterd a new loop
-                    Runcount=Runcount+1
-                    self.TransferRunCount[i]=Runcount
+            # TODO IMPLEMNT REAL UNCER CALCULATION THIS IS JUST FOR DEBUGGING
+            self.TransferAmplErr[i] = (
+                np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0, 0])) / AmplTF
+            )
+            # detect run count based on frequency drop to do right unwraping
+            self.TransferRunCount[i] = Runcount
+            # print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
+            if i > 0:
+                if (
+                    self.TransferFreqs[i] * 1.01 < self.TransferFreqs[i - 1]
+                ):  # multiply with 1.01 in case of same freqs
+                    # ok the freq now is smaller the the last freq we have enterd a new loop
+                    Runcount = Runcount + 1
+                    self.TransferRunCount[i] = Runcount
             i = i + 1
-        for run in range(Runcount+1):
-            runIDX=self.TransferRunCount==run
-            transferfunctionunwraped=np.unwrap(DB1.TransferPhase[runIDX])
-            if all (transferfunctionunwraped<=(-2*np.pi)):
-                transferfunctionunwraped=transferfunctionunwraped+2*np.pi
-            self.TransferPhase[runIDX]=transferfunctionunwraped
+        for run in range(Runcount + 1):
+            runIDX = self.TransferRunCount == run
+            transferfunctionunwraped = np.unwrap(DB1.TransferPhase[runIDX])
+            if all(transferfunctionunwraped <= (-2 * np.pi)):
+                transferfunctionunwraped = transferfunctionunwraped + 2 * np.pi
+            self.TransferPhase[runIDX] = transferfunctionunwraped
         # TODO implement bettwer way vor unwraping and function for data set labeling
         # self.TransferPhase = np.unwrap(self.TransferPhase)
 
@@ -596,21 +623,39 @@ class Databuffer:
         fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
-        for run in range(int(np.max(self.TransferRunCount))+1):
-            runIDX=self.TransferRunCount==run
-            ax1.errorbar(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX],yerr=self.TransferAmplErr[runIDX],fmt=".", markersize=20,label=str(run))
+        for run in range(int(np.max(self.TransferRunCount)) + 1):
+            runIDX = self.TransferRunCount == run
+            ax1.errorbar(
+                self.TransferFreqs[runIDX],
+                self.TransferAmpl[runIDX],
+                yerr=self.TransferAmplErr[runIDX],
+                fmt=".",
+                markersize=20,
+                label=str(run),
+            )
             ax2.plot(
-                self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
+                self.TransferFreqs[runIDX],
+                self.TransferPhase[runIDX] / np.pi * 180,
+                ".",
+                markersize=20,
+                label=str(run),
             )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
-        ax1.legend(numpoints=1, fontsize=8,ncol=3)
-        ax2.legend(numpoints=1, fontsize=8,ncol=3)
+        ax1.legend(numpoints=1, fontsize=8, ncol=3)
+        ax2.legend(numpoints=1, fontsize=8, ncol=3)
         plt.show()
 
     def PrintTransferParams(self):
-        self.TransferParams=pd.DataFrame({'Freq':self.TransferFreqs,'Ampl':self.TransferAmpl,'Phase Deg':self.TransferPhase / np.pi * 180,'Phase Rad':self.TransferPhase})
+        self.TransferParams = pd.DataFrame(
+            {
+                "Freq": self.TransferFreqs,
+                "Ampl": self.TransferAmpl,
+                "Phase Deg": self.TransferPhase / np.pi * 180,
+                "Phase Rad": self.TransferPhase,
+            }
+        )
         return self.TransferParams
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0):
@@ -805,7 +850,7 @@ def DataReaderROS(RosCSVFilename):
 
 
 def DataReaderPROTOdump(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False)
+    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";", index_col=False)
     print(sdf.columns.values)
     chunkSize = DB1.params["IntegrationLength"]
     for Index in np.arange(0, len(sdf), chunkSize)[
@@ -815,117 +860,132 @@ def DataReaderPROTOdump(ProtoCSVFilename):
             sdf["Data_01"][Index : Index + chunkSize],
             sdf["Data_02"][Index : Index + chunkSize],
             sdf["Data_03"][Index : Index + chunkSize],
-            sdf["Data_11"][Index : Index + chunkSize]*10,
+            sdf["Data_11"][Index : Index + chunkSize] * 10,
             (sdf["unix_time"][Index : Index + chunkSize])
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
 
 def DataReaderGYROdump(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";",index_col=False,skiprows=1)
+    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";", index_col=False, skiprows=1)
     print(sdf.columns.values)
     chunkSize = DB1.params["IntegrationLength"]
     for Index in np.arange(0, len(sdf), chunkSize)[
         :-1
     ]:  # don't use last chuck since this will propably not have chnukSize elements
         DB1.pushBlock(
-            sdf["GYR_x"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["GYR_y"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["GYR_z"][Index : Index + chunkSize]*(180/np.pi),
-            sdf["ADC_1"][Index : Index + chunkSize]*100,
+            sdf["GYR_x"][Index : Index + chunkSize] * (180 / np.pi),
+            sdf["GYR_y"][Index : Index + chunkSize] * (180 / np.pi),
+            sdf["GYR_z"][Index : Index + chunkSize] * (180 / np.pi),
+            sdf["ADC_1"][Index : Index + chunkSize] * 100,
             (sdf["unix_time"][Index : Index + chunkSize])
             + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
         )
 
-def DataReaderGYROdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
-    reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
+
+def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
+    reader = csv.reader(open(ProtoCSVFilename), delimiter=";")
     print("reading first to rows")
     print(next(reader))
     print(next(reader))
-    #we sacrifice a line to set the start time stamp
-    line=next(reader)
-    startsec=float(line[2])
-    i=0
-    if(i==0):
-        linestoread=Databuffer.params["IntegrationLength"]*Databuffer.params["MaxChunks"]
-    #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
-    while i<linestoread:
-        #['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+    # we sacrifice a line to set the start time stamp
+    line = next(reader)
+    startsec = float(line[2])
+    i = 0
+    if i == 0:
+        linestoread = (
+            Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
+        )
+    # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
+    while i < linestoread:
+        # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
         try:
-            line=next(reader)
-            time=float(line[2])-startsec+(float(line[3])*1e-9)
-            #pushData(self, x, y, z, REF, t)
-            Databuffer.pushData(float(line[8])*(180/np.pi),
-                                float(line[9])*(180/np.pi),
-                                float(line[10])*(180/np.pi),
-                                float(line[15])*100,
-                                time)
-            i=i+1
+            line = next(reader)
+            time = float(line[2]) - startsec + (float(line[3]) * 1e-9)
+            # pushData(self, x, y, z, REF, t)
+            Databuffer.pushData(
+                float(line[8]) * (180 / np.pi),
+                float(line[9]) * (180 / np.pi),
+                float(line[10]) * (180 / np.pi),
+                float(line[15]) * 100,
+                time,
+            )
+            i = i + 1
         except Exception as e:
             print(e)
             break
-    print(str(i)+" Lines read Data Parsing finsihed")
+    print(str(i) + " Lines read Data Parsing finsihed")
     return
 
-def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
-    chunksize=Databuffer.params["IntegrationLength"]
-    reader = csv.reader(open(ProtoCSVFilename),delimiter=';')
+
+def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
+    chunksize = Databuffer.params["IntegrationLength"]
+    reader = csv.reader(open(ProtoCSVFilename), delimiter=";")
     print("reading first to rows")
     print(next(reader))
     print(next(reader))
-    #we sacrifice a line to set the start time stamp
-    line=next(reader)
-    startsec=float(line[2])
-    j=0
-    i=0
-    x=np.zeros(chunksize)
-    y=np.zeros(chunksize)
-    z=np.zeros(chunksize)
-    REF=np.zeros(chunksize)
-    t=np.zeros(chunksize)
+    # we sacrifice a line to set the start time stamp
+    line = next(reader)
+    startsec = float(line[2])
+    j = 0
+    i = 0
+    x = np.zeros(chunksize)
+    y = np.zeros(chunksize)
+    z = np.zeros(chunksize)
+    REF = np.zeros(chunksize)
+    t = np.zeros(chunksize)
 
-    if(i==0):
-        linestoread=Databuffer.params["IntegrationLength"]*Databuffer.params["MaxChunks"]
-    #TODO add "static" var for first time stamp to have relative times to avoid quantisation error
-    while i<linestoread:
-        #['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+    if i == 0:
+        linestoread = (
+            Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
+        )
+    # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
+    while i < linestoread:
+        # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
         #  0      1                2               3                    4               5           6          7         8          9         10
         try:
-            line=next(reader)
-            time=float(line[2])-startsec+(float(line[3])*1e-9)
-            #pushData(self, x, y, z, REF, t)
-            if(j<chunksize):
-                x[j]=float(line[5])
-                y[j]=float(line[6])
-                z[j]=float(line[7])
-                REF[j]=float(line[15])*100
-                t[j]=time
-                j=j+1
-            if(j==chunksize):
-                Databuffer.pushBlock(x,y,z,REF,t)
-                j=0
-                x=np.zeros(chunksize)
-                y=np.zeros(chunksize)
-                z=np.zeros(chunksize)
-                REF=np.zeros(chunksize)
-                t=np.zeros(chunksize)
-                x[j]=float(line[5])
-                y[j]=float(line[6])
-                z[j]=float(line[7])
-                REF[j]=float(line[15])*100.0
-                t[j]=time
-                j=j+1
+            line = next(reader)
+            time = float(line[2]) - startsec + (float(line[3]) * 1e-9)
+            # pushData(self, x, y, z, REF, t)
+            if j < chunksize:
+                x[j] = float(line[5])
+                y[j] = float(line[6])
+                z[j] = float(line[7])
+                REF[j] = float(line[15]) * 100
+                t[j] = time
+                j = j + 1
+            if j == chunksize:
+                Databuffer.pushBlock(x, y, z, REF, t)
+                j = 0
+                x = np.zeros(chunksize)
+                y = np.zeros(chunksize)
+                z = np.zeros(chunksize)
+                REF = np.zeros(chunksize)
+                t = np.zeros(chunksize)
+                x[j] = float(line[5])
+                y[j] = float(line[6])
+                z[j] = float(line[7])
+                REF[j] = float(line[15]) * 100.0
+                t[j] = time
+                j = j + 1
             # Databuffer.pushData(float(line[5]),
             #                     float(line[6]),
             #                     float(line[7]),
             #                     float(line[15])*100,
             #                     time)
-            i=i+1
+            i = i + 1
         except Exception as e:
             print(e)
             break
-    print(str(i)+"for a max of "+str(linestoread)+" Lines read Data Parsing finsihed")
+    print(
+        str(i)
+        + "for a max of "
+        + str(linestoread)
+        + " Lines read Data Parsing finsihed"
+    )
     return
+
+
 # Column Names
 # 'id'
 # 'sample_number'
@@ -952,8 +1012,16 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
 if __name__ == "__main__":
     start_time = time.time()
     DB1 = Databuffer()
-    DB1.setRefADCTF(['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'],ADCChannel='ADC1')
-    DB1.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv")
+    DB1.setRefADCTF(
+        [
+            "cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json",
+            "cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json",
+        ],
+        ADCChannel="ADC1",
+    )
+    DB1.setRefTransferFunction(
+        "D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv"
+    )
     # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
     # DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
@@ -968,25 +1036,27 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
-    DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump")
+    DataReaderACCdumpLARGE(
+        DB1,
+        "D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump",
+    )
     # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
 
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(2,RefPhaseDC=-np.pi)
+    DB1.getTransferFunction(2, RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     print("--- %s seconds ---" % (time.time() - start_time))
-    #fstats=yappi.get_func_stats()
-    #fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
-    #DB2 = Databuffer()
-    #DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-    #DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
+    # fstats=yappi.get_func_stats()
+    # fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
+    # DB2 = Databuffer()
+    # DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
+    # DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
     # reading data from file and proces all Data
-    #DB2.DoAllFFT()
-    #DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
-    #DB2.PlotTransferFunction()
-    #DB2.PlotTransferFunction(PlotType="logx")
-
+    # DB2.DoAllFFT()
+    # DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
+    # DB2.PlotTransferFunction()
+    # DB2.PlotTransferFunction(PlotType="logx")
 
     # callculate all the ffts
