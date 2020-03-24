@@ -20,6 +20,8 @@ import timeit
 from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
 import time
 
+from uncertainties import ufloat
+
 
 # from termcolor import colored
 # plt.rcParams.update({"font.size": 30})
@@ -558,7 +560,7 @@ class Databuffer:
             return (1, 0, 0, 0)
 
     def getTransferCoevs(
-        self, axisDUT, AxisRef=3, RefScalefactor=1, RefPhaseDC=-np.pi
+        self, axisDUT, AxisRef=3, RefPhaseDC=-np.pi
     ):
         if not self.flags["AllSinFitCalculated"]:
             print(
@@ -576,7 +578,6 @@ class Databuffer:
         Runcount = (
             0  # number of loops processed so far loop is an series of rising frequencys
         )
-        # todo remove this block and implement get RefPhasefunction
         for item in self.CalData:
             Freq = self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
             RefData = self.getNearestReFTPoint(Freq, loop=self.TransferRunCount[i])
@@ -586,18 +587,16 @@ class Databuffer:
             PhaseTFErr = RefData[3]*2# 2* for 95% coverage
             DUTFit=self.CalData[i].popt[axisDUT, 0]
             DUTFitErr=np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0, 0]))*2 # 2* for 95% coverage
-
             # S=DUT/REF
-            self.TransferAmpl[i] =  DUTFit/ AmplTF
+            self.TransferAmpl[i] =DUTFit/AmplTF
             # A/B da-->1/B
             COEV1=(1/AmplTF*DUTFitErr)
             # A/B db -->-A/B^2
-            COEV2=(-1*DUTFit/(AmplTF*AmplTF)*DUTFitErr)
+            COEV2=(-1*DUTFit/(AmplTF*AmplTF)*AmplTFErr)
             self.TransferAmplErr[i] = np.sqrt(
                 COEV1*COEV1+
                 COEV2*COEV2
             )
-
             TransferPhasetmp = (
                 self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
             )
@@ -626,8 +625,48 @@ class Databuffer:
             if all(transferfunctionunwraped <= (-2 * np.pi)):
                 transferfunctionunwraped = transferfunctionunwraped + 2 * np.pi
             self.TransferPhase[runIDX] = transferfunctionunwraped
-        # TODO implement bettwer way vor unwraping and function for data set labeling
-        # self.TransferPhase = np.unwrap(self.TransferPhase)
+
+    def GetTransferFunction(self,axisDUT, AxisRef=3, RefPhaseDC=-np.pi):
+        self.getTransferCoevs(axisDUT, AxisRef=AxisRef, RefPhaseDC=RefPhaseDC)
+        nominalFreqs=[]
+        for freqs in self.TransferFreqs:
+            if np.rint(freqs*10)/10 in nominalFreqs:# *10/10 for x.1 digit fixpoint resolution
+                pass
+            else:
+                nominalFreqs.append(np.rint(freqs*10)/10)# *10/10 for x.1 digit fixpoint resolution
+        FreqNum=len(nominalFreqs)
+        self.Transferfunction={'Frequencys':np.array(nominalFreqs),
+                          'AmplitudeCoefficent':np.zeros(FreqNum),
+                          'AmplitudeCoefficentUncer':np.zeros(FreqNum),
+                          'Phase':np.zeros(FreqNum),
+                          'PhaseUncer':np.zeros(FreqNum),
+                          'N':np.zeros(FreqNum)}
+        roundedFreqs=np.rint(self.TransferFreqs*10)/10
+        for i in range(len(nominalFreqs)):
+            IDX=np.where(roundedFreqs==nominalFreqs[i])
+            N=len(IDX)
+            TMPAmplitudes=self.TransferAmpl[IDX]
+            TMPAmplitudesErr = self.TransferAmplErr[IDX]
+            Amps=[None] * N
+            for j in range(N):
+                Amps[j]=ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
+            Amps = np.array(Amps)
+            amp=Amps.sum()
+            amp=amp/ufloat(1, 0)
+            TMPPhases=self.TransferPhase[IDX]
+            TMPPhasesErr=self.TransferPhaseErr[IDX]
+            Phases = [None] * N
+            for j in range(N):
+                Phases[j] = ufloat(TMPPhases[j], TMPPhasesErr[j])
+            Phases=np.array(Phases)
+            phase=Phases.sum()
+            phase=phase/ufloat(1,0)
+            self.Transferfunction['AmplitudeCoefficent'][i]=amp.nominal_value
+            self.Transferfunction['AmplitudeCoefficentUncer'][i]=amp.std_dev
+            self.Transferfunction['Phase'][i]= phase.nominal_value
+            self.Transferfunction['PhaseUncer'][i] = phase.std_dev
+            self.Transferfunction['N'][i] = len(IDX)
+        return self.Transferfunction
 
     def PlotTransferFunction(self, PlotType="lin"):
         fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -647,6 +686,14 @@ class Databuffer:
                 markersize=20,
                 label=str(run),
             )
+            ax1.errorbar(
+                self.Transferfunction['Frequencys'],
+                self.Transferfunction['AmplitudeCoefficent'],
+                yerr=self.Transferfunction['AmplitudeCoefficentUncer'],
+                fmt='s',
+                markersize=5,
+                label='Mean',
+            )
             ax2.errorbar(
                 self.TransferFreqs[runIDX],
                 self.TransferPhase[runIDX] / np.pi * 180,
@@ -654,6 +701,14 @@ class Databuffer:
                 fmt=".",
                 markersize=20,
                 label=str(run),
+            )
+            ax2.errorbar(
+                self.Transferfunction['Frequencys'],
+                self.Transferfunction['Phase'],
+                yerr=self.Transferfunction['PhaseUncer'],
+                fmt='s',
+                markersize=5,
+                label='Mean',
             )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
@@ -663,15 +718,19 @@ class Databuffer:
         plt.show()
 
     def PrintTransferParams(self):
-        self.TransferParams = pd.DataFrame(
+        PDTransferParams = pd.DataFrame(
             {
                 "Freq": self.TransferFreqs,
                 "Ampl": self.TransferAmpl,
+                "AmplErr": self.TransferAmplErr,
                 "Phase Deg": self.TransferPhase / np.pi * 180,
+                "Phase Deg Err": self.TransferPhaseErr / np.pi * 180,
                 "Phase Rad": self.TransferPhase,
+                "Phase Rad Err": self.TransferPhase,
             }
         )
-        return self.TransferParams
+        print(PDTransferParams)
+        return PDTransferParams
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0):
         fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -778,107 +837,6 @@ class Databuffer:
         ax1.legend()
         ax1.grid(True)
         plt.show()
-
-
-def callback(data):
-    print(data)
-    DB1.pushData(
-        data.linear_acceleration.x,
-        data.linear_acceleration.y,
-        data.linear_acceleration.z,
-        0,
-        data.header.stamp / 1e9,
-    )
-    return
-
-
-# def listener():
-# In ROS, nodes are uniquely named. If two nodes with the same
-# name are launched, the previous one is kicked off. The
-# anonymous=True flag means that rospy will choose a unique
-# name for our 'listener' node so that multiple listeners can
-# run simultaneously.
-# rospy.init_node('listener', anonymous=True)
-
-# rospy.Subscriber("IMU0", Imu, callback)
-# rospy.Subscriber("IMU1", Imu, callback)
-# spin() simply keeps python from exiting until this node is stopped
-# rospy.spin()
-
-
-def DataReaderROS(RosCSVFilename):
-    sdf = pd.read_csv(RosCSVFilename)
-    print(sdf.columns.values)
-    chunkSize = DB1.params["IntegrationLength"]
-    for Index in np.arange(0, len(sdf), chunkSize):
-        DB1.pushBlock(
-            sdf["field.linear_acceleration.x"][Index : Index + chunkSize],
-            sdf["field.linear_acceleration.y"][Index : Index + chunkSize],
-            sdf["field.linear_acceleration.z"][Index : Index + chunkSize],
-            0,
-            sdf["field.header.stamp"][Index : Index + chunkSize] / 1e9,
-        )
-
-
-# Column Names
-#        'time',
-#        'field.header.seq',
-#        'field.header.stamp',
-#        'field.header.frame_id',
-#        'field.orientation.x',
-#        'field.orientation.y',
-#        'field.orientation.z',
-#        'field.orientation.w',
-#        'field.orientation_covariance0',
-#        'field.orientation_covariance1',
-#        'field.orientation_covariance2',
-#        'field.orientation_covariance3',
-#        'field.orientation_covariance4',
-#        'field.orientation_covariance5',
-#        'field.orientation_covariance6',
-#        'field.orientation_covariance7',
-#        'field.orientation_covariance8',
-#        'field.angular_velocity.x',
-#        'field.angular_velocity.y',
-#        'field.angular_velocity.z',
-#        'field.angular_velocity_covariance0',
-#        'field.angular_velocity_covariance1',
-#        'field.angular_velocity_covariance2',
-#        'field.angular_velocity_covariance3',
-#        'field.angular_velocity_covariance4',
-#        'field.angular_velocity_covariance5',
-#        'field.angular_velocity_covariance6',
-#        'field.angular_velocity_covariance7',
-#        'field.angular_velocity_covariance8',
-#        'field.linear_acceleration.x',
-#        'field.linear_acceleration.y',
-#        'field.linear_acceleration.z',
-#        'field.linear_acceleration_covariance0',
-#        'field.linear_acceleration_covariance1',
-#        'field.linear_acceleration_covariance2',
-#        'field.linear_acceleration_covariance3',
-#        'field.linear_acceleration_covariance4',
-#        'field.linear_acceleration_covariance5',
-#        'field.linear_acceleration_covariance6',
-#        'field.linear_acceleration_covariance7',
-#        'field.linear_acceleration_covariance8'
-
-
-def DataReaderPROTOdump(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";", index_col=False)
-    print(sdf.columns.values)
-    chunkSize = DB1.params["IntegrationLength"]
-    for Index in np.arange(0, len(sdf), chunkSize)[
-        :-1
-    ]:  # don't use last chuck since this will propably not have chnukSize elements
-        DB1.pushBlock(
-            sdf["Data_01"][Index : Index + chunkSize],
-            sdf["Data_02"][Index : Index + chunkSize],
-            sdf["Data_03"][Index : Index + chunkSize],
-            sdf["Data_11"][Index : Index + chunkSize] * 10,
-            (sdf["unix_time"][Index : Index + chunkSize])
-            + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
-        )
 
 
 def DataReaderGYROdump(ProtoCSVFilename):
@@ -1060,6 +1018,7 @@ if __name__ == "__main__":
     # reading data from file and proces all Data
     DB1.DoAllFFT()
     DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
+    DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     print("--- %s seconds ---" % (time.time() - start_time))
