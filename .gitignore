@@ -26,3 +26,5 @@ Debug/
 st-link\.cfg
 
 tools/linux_tty_lister\.sh
+
+tools/venv/
