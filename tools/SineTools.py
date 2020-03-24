@@ -11,7 +11,6 @@ import scipy as sp
 from scipy import linalg as la
 import matplotlib.pyplot as mp
 
-
 def sampletimes(Fs, T):  #
     """
     generate a t_i vector with \n

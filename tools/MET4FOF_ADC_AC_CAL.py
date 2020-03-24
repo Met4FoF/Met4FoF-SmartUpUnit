@@ -379,7 +379,3 @@ if __name__ == "__main__":
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
-
-
-
-CYCL

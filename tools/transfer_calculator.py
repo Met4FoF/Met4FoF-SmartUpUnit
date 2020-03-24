@@ -18,7 +18,6 @@ import SineTools as st
 import csv
 import timeit
 from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
-import yappi
 import time
 
 
@@ -600,7 +599,6 @@ class Databuffer:
         for run in range(int(np.max(self.TransferRunCount))+1):
             runIDX=self.TransferRunCount==run
             ax1.errorbar(self.TransferFreqs[runIDX], self.TransferAmpl[runIDX],yerr=self.TransferAmplErr[runIDX],fmt=".", markersize=20,label=str(run))
-            ax1.errorbar(self.TransferFreqs[runIDX]+0.01, self.TransferAmpl[runIDX],yerr=self.TransferAmplErr2[runIDX],fmt=".", markersize=20,label='STD'+str(run))
             ax2.plot(
                 self.TransferFreqs[runIDX], self.TransferPhase[runIDX] / np.pi * 180, ".", markersize=20,label=str(run)
             )
@@ -917,8 +915,6 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
                 REF[j]=float(line[15])*100.0
                 t[j]=time
                 j=j+1
-
-
             # Databuffer.pushData(float(line[5]),
             #                     float(line[6]),
             #                     float(line[7]),
@@ -954,7 +950,6 @@ def DataReaderACCdumpLARGE(Databuffer,ProtoCSVFilename,linestoread=0):
 # 'stimtype'
 
 if __name__ == "__main__":
-    yappi.start()
     start_time = time.time()
     DB1 = Databuffer()
     DB1.setRefADCTF(['cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json','cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json'],ADCChannel='ADC1')
@@ -982,7 +977,7 @@ if __name__ == "__main__":
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     print("--- %s seconds ---" % (time.time() - start_time))
-    fstats=yappi.get_func_stats()
+    #fstats=yappi.get_func_stats()
     #fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
     #DB2 = Databuffer()
     #DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
