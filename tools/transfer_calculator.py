@@ -557,7 +557,7 @@ class Databuffer:
             raise RuntimeWarning("REFTransferFunction NOT SET RETURNING 0,0")
             return (1, 0, 0, 0)
 
-    def getTransferFunction(
+    def getTransferCoevs(
         self, axisDUT, AxisRef=3, RefScalefactor=1, RefPhaseDC=-np.pi
     ):
         if not self.flags["AllSinFitCalculated"]:
@@ -581,20 +581,34 @@ class Databuffer:
             Freq = self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
             RefData = self.getNearestReFTPoint(Freq, loop=self.TransferRunCount[i])
             AmplTF = RefData[0]
-            AmplTFErr = RefData[1]
+            AmplTFErr = RefData[1]*2# 2* for 95% coverage
             PhaseTF = RefData[2]
-            PhaseTFErr = RefData[3]
-            self.TransferAmpl[i] = self.CalData[i].popt[axisDUT, 0] / AmplTF
+            PhaseTFErr = RefData[3]*2# 2* for 95% coverage
+            DUTFit=self.CalData[i].popt[axisDUT, 0]
+            DUTFitErr=np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0, 0]))*2 # 2* for 95% coverage
+
+            # S=DUT/REF
+            self.TransferAmpl[i] =  DUTFit/ AmplTF
+            # A/B da-->1/B
+            COEV1=(1/AmplTF*DUTFitErr)
+            # A/B db -->-A/B^2
+            COEV2=(-1*DUTFit/(AmplTF*AmplTF)*DUTFitErr)
+            self.TransferAmplErr[i] = np.sqrt(
+                COEV1*COEV1+
+                COEV2*COEV2
+            )
+
             TransferPhasetmp = (
                 self.CalData[i].popt[axisDUT, 3] - self.CalData[i].popt[AxisRef, 3]
             )
+            TransferPhasetmpErr = (self.CalData[i].pcov[AxisRef, 3,3])*2# 2* for 95% coverage
+
             ADCPhase, ADCPhaseErr = self.getADCPhase(Freq)
             self.TransferPhase[i] = TransferPhasetmp - PhaseTF + ADCPhase + RefPhaseDC
-
-            # TODO IMPLEMNT REAL UNCER CALCULATION THIS IS JUST FOR DEBUGGING
-            self.TransferAmplErr[i] = (
-                np.sqrt(abs(self.CalData[i].pcov[axisDUT, 0, 0])) / AmplTF
-            )
+            self.TransferPhaseErr[i]=np.sqrt((TransferPhasetmpErr*TransferPhasetmpErr) #A-B+C+D dA--> 1
+                                             +(PhaseTFErr*PhaseTFErr) #A-B+C+D dB--> -1
+                                             +(ADCPhaseErr*ADCPhaseErr))  #A-B+C+D dC--> 1
+                                            # RefPhaseDC is an constant and has an uncertainty of 0
             # detect run count based on frequency drop to do right unwraping
             self.TransferRunCount[i] = Runcount
             # print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
@@ -633,10 +647,11 @@ class Databuffer:
                 markersize=20,
                 label=str(run),
             )
-            ax2.plot(
+            ax2.errorbar(
                 self.TransferFreqs[runIDX],
                 self.TransferPhase[runIDX] / np.pi * 180,
-                ".",
+                yerr=self.TransferPhaseErr[runIDX]/ np.pi * 180,
+                fmt=".",
                 markersize=20,
                 label=str(run),
             )
@@ -1044,7 +1059,7 @@ if __name__ == "__main__":
 
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferFunction(2, RefPhaseDC=-np.pi)
+    DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     print("--- %s seconds ---" % (time.time() - start_time))
