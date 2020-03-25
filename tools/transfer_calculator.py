@@ -644,23 +644,25 @@ class Databuffer:
         roundedFreqs=np.rint(self.TransferFreqs*10)/10
         for i in range(len(nominalFreqs)):
             IDX=np.where(roundedFreqs==nominalFreqs[i])
-            N=len(IDX)
+            npIDX=np.array(IDX[0])
+            N=npIDX.size
             TMPAmplitudes=self.TransferAmpl[IDX]
             TMPAmplitudesErr = self.TransferAmplErr[IDX]
             Amps=[None] * N
+            ampsum=ufloat(0,0)
             for j in range(N):
                 Amps[j]=ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
-            Amps = np.array(Amps)
-            amp=Amps.sum()
-            amp=amp/ufloat(1, 0)
+                ampsum=ampsum+ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
+            amp = ampsum/N
             TMPPhases=self.TransferPhase[IDX]
             TMPPhasesErr=self.TransferPhaseErr[IDX]
-            Phases = [None] * N
+            Phases = np.full(N,ufloat(0,0))
+            phasessum = ufloat(0, 0)
             for j in range(N):
                 Phases[j] = ufloat(TMPPhases[j], TMPPhasesErr[j])
-            Phases=np.array(Phases)
-            phase=Phases.sum()
-            phase=phase/ufloat(1,0)
+                phasessum = phasessum + ufloat(TMPPhases[j], TMPPhasesErr[j])
+            phase=np.mean(Phases)
+            phasetmp =phasessum/N
             self.Transferfunction['AmplitudeCoefficent'][i]=amp.nominal_value
             self.Transferfunction['AmplitudeCoefficentUncer'][i]=amp.std_dev
             self.Transferfunction['Phase'][i]= phase.nominal_value
@@ -686,14 +688,7 @@ class Databuffer:
                 markersize=20,
                 label=str(run),
             )
-            ax1.errorbar(
-                self.Transferfunction['Frequencys'],
-                self.Transferfunction['AmplitudeCoefficent'],
-                yerr=self.Transferfunction['AmplitudeCoefficentUncer'],
-                fmt='s',
-                markersize=5,
-                label='Mean',
-            )
+
             ax2.errorbar(
                 self.TransferFreqs[runIDX],
                 self.TransferPhase[runIDX] / np.pi * 180,
@@ -702,14 +697,23 @@ class Databuffer:
                 markersize=20,
                 label=str(run),
             )
-            ax2.errorbar(
-                self.Transferfunction['Frequencys'],
-                self.Transferfunction['Phase'],
-                yerr=self.Transferfunction['PhaseUncer'],
-                fmt='s',
-                markersize=5,
-                label='Mean',
-            )
+
+        ax1.errorbar(
+            self.Transferfunction['Frequencys'],
+            self.Transferfunction['AmplitudeCoefficent'],
+            yerr=self.Transferfunction['AmplitudeCoefficentUncer'],
+            fmt='s',
+            markersize=5,
+            label='Mean',
+        )
+        ax2.errorbar(
+            self.Transferfunction['Frequencys'],
+            self.Transferfunction['Phase']/ np.pi * 180,
+            yerr=self.Transferfunction['PhaseUncer']/ np.pi * 180,
+            fmt='s',
+            markersize=5,
+            label='Mean',
+        )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
