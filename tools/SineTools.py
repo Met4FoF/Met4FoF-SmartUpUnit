@@ -4,12 +4,12 @@ Created on Fri Jun 14 20:36:01 2013
 SineTools.py
 auxiliary functions related to sine-approximation
 
-@author: Dr. Thomas Bruns PTB
+@author: bruns01
 """
 
 import scipy as sp
 from scipy import linalg as la
-
+import matplotlib.pyplot as mp
 
 def sampletimes(Fs, T):  #
     """
@@ -57,9 +57,9 @@ def fm_counter_sine(
     fm, f, x, phi, ti, offset=0, noise=0, absnoise=0, drift=0, ampdrift=0, lamb=633.0e-9
 ):
     """
-    # calculate counter value of heterodyne signal at \n
-    carrier freq. fm
-    x = displacement amplitude
+    calculate counter value of heterodyne signal at \n
+    carrier freq. fm\n
+    x = displacement amplitude \n
     initial phase phi \n
     sample times t_i \n
     bias or offset (default 0)\n
@@ -79,7 +79,7 @@ def fm_counter_sine(
     d = drift * x / Tau
 
     s = (
-        2
+        1.0
         / lamb
         * (
             x * (1 + ampdrift / Tau * ti) * sp.sin(2 * sp.pi * f * ti - phi)
@@ -106,7 +106,7 @@ def threeparsinefit(y, t, f0):
     """
     w0 = 2 * sp.pi * f0
 
-    a = sp.array([sp.sin(w0 * t), sp.cos(w0 * t), sp.ones(t.size)])
+    a = sp.array([sp.cos(w0 * t), sp.sin(w0 * t), sp.ones(t.size)])
 
     abc = la.lstsq(a.transpose(), y)
     return abc[0][0:3]  ## fit vector a*sin+b*cos+c
@@ -125,7 +125,7 @@ def threeparsinefit_lin(y, t, f0):
     """
     w0 = 2 * sp.pi * f0
 
-    a = sp.array([sp.sin(w0 * t), sp.cos(w0 * t), sp.ones(t.size), t, sp.ones(t.size)])
+    a = sp.array([sp.cos(w0 * t), sp.sin(w0 * t), sp.ones(t.size), t, sp.ones(t.size)])
 
     abc = la.lstsq(a.transpose(), y)
     return abc[0][0:4]  ## fit vector
@@ -136,7 +136,7 @@ def calc_threeparsine(abc, t, f0):
     return y = abc[0]*sin(2*pi*f0*t) + abc[1]*cos(2*pi*f0*t) + abc[2]
     """
     w0 = 2 * sp.pi * f0
-    return abc[0] * sp.sin(w0 * t) + abc[1] * sp.cos(w0 * t) + abc[2]
+    return abc[0] * sp.cos(w0 * t) + abc[1] * sp.sin(w0 * t) + abc[2]
 
 
 def amplitude(abc):
@@ -190,8 +190,8 @@ def seq_threeparsinefit(y, t, f0):
     """
     Tau = 1.0 / f0
     dt = t[1] - t[0]
-    N = Tau / dt  ## samples per section
-    M = sp.floor(t.size / N)  ## number of sections or periods
+    N = int(Tau / dt)  ## samples per section
+    M = int(sp.floor(t.size / N))  ## number of sections or periods
 
     abc = sp.zeros((M, 3))
 
@@ -202,9 +202,119 @@ def seq_threeparsinefit(y, t, f0):
     return abc  ## matrix of all fit vectors per period
 
 
-# def fourparsinefit(y,t,f0,df_max=None):
-#    if dy_max is None :
-#        df_max = 0.05*f0
+# four parameter sine-fit (with frequency approximation)
+def fourparsinefit(y, t, f0, tol=1.0e-7, nmax=1000):
+    """
+    y sampled data values \n
+    t sample times of y \n
+    f0 estimate of sine frequency \n
+    tol rel. frequency correction where we stop \n
+    nmax maximum number of iterations taken \n
+    \n
+    returns the vector [a, b, c, w] of  a*sin(w*t)+b*cos(w*t)+c
+    """
+    abcd = threeparsinefit(y, t, f0)
+    w = 2 * sp.pi * f0
+    err = 1
+    i = 0
+    while (err > tol) and (i < nmax):
+        D = sp.array(
+            [
+                sp.cos(w * t),
+                sp.sin(w * t),
+                sp.ones(t.size),
+                (-1.0) * abcd[0] * t * sp.sin(w * t) + abcd[1] * t * sp.cos(w * t),
+            ]
+        )
+
+        abcd = (la.lstsq(D.transpose(), y))[0]
+        dw = abcd[3]
+        w = w + 0.9 * dw
+        i += 1
+        err = sp.absolute(dw / w)
+
+    assert i < nmax, "iteration error"
+
+    return sp.hstack((abcd[0:3], w / (2 * sp.pi)))
+
+
+def calc_fourparsine(abcf, t):
+    """
+    return y = abc[0]*sin(2*pi*f0*t) + abc[1]*cos(2*pi*f0*t) + abc[2]
+    """
+    w0 = 2 * sp.pi * abcf[3]
+    return abcf[0] * sp.cos(w0 * t) + abcf[1] * sp.sin(w0 * t) + abcf[2]
+
+
+"""
+from octave ...
+function abcw = fourParSinefit(data,w0)
+  abc = threeParSinefit(data,w0);
+  a=abc(1);
+  b=abc(2);
+  c=abc(3);
+  w = w0;
+  
+  do 
+  D = [sin(w.*data(:,1)) , cos(w.*data(:,1)) , ones(rows(data),1) , a.*data(:,1).*cos(w.*data(:,1)) - b.*data(:,1).*sin(w.*data(:,1)) ];
+  
+  s = D \ data(:,2);
+  dw = s(4);
+  w = w+0.9*dw;
+  err = abs(dw/w);
+
+  until (err < 1.0e-8 );
+  
+  abcw = [s(1),s(2),s(3),w];
+  
+endfunction
+"""
+
+# periodical sinefit at known frequency
+def seq_fourparsinefit(y, t, f0, tol=1.0e-7, nmax=1000, debug_plot=False,periods=1):
+    """
+    period-wise sine-fit at a known frequency\n
+    y vector of sample values \n
+    t vector of sample times\n
+    f0 estimate of excitation frequency\n
+    nmax maximum of iteration to improve f0 \n
+    debug_plot Flag for plotting the sequential fit for dubugging \n
+     \n
+    returns a (n,3)-matrix of coefficient-triplets [[a,b,c], ...]\n
+    for y = a*sin(2*pi*f0*t) + b*cos(2*pi*f0*t) + c
+    """
+    Tau = 1.0 / f0
+    dt = t[1] - t[0]
+    N = int(sp.floor(Tau / dt))*periods  ## samples per section
+    M = int(sp.floor(t.size / N))  ## number of sections or periods
+
+    abcd = sp.zeros((M, 4))
+
+    for i in range(M):
+        ti = t[i * N : (i + 1) * N]
+        yi = y[i * N : (i + 1) * N]
+        abcd[i, :] = fourparsinefit(yi, ti, f0, tol=tol, nmax=nmax)
+
+    if debug_plot:
+        mp.ioff()
+        fig = mp.figure("seq_fourparsinefit")
+        fig.clear()
+        p1 = fig.add_subplot(211)
+        p2 = fig.add_subplot(212, sharex=p1)
+
+        for i in range(M):
+            p1.plot(t[i * N : (i + 1) * N], y[i * N : (i + 1) * N], ".")
+            s = calc_fourparsine(
+                abcd[i, :], t[i * N : (i + 1) * N]
+            )  # fitted data to plot
+            p1.plot(t[i * N : (i + 1) * N], s, "-")
+            r = y[i * N : (i + 1) * N] - s  # residuals to plot
+            p2.plot(t[i * N : (i + 1) * N], r, ".")
+            yi = y[i * N : (i + 1) * N]
+        mp.show()
+
+    return abcd  ## matrix of all fit vectors per period
+
 
 # fitting a pseudo-random multi-sine signal with 2*Nf+1 parameters
 def multi_threeparsinefit(y, t, f0):  # fo vector of frequencies
@@ -221,7 +331,7 @@ def multi_threeparsinefit(y, t, f0):  # fo vector of frequencies
     # set up design matrix
     a = sp.ones(len(t))
     for w in w0:
-        a = sp.vstack((sp.vstack((sp.sin(w * t), sp.cos(w * t))), a))
+        a = sp.vstack((sp.vstack((sp.cos(w * t), sp.sin(w * t))), a))
 
     abc = sp.linalg.lstsq(a.transpose(), y)
     return abc[0]  ## fit vector a*sin+b*cos+c
@@ -259,79 +369,8 @@ def multi_waveform_abc(f, abc, t):
     """
     ret = 0.0 * t + abc[-1]  # bias
     for fi, a, b in zip(f, abc[0::2], abc[1::2]):
-        ret = ret + a * sp.sin(2 * sp.pi * fi * t) + b * sp.cos(2 * sp.pi * fi * t)
+        ret = ret + a * sp.cos(2 * sp.pi * fi * t) + b * sp.sin(2 * sp.pi * fi * t)
     return ret
-
-
-def fourparsinefit1(y, t, f0, df_max=None, max_iter=20, eps=1.0e-6):
-    if df_max is None:
-        df_max = 0.05 * f0
-    w0 = 2 * sp.pi * f0
-    abcd = threeparsinefit(y, t, f0)  # get initial coefficients
-
-    dw = w0  # init for the while loop
-    i = 0
-    while (sp.absolute(dw) > eps * w0) and (i < max_iter):
-        a = sp.array(
-            [
-                sp.sin(w0 * t),
-                sp.cos(w0 * t),
-                sp.ones(t.size),
-                t * (abcd[0] * sp.cos(w0 * t) - abcd[1] * sp.sin(w0 * t)),
-            ]
-        )
-        abcd, q1, q2, q3 = la.lstsq(a.transpose(), y)  # the fit
-        dw = abcd[3]  # delta-omega
-        w0 = w0 + dw  # new w0
-        i += 1  # number of iteration
-    #        print("i=%d  w0=%f dw=%f " % (i,w0/2/sp.pi,dw))
-    if i >= max_iter:
-        abcd[3] = -1  # impossible frequency => not converged
-    else:
-        abcd[3] = w0 / (2 * sp.pi)
-
-    #    mp.plot (t,y,"+")
-    #    mp.plot (t,a[0:3,:].transpose().dot(abcd[0:3]) ,"-")
-    #    mp.show()
-    #    input("Press Enter to continue...")
-
-    return abcd[:]  ## fit vector
-
-
-# four parameter sine-fit (with frequency approximation)
-def fourparsinefit2(y, t, f0, tol=1.0e-7, nmax=1000):
-    """
-    y sampled data values \n
-    t sample times of y \n
-    f0 estimate of sine frequency \n
-    tol rel. frequency correction where we stop \n
-    nmax maximum number of iterations taken \n
-    \n
-    returns the vector [a, b, c, w] of  a*sin(w*t)+b*cos(w*t)+c
-    """
-    abcd = threeparsinefit(y, t, f0)
-    w = 2 * sp.pi * f0
-    err = 1
-    i = 0
-    while (err > tol) and (i < nmax):
-        D = sp.array(
-            [
-                sp.sin(w * t),
-                sp.cos(w * t),
-                sp.ones(t.size),
-                abcd[0] * t * sp.cos(w * t) - abcd[1] * t * sp.sin(w * t),
-            ]
-        )
-
-        abcd = (la.lstsq(D.transpose(), y))[0]
-        dw = abcd[3]
-        w = w + 0.9 * dw
-        i += 1
-        err = sp.absolute(dw / w)
-
-    assert i < nmax, "iteration error"
-
-    return sp.hstack((abcd[0:3], w / (2 * sp.pi)))
 
 
 ##################################
@@ -379,9 +418,9 @@ def remove_counter_carrier(y, diff=False):
         d = d - sp.mean(d)
         y = sp.hstack((0, sp.cumsum(d)))
     else:
-        slope = y[1] - y[0]  # slope of linear increment
+        slope = y[-1] - y[0]  # slope of linear increment
         y = y - slope * sp.linspace(
-            0, 1, len(y), endpoint=False
+            0.0, 1.0, len(y), endpoint=False
         )  # removal of linear increment
     return y
 
