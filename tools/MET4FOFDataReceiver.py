@@ -29,10 +29,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import numpy as np
 
-# for profiling
-# import yappi
-
-# yappi.start()
+matplotlib.use('Qt5Agg')
 
 
 class DataReceiver:
@@ -42,6 +39,8 @@ class DataReceiver:
         self.socket = socket.socket(
             socket.AF_INET, socket.SOCK_DGRAM  # Internet
         )  # UDP
+
+        # Try to open the UDP connection
         try:
             self.socket.bind((IP, Port))
         except OSError as err:
@@ -73,6 +72,7 @@ class DataReceiver:
         self.lastTimestamp = 0
         self.Datarate = 0
         self._stop_event = threading.Event()
+        #start thread for data processing
         thread = threading.Thread(target=self.run, name="Datareceiver_thread", args=())
         thread.start()
 

@@ -119,9 +119,9 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
-//BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
+//BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+MPU9250 Sensor1(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -412,21 +412,21 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor1.begin();
 	Sensor1.enableDataReadyInterrupt();
 
-
 	//MPU9250
-	uint32_t SensorID1=configMan.getSensorBaseID(1);
+	uint32_t SensorID0=configMan.getSensorBaseID(0);
 
-	Sensor1.setBaseID(SensorID1);
-	Sensor1.begin();
-	Sensor1.enableDataReadyInterrupt();
+	Sensor0.setBaseID(SensorID0);
+	Sensor0.begin();
+	Sensor0.enableDataReadyInterrupt();
 
-	/*//BMA280
+	//BMA280
 	 // SET PS pin low
+	/*
 	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
 	 Sensor0.setBaseID(SensorID0);
 	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+*/
 	//Dummy Sensor
 	/*
 	 Sensor0.setBaseID(0);

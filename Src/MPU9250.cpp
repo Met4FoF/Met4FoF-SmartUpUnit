@@ -161,6 +161,8 @@ int MPU9250::begin(){
 	  //if (calibrateGyro() < 0) {
 	    //return -20;
 	  //}
+	  //Dummy read to active High speed SPI
+	  readSensor();
 	  // successful init, return 1
 	  return 1;
 	}

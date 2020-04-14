@@ -648,12 +648,22 @@ class Databuffer:
             N=npIDX.size
             TMPAmplitudes=self.TransferAmpl[IDX]
             TMPAmplitudesErr = self.TransferAmplErr[IDX]
-            Amps=[None] * N
+            Amps=np.full(N,ufloat(0,0))
             ampsum=ufloat(0,0)
+            weights=np.full(N,ufloat(0,0))
+            weighted = np.full(N,ufloat(0,0))
             for j in range(N):
                 Amps[j]=ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
                 ampsum=ampsum+ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
+                weights[j]=ufloat(1/TMPAmplitudesErr[j],0)
+                weighted[j]=Amps[j]*weights[j]
             amp = ampsum/N
+            wightsum=np.sum(weights)
+            ampWMean=np.sum(weighted)/wightsum
+            tmpmean=np.mean(Amps)
+            diff=weighted-np.mean(weighted)
+            tmpstd=np.sum(diff)
+            #tmpstd = np.sum(diff)/wightsum
             TMPPhases=self.TransferPhase[IDX]
             TMPPhasesErr=self.TransferPhaseErr[IDX]
             Phases = np.full(N,ufloat(0,0))
