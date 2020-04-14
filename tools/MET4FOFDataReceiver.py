@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation
 import numpy as np
 
-matplotlib.use('Qt5Agg')
+#matplotlib.use('Qt5Agg')
 
 
 class DataReceiver:
