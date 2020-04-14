@@ -87,7 +87,7 @@
 
 #include "lwip/apps/sntp.h"
 
-#include "fatfs.h"//fat file System
+//#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -120,8 +120,8 @@ osThreadId TempSensorTID;
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
 //BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -199,7 +199,7 @@ void StartDefaultTask(void const * argument) {
 	MX_LWIP_Init();
 
 	/* init code for FATFS */
-	MX_FATFS_Init();
+	//MX_FATFS_Init();
 
 	Lwip_anf_FAT_init_finished=true;
 	/* USER CODE BEGIN StartDefaultTask */
@@ -306,14 +306,14 @@ void StartBlinkThread(void const * argument) {
 	osDelay(10000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
-		Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1000);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
-		Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(500);
 	}
 	osThreadTerminate(NULL);
@@ -409,6 +409,14 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
 	Sensor0.enableDataReadyInterrupt();
+
+
+	//MPU9250
+	uint32_t SensorID1=configMan.getSensorBaseID(1);
+
+	Sensor1.setBaseID(SensorID1);
+	Sensor1.begin();
+	Sensor1.enableDataReadyInterrupt();
 
 	/*//BMA280
 	 // SET PS pin low
@@ -743,14 +751,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		/*
+
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp, Channel1Tim2CaptureCount);
-		 //mptr->has_Data_11 = true;
-		 //mptr->Data_11 = (float) HAL_ADC_PollForConversion(&hadc1, 1);
+		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
 		 osStatus result = osMailPut(DataMail, mptr);
-		 */
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
