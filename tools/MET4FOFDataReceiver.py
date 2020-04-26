@@ -34,6 +34,28 @@ import numpy as np
 
 class DataReceiver:
     def __init__(self, IP, Port):
+        """
+        
+
+        Parameters
+        ----------
+        IP : TYPE
+            DESCRIPTION.
+        Port : TYPE
+            DESCRIPTION.
+
+        Raises
+        ------
+        
+            DESCRIPTION.
+        an
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.flags = {"Networtinited": False}
         self.params = {"IP": IP, "Port": Port, "PacketrateUpdateCount": 10000}
         self.socket = socket.socket(
@@ -77,6 +99,14 @@ class DataReceiver:
         thread.start()
 
     def stop(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         print("Stopping DataReceiver")
         self._stop_event.set()
         # wait 1 second to ensure that all ques are empty before closing them
@@ -88,6 +118,14 @@ class DataReceiver:
         self.socket.close()
 
     def run(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         # implement stop routine
         while not self._stop_event.is_set():
             data, addr = self.socket.recvfrom(1500)  # buffer size is 1024 bytes
@@ -197,32 +235,109 @@ class DataReceiver:
                             self.lastTimestamp = datetime.now()
             else:
                 print("unrecognized packed preamble" + str(data[:5]))
-
-    def getsenorIDs(self):
-        return [*self.AllSensors]
-
     def __del__(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.socket.close()
 
 
 ### classes to proces sensor descriptions
 class AliasDict(dict):
     def __init__(self, *args, **kwargs):
+        """
+        
+
+        Parameters
+        ----------
+        *args : TYPE
+            DESCRIPTION.
+        **kwargs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         dict.__init__(self, *args, **kwargs)
         self.aliases = {}
 
     def __getitem__(self, key):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         return dict.__getitem__(self, self.aliases.get(key, key))
 
     def __setitem__(self, key, value):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+        value : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         return dict.__setitem__(self, self.aliases.get(key, key), value)
 
     def add_alias(self, key, alias):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+        alias : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.aliases[alias] = key
 
 
 class ChannelDescription:
     def __init__(self, CHID):
+        """
+        
+
+        Parameters
+        ----------
+        CHID : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.Description = {
             "CHID": CHID,
             "PHYSICAL_QUANTITY": False,
@@ -234,11 +349,34 @@ class ChannelDescription:
         self._complete = False
 
     def __getitem__(self, key):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         # if key='SpecialKey':
         # self.Description['SpecialKey']
         return self.Description[key]
 
     def __str__(self):
+        """
+        
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         return (
             "Channel: "
             + str(self.Description["CHID"])
@@ -250,6 +388,21 @@ class ChannelDescription:
 
     # todo override set methode
     def setDescription(self, key, value):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+        value : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.Description[key] = value
         if (
             self.Description["PHYSICAL_QUANTITY"] != False
@@ -263,6 +416,21 @@ class ChannelDescription:
 
 class SensorDescription:
     def __init__(self, ID, SensorName):
+        """
+        
+
+        Parameters
+        ----------
+        ID : TYPE
+            DESCRIPTION.
+        SensorName : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.ID = ID
         self.SensorName = SensorName
         self._complete = False
@@ -271,6 +439,23 @@ class SensorDescription:
         self._ChannelsComplte = 0
 
     def setChannelParam(self, CHID, key, value):
+        """
+        
+
+        Parameters
+        ----------
+        CHID : TYPE
+            DESCRIPTION.
+        key : TYPE
+            DESCRIPTION.
+        value : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         wasComplete = False
         if CHID in self.Channels:
             wasComplete = self.Channels[
@@ -299,11 +484,34 @@ class SensorDescription:
                 print("Description completed")
 
     def __getitem__(self, key):
+        """
+        
+
+        Parameters
+        ----------
+        key : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         # if key='SpecialKey':
         # self.Description['SpecialKey']
         return self.Channels[key]
 
     def asDict(self):
+        """
+        
+
+        Returns
+        -------
+        RetunDict : TYPE
+            DESCRIPTION.
+
+        """
         RetunDict = {"Name": self.SensorName}
         for key in self.Channels:
             print(self.Channels[key].Description)
@@ -360,6 +568,21 @@ class Sensor:
     }
     # TODO implement multi therading and callbacks
     def __init__(self, ID, BufferSize=1e4):
+        """
+        
+
+        Parameters
+        ----------
+        ID : TYPE
+            DESCRIPTION.
+        BufferSize : TYPE, optional
+            DESCRIPTION. The default is 1e4.
+
+        Returns
+        -------
+        None.
+
+        """
         self.Description = SensorDescription(ID, "Name not Set")
         self.buffer = Queue(int(BufferSize))
         self.buffersize = BufferSize
@@ -394,7 +617,37 @@ class Sensor:
         )  # will b 0 but has deltaTime type witch is intended
         self.datarate = 0
 
+    def __repr__(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
+        return(hex(self.params[
+                        "ID"])
+                + ' '
+                + self.Description.SensorName
+                + ' '
+                + self.Description.ChannelCount
+                + ' Channel Sensor')
+
     def StartDumpingToFileASCII(self, filename=""):
+        """
+        
+
+        Parameters
+        ----------
+        filename : TYPE, optional
+            DESCRIPTION. The default is "".
+
+        Returns
+        -------
+        None.
+
+        """
         # check if the path is valid
         # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
         if filename == "":
@@ -418,11 +671,32 @@ class Sensor:
         self.flags["DumpToFileASCII"] = True
 
     def StopDumpingToFileASCII(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.flags["DumpToFileASCII"] = False
         self.params["DumpFileNameASCII"] = ""
         self.DumpfileASCII.close()
 
     def StartDumpingToFileProto(self, filename=""):
+        """
+        
+
+        Parameters
+        ----------
+        filename : TYPE, optional
+            DESCRIPTION. The default is "".
+
+        Returns
+        -------
+        None.
+
+        """
         # check if the path is valid
         # if(os.path.exists(os.path.dirname(os.path.abspath('data/dump.csv')))):
         if filename == "":
@@ -444,11 +718,27 @@ class Sensor:
         self.flags["DumpToFileProto"] = True
 
     def StopDumpingToFileProto(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.flags["DumpToFileProto"] = False
         self.params["DumpFileNameProto"] = ""
         self.DumpfileProto.close()
 
     def run(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         while not self._stop_event.is_set():
             # problem when we are closing the queue this function is waiting for data and raises EOF error if we delet the q
             # work around adding time out so self.buffer.get is returning after a time an thestop_event falg can be checked
@@ -594,14 +884,43 @@ class Sensor:
                 pass
 
     def SetCallback(self, callback):
+        """
+        
+
+        Parameters
+        ----------
+        callback : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.flags["callbackSet"] = True
         self.callback = callback
 
     def UnSetCallback(self,):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.flags["callbackSet"] = False
         self.callback = doNothingCb
 
     def stop(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         print("Stopping Sensor " + hex(self.params["ID"]))
         self._stop_event.set()
         # sleeping until run function is exiting due to timeout
@@ -615,9 +934,37 @@ class Sensor:
         self.buffer.close()
 
     def join(self, *args, **kwargs):
+        """
+        
+
+        Parameters
+        ----------
+        *args : TYPE
+            DESCRIPTION.
+        **kwargs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.stop()
 
     def dumMsgToFileASCII(self, message):
+        """
+        
+
+        Parameters
+        ----------
+        message : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.DumpfileASCII.write(
             str(message.id)
             + ";"
@@ -664,124 +1011,25 @@ class Sensor:
         )
 
     def dumMsgToFileProto(self, message):
+        """
+        
+
+        Parameters
+        ----------
+        message : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         size = message.ByteSize()
         self.DumpfileProto.write(_VarintBytes(size))
         self.DumpfileProto.write(message.SerializeToString())
 
-
-def DumpDataMPU9250(message, Description):
-    filename = "data(dumpfile.dump"
-    if not (os.path.exists(filename)):
-        dumpfile = open(filename, "a+")
-        json.dump(Description, filename)
-        dumpfile.write(
-            "id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n"
-        )
-    else:
-        dumpfile = open(filename, "a")
-    PRINTDEVIDER = 10000
-    dumpfile.write(
-        str(message.id)
-        + ";"
-        + str(message.sample_number)
-        + ";"
-        + str(message.unix_time)
-        + ";"
-        + str(message.unix_time_nsecs)
-        + ";"
-        + str(message.time_uncertainty)
-        + ";"
-        + str(message.Data_01)
-        + ";"
-        + str(message.Data_02)
-        + ";"
-        + str(message.Data_03)
-        + ";"
-        + str(message.Data_04)
-        + ";"
-        + str(message.Data_05)
-        + ";"
-        + str(message.Data_06)
-        + ";"
-        + str(message.Data_07)
-        + ";"
-        + str(message.Data_08)
-        + ";"
-        + str(message.Data_09)
-        + ";"
-        + str(message.Data_10)
-        + ";"
-        + str(message.Data_11)
-        + ";"
-        + str(message.Data_12)
-        + ";"
-        + str(message.Data_13)
-        + ";"
-        + "\n"
-    )
-    # if(message.sample_number%PRINTDEVIDER==0):
-    #     print('=====DATA PACKET====','\n',
-    #       hex(message.id),message.sample_number,message.unix_time,message.unix_time_nsecs,message.time_uncertainty,
-    #       '\n ACC:',message.Data_01,message.Data_02,message.Data_03,
-    #       '\n GYR:',message.Data_04,message.Data_05,message.Data_06,
-    #       '\n MAG:',message.Data_07,message.Data_08,message.Data_09,
-    #       '\n TEMP:',message.Data_10,
-    #       '\n ADC:',message.Data_11,message.Data_12,message.Data_13),
-
-
-def DumpDataGPSDummySensor(message, Description):
-    if not (os.path.exists("data/GPSLog.log")):
-        dumpfile = open("data/GPSLog.log", "a+")
-        dumpfile.write(
-            "id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;GPSCount\n"
-        )
-    else:
-        dumpfile = open("data/GPSLog", "a")
-        # 2^48=281474976710656 2^32=4294967296 2^16=65536
-        gpscount = (
-            message.Data_01 * 281474976710656
-            + message.Data_02 * 4294967296
-            + message.Data_03 * 65536
-            + message.Data_04
-        )
-        print(
-            hex(message.id),
-            message.sample_number,
-            message.unix_time,
-            message.unix_time_nsecs,
-            message.time_uncertainty,
-            gpscount,
-        )
-        dumpfile.write(
-            str(message.id)
-            + ";"
-            + str(message.sample_number)
-            + ";"
-            + str(message.unix_time)
-            + ";"
-            + str(message.unix_time_nsecs)
-            + ";"
-            + str(message.time_uncertainty)
-            + ";"
-            + str(gpscount)
-            + "\n"
-        )
-
-
 def doNothingCb():
     pass
-
-
-def openDumpFile():
-    filename = "data/DataDump.log"
-    if not (os.path.exists(filename)):
-        dumpfile = open(filename, "a+")
-        dumpfile.write(
-            "id;sample_number;unix_time;unix_time_nsecs;time_uncertainty;ACC_x;ACC_y,;ACC_z,;GYR_x;GYR_y;GYR_z;MAG_x;MAG_y;MAG_z;TEMP;ADC_1;ADC_2;ADC_3\n"
-        )
-    else:
-        dumpfile = open(filename, "a")
-
 
 def initRos():
     # todo make the imports golbaly
@@ -826,6 +1074,19 @@ def RosCallbackIMU(message, Description):
 # Data can be acessed over the atribute ExampleBuffer.Buffer[0]
 class DataBuffer:
     def __init__(self, BufferLength):
+        """
+        
+
+        Parameters
+        ----------
+        BufferLength : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.BufferLength = BufferLength
         self.Buffer = [None] * BufferLength
         self.Datasetpushed = 0
@@ -862,6 +1123,21 @@ class DataBuffer:
         plt.show()
 
     def PushData(self, message, Description):
+        """
+        
+
+        Parameters
+        ----------
+        message : TYPE
+            DESCRIPTION.
+        Description : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.Datasetpushed == 0:
             self.Description = copy.deepcopy(Description)
         if self.Datasetpushed < self.BufferLength:

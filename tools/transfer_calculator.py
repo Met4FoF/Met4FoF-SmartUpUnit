@@ -27,7 +27,6 @@ from uncertainties import ufloat
 # plt.rcParams.update({"font.size": 30})
 # plt.rc("text", usetex=True)
 
-
 class ReferencTransferFunction:
     def __init__(self, typ="hf_ref", filename="filename"):
         self.CSVData = pd.read_csv(filename, delimiter=";").set_index(
