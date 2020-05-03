@@ -75,9 +75,32 @@ void http_server_serve(struct netconn *conn)
       there are other formats for GET, and we're keeping it very simple )*/
       if ((buflen >=5) || (strncmp(buf, "GET /", 5) == 0))
       {
-    	  SEGGER_RTT_printf(0,"%s.\r\n",buf);
+    	  //SEGGER_RTT_printf(0,"%s.\r\n",buf);
     	  if (strncmp((char const *)buf,"GET /index.html",15)==0) {
     		  netconn_write(conn, (const unsigned char*)index_html, index_html_len, NETCONN_NOCOPY);
+    	  }
+    	  if (strncmp((char const *)buf,"GET /index.html?tbox1=",22)==0) {
+    		  uint32_t stop=strstr(buf,"&tbox2=");
+    		  uint32_t len=stop-(uint32_t)buf-22;
+    		  char asciip[17]={};
+			  memcpy(&asciip,&buf[22],len);
+			  asciip[16]=0;
+    		  ip4_addr_t * UDPip;
+    		  ip4_addr_t * UDPNetmask;
+    		  ip4addr_aton((char const *)asciip,&UDPip);
+    		  char iPadressBuffer[17] = { };
+  			  ip4addr_ntoa_r(&UDPip, iPadressBuffer,
+  					sizeof(iPadressBuffer));
+    		 SEGGER_RTT_printf(0,"IP1>%s<\r\n", asciip);
+    		SEGGER_RTT_printf(0,"Parsed IP %s \r\n", iPadressBuffer);
+
+    		uint32_t start=(uint32_t)buf+22+7+len;
+  			stop=strstr(start," ");
+  			len=stop-start;
+    		memcpy(&asciip,start,len);
+  			SEGGER_RTT_printf(0,"IP2>%s<\r\n", asciip);
+  			SEGGER_RTT_printf(0,"Parsed IP %s \r\n", iPadressBuffer);
+
     	  }
     	  if (strncmp((char const *)buf,"GET /led1", 9) == 0) {
     		  HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
@@ -143,26 +166,21 @@ static void http_server_netconn_thread()
   SEGGER_RTT_printf(0,"Starting http_server_netconn_thread()\n\r");
   /* Create a new TCP connection handle */
   conn = netconn_new(NETCONN_TCP);
-  SEGGER_RTT_printf(0,"Web Server TCP Connection\r\n");
   if (conn!= NULL)
   {
-	  SEGGER_RTT_printf(0,"netconn_new(NETCONN_TCP) != NULL\n\r");
-
     /* Bind to port 80 (HTTP) with default IP address */
-	SEGGER_RTT_printf(0,"err = netconn_bind(conn, NULL, 80);\n\r");
     err = netconn_bind(conn, NULL, 80);
     Check_LWIP_RETURN_VAL(err);
     if (err == ERR_OK)
     {
       /* Put the connection into LISTEN state */
       netconn_listen(conn);
-
+      SEGGER_RTT_printf(0,"Web Server TCP Connection up and running \r\n");
       while(1)
       {
-          SEGGER_RTT_printf(0,"Web Server TCP Connection up and running \r\n");
+
     	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
         /* accept any icoming connection */
-    	SEGGER_RTT_printf(0,"accept_err = netconn_accept(conn, &newconn);\n\r");
         accept_err = netconn_accept(conn, &newconn);
         Check_LWIP_RETURN_VAL(accept_err);
         if(accept_err == ERR_OK)
@@ -185,7 +203,6 @@ static void http_server_netconn_thread()
   */
 void http_server_netconn_init()
 {
-	SEGGER_RTT_printf(0,"sys_thread_new(HTTP, http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);\n\r");
   sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
 }
 
