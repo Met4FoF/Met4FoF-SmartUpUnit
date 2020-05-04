@@ -26,16 +26,10 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "lwip/opt.h"
-#include "lwip/arch.h"
-#include "lwip/api.h"
-#include "string.h"
-#include "httpserver-netconn.h"
-#include "cmsis_os.h"
+#include <httpserver-netconn.hpp>
+#include "configmanager.hpp"
 #include "../webpages/index.h"
-#include "main.h"
 
-#include "SEGGER_RTT.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -56,6 +50,7 @@ float peekValFormChannel(int channel);
   */
 void http_server_serve(struct netconn *conn)
 {
+  ConfigManager& configMan = ConfigManager::instance();
   struct netbuf *inbuf;
   err_t recv_err;
   char* buf;
@@ -79,29 +74,7 @@ void http_server_serve(struct netconn *conn)
     	  if (strncmp((char const *)buf,"GET /index.html",15)==0) {
     		  netconn_write(conn, (const unsigned char*)index_html, index_html_len, NETCONN_NOCOPY);
     	  }
-    	  if (strncmp((char const *)buf,"GET /index.html?tbox1=",22)==0) {
-    		  uint32_t stop=strstr(buf,"&tbox2=");
-    		  uint32_t len=stop-(uint32_t)buf-22;
-    		  char asciip[17]={};
-			  memcpy(&asciip,&buf[22],len);
-			  asciip[16]=0;
-    		  ip4_addr_t * UDPip;
-    		  ip4_addr_t * UDPNetmask;
-    		  ip4addr_aton((char const *)asciip,&UDPip);
-    		  char iPadressBuffer[17] = { };
-  			  ip4addr_ntoa_r(&UDPip, iPadressBuffer,
-  					sizeof(iPadressBuffer));
-    		 SEGGER_RTT_printf(0,"IP1>%s<\r\n", asciip);
-    		SEGGER_RTT_printf(0,"Parsed IP %s \r\n", iPadressBuffer);
 
-    		uint32_t start=(uint32_t)buf+22+7+len;
-  			stop=strstr(start," ");
-  			len=stop-start;
-    		memcpy(&asciip,start,len);
-  			SEGGER_RTT_printf(0,"IP2>%s<\r\n", asciip);
-  			SEGGER_RTT_printf(0,"Parsed IP %s \r\n", iPadressBuffer);
-
-    	  }
     	  if (strncmp((char const *)buf,"GET /led1", 9) == 0) {
     		  HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
     	  }
@@ -128,20 +101,32 @@ void http_server_serve(struct netconn *conn)
     			  netconn_write(conn, (const unsigned char*)"OFF", 3, NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /adc", 8) == 0) {
-    		  sprintf(buf, "%2.1f °C",peekValFormChannel(0));
+    		  sprintf(buf, "%2.1f °C",0.0);
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
-    	  if (strncmp((char const *)buf,"GET /xacc", 8) == 0) {
-    		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(1));
-    		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
-    	  }
-    	  if (strncmp((char const *)buf,"GET /yacc", 8) == 0) {
-    		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(2));
-    		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
-    	  }
-    	  if (strncmp((char const *)buf,"GET /zacc", 8) == 0) {
-    		  sprintf(buf, "%3.4f m/s^2", peekValFormChannel(3));
-    		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
+    	  if (strncmp((char const *)buf,"GET /index.html?tbox1=",22)==0) {
+    		  const char *stop=strstr(buf,"&tbox2=");
+    		  uint32_t len=(uint32_t)stop-(uint32_t)buf-22;
+    		  char * asciip;
+			  asciip[16]=0;
+			  memcpy(&asciip,&buf[22],len);
+    		  ip4_addr_t * UDPip;
+    		  ip4_addr_t * UDPNetmask;
+    		  ip4addr_aton((char const *)asciip,UDPip);
+    		  char * iPadressBuffer;
+    		  char * NetMaskBuffer;
+    		  iPadressBuffer[16]=0;
+    		  NetMaskBuffer[16]=0;
+  			  ip4addr_ntoa_r(UDPip, iPadressBuffer,sizeof(iPadressBuffer));
+    		  uint32_t start=(uint32_t)buf+22+7+len;
+  			  stop=strstr((const char *)start," ");
+  			  len=(uint32_t)stop-(uint32_t)start;
+    		  memcpy(&asciip,(const void *)start,len);
+  			  ip4addr_aton((char const *)asciip,UDPNetmask);
+  			  ip4addr_ntoa_r(UDPNetmask, NetMaskBuffer,sizeof(NetMaskBuffer));
+  			  char * HTMLBuff;
+  			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>Targ IP= %s NetMask %s Softreset to activate Changes if Battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer);
+  			  netconn_write(conn, (const unsigned char*)HTMLBuff, strlen(HTMLBuff), NETCONN_NOCOPY);
     	  }
       }
     }
@@ -203,11 +188,5 @@ static void http_server_netconn_thread()
   */
 void http_server_netconn_init()
 {
-  sys_thread_new("HTTP", http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
-}
-
-float peekValFormChannel(int channel)
-{
-float returnVal=(float)channel*10;
-return returnVal;
+  sys_thread_new("HTTP",(lwip_thread_fn)http_server_netconn_thread, NULL, DEFAULT_THREAD_STACKSIZE, WEBSERVER_THREAD_PRIO);
 }

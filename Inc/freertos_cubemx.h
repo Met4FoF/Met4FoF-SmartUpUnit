@@ -7,10 +7,11 @@
 
 #ifndef FREERTOS_CUBEMX_H_
 #define FREERTOS_CUBEMX_H_
-
+#include "httpserver-netconn.hpp"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
@@ -74,7 +75,6 @@ extern "C" {
 #include "lwip/api.h"
 //#include "lwip/udp.h"
 #include "lwip.h"
-#include "httpserver-netconn.h"
 #include "SEGGER_RTT.h"
 #include <GPSTimesyn.hpp>
 #include "tim64extender.h"
@@ -124,12 +124,8 @@ void StartDataStreamerThread(void const * argument);
 void StartTempSensorThread(void const * argument);
 extern void MX_LWIP_Init(void);
 extern void MX_FATFS_Init(void);
-void Check_LWIP_RETURN_VAL(err_t);
 
 void MX_FREERTOS_Init(void);
-//TODO move to configmanager
-uint16_t gen_crc16(const uint8_t *data, uint16_t size);
-
 
 /* (MISRA C 2004 rule 8.1) */
 #ifdef __cplusplus
