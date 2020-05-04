@@ -373,6 +373,9 @@ void StartLCDThread(void const * argument) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 200, WHITE, 1, BLUE);
 
 		sprintf(Temp_Buffer_text, "Counting happy: %i",lcdupdatecnt);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 210, WHITE, 1, BLUE);
+		uint32_t startcount=configMan.getStartcount();
+		sprintf(Temp_Buffer_text, "Start count: %i",startcount);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
 		if (lcdupdatecnt %10==0) {
 			iPadressBuffer[17]= {};
@@ -435,21 +438,25 @@ void StartDataStreamerThread(void const * argument) {
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
 			UDID_Read8(4), UDID_Read8(5), UDID_Read8(6), UDID_Read8(7),
 			UDID_Read8(8), UDID_Read8(9), UDID_Read8(10), UDID_Read8(11));
-	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
 	uint32_t StartCount = configMan.getStartcount();
-	SEGGER_RTT_printf(0, "StartCount is= %d", StartCount);
+	SEGGER_RTT_printf(0, "StartCount is= %llu", StartCount);
 	struct netconn *conn;
 	struct netbuf *buf;
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
 	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
-	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
-			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
-	configMan.setUDPTargetIP(targetipaddr);
+	ip_addr_t settargetipaddr=configMan.getUDPTargetIP();
+	if(settargetipaddr.addr==0x00000000)
+		{
 
-	//targetipaddr=configMan.getUDPTargetIP();
+		uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
+		IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
+				UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+		configMan.setUDPTargetIP(targetipaddr);
+		}
+
+	targetipaddr=configMan.getUDPTargetIP();
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 	/* connect the connection to the remote host */

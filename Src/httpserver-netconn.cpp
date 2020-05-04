@@ -105,27 +105,33 @@ void http_server_serve(struct netconn *conn)
     		  netconn_write(conn, (const unsigned char*)buf, strlen(buf), NETCONN_NOCOPY);
     	  }
     	  if (strncmp((char const *)buf,"GET /index.html?tbox1=",22)==0) {
+    		  SEGGER_RTT_printf(0,"PARSING IP\n\r");
     		  const char *stop=strstr(buf,"&tbox2=");
     		  uint32_t len=(uint32_t)stop-(uint32_t)buf-22;
-    		  char * asciip;
-			  asciip[16]=0;
-			  memcpy(&asciip,&buf[22],len);
-    		  ip4_addr_t * UDPip;
-    		  ip4_addr_t * UDPNetmask;
-    		  ip4addr_aton((char const *)asciip,UDPip);
-    		  char * iPadressBuffer;
-    		  char * NetMaskBuffer;
-    		  iPadressBuffer[16]=0;
-    		  NetMaskBuffer[16]=0;
-  			  ip4addr_ntoa_r(UDPip, iPadressBuffer,sizeof(iPadressBuffer));
+    		  SEGGER_RTT_printf(0,"LEN %llu \n\r",len);
+    		  char * asciip[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+			  memcpy(asciip,buf+22,len);
+			  SEGGER_RTT_printf(0,"PARSING >%s< \n\r",asciip);
+    		  ip4_addr_t UDPip;
+    		  ip4_addr_t UDPNetmask;
+    		  ip4addr_aton((char const *)asciip,(ip4_addr_t*)&UDPip);
+
+    		  char iPadressBuffer[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    		  char NetMaskBuffer[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+  			  ip4addr_ntoa_r((ip4_addr_t*)&UDPip, iPadressBuffer,sizeof(iPadressBuffer));
     		  uint32_t start=(uint32_t)buf+22+7+len;
   			  stop=strstr((const char *)start," ");
   			  len=(uint32_t)stop-(uint32_t)start;
     		  memcpy(&asciip,(const void *)start,len);
-  			  ip4addr_aton((char const *)asciip,UDPNetmask);
-  			  ip4addr_ntoa_r(UDPNetmask, NetMaskBuffer,sizeof(NetMaskBuffer));
-  			  char * HTMLBuff;
+  			  ip4addr_aton((char const *)asciip,(ip4_addr_t*)&UDPNetmask);
+  			  SEGGER_RTT_printf(0,"PARSING>%s<",asciip);
+  			  ip4addr_ntoa_r((ip4_addr_t*)&UDPNetmask, NetMaskBuffer,sizeof(NetMaskBuffer));
+
+  			  char HTMLBuff[300]={};
   			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>Targ IP= %s NetMask %s Softreset to activate Changes if Battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer);
+  			  configMan.setUDPSubnetmarsk(UDPNetmask);
+  			  configMan.setUDPTargetIP(UDPip);
   			  netconn_write(conn, (const unsigned char*)HTMLBuff, strlen(HTMLBuff), NETCONN_NOCOPY);
     	  }
       }
