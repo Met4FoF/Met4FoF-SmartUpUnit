@@ -28,12 +28,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* MPU9250 object, input the SPI bus and chip select pin */
 MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID){
-	_BaseID=BaseID;
-	_SetingsID=0;
-	_ID=_BaseID+(uint32_t)_SetingsID;
     _SPICSTypeDef=SPICSTypeDef;
     _SPICSPin=SPICSPin;
     _MPU9250spi=MPU9250spi;
+	_BaseID=BaseID;
+	_SetingsID=0;
+	_ID=_BaseID+(uint32_t)_SetingsID;
 }
 
 int MPU9250::setBaseID(uint32_t BaseID)
@@ -45,6 +45,7 @@ int MPU9250::setBaseID(uint32_t BaseID)
 }
 /* starts communication with the MPU-9250 */
 int MPU9250::begin(){
+	// spi interface is maybe not ready if the class instance is created but on begin it musst be ready so we are getting the default speed now from the interface
 	// using SPI for communication
 	// use low speed SPI for register setting
 	_useSPIHS = false;
@@ -52,6 +53,11 @@ int MPU9250::begin(){
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
 	    return -1;
 	  }
+
+	  //read selftest data
+	  readRegisters(ACC_ST_X, 3, _AccST);
+	  readRegisters(GYRO_ST_X, 3, _GyroST);
+
 	  // enable I2C master mode
 	  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
 	    return -2;
@@ -156,6 +162,9 @@ int MPU9250::begin(){
 	  //if (calibrateGyro() < 0) {
 	    //return -20;
 	  //}
+	  //Dummy read to active High speed SPI
+	  readSensor();
+	  readSensor();
 	  // successful init, return 1
 	  return 1;
 	}
@@ -454,11 +463,11 @@ int MPU9250::readSensor() {
     return -1;
   }
   // combine into 16 bit values
-  _axcounts = (((int16_t)_buffer[0]) << 8) | _buffer[1];  
-  _aycounts = (((int16_t)_buffer[2]) << 8) | _buffer[3];
-  _azcounts = (((int16_t)_buffer[4]) << 8) | _buffer[5];
-  _tcounts = (((int16_t)_buffer[6]) << 8) | _buffer[7];
-  _gxcounts = (((int16_t)_buffer[8]) << 8) | _buffer[9];
+  _axcounts =  (((int16_t)_buffer[0]) << 8) | _buffer[1];
+  _aycounts =  (((int16_t)_buffer[2]) << 8) | _buffer[3];
+  _azcounts =  (((int16_t)_buffer[4]) << 8) | _buffer[5];
+  _tcounts =   (((int16_t)_buffer[6]) << 8) | _buffer[7];
+  _gxcounts =  (((int16_t)_buffer[8]) << 8) | _buffer[9];
   _gycounts = (((int16_t)_buffer[10]) << 8) | _buffer[11];
   _gzcounts = (((int16_t)_buffer[12]) << 8) | _buffer[13];
   _hxcounts = (((int16_t)_buffer[15]) << 8) | _buffer[14];
@@ -985,20 +994,46 @@ void MPU9250::setMagCalZ(float bias,float scaleFactor) {
   _hzb = bias;
   _hzs = scaleFactor;
 }
-
+/* Sets the Acc selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
+void MPU9250::setAccSelfTest(uint8_t SelftestStatus){
+	// mutex not nesseary since isr can interrupt this routine but not the write regisrer routine since SPi will beblocked
+	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+	_AccSeftestStatus=0x07 & SelftestStatus;
+	uint8_t accStatusToSet=_AccSeftestStatus<<5;
+	uint8_t configOLD=0;
+	readRegisters(ACCEL_CONFIG,1,&configOLD);
+	uint8_t configNew=(configOLD&0x1F) |accStatusToSet;
+	writeRegister(ACCEL_CONFIG,configNew);
+}
+/* Sets the Gyro selftest registers bytemask 0x00000xyz 1=selftest active 0=normal mesurment */
+void MPU9250::setGyroSelfTest(uint8_t SelftestStatus){
+	//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+	// mutex not nesseary since isr can interrupt this routine but not the write regisrer routine since SPi will beblocked
+	_GyroSeftestStatus=0x07 & SelftestStatus;
+	uint8_t gyroStatusToSet=_GyroSeftestStatus<<5;
+	uint8_t configOLD=0;
+	readRegisters(GYRO_CONFIG,1,&configOLD);
+	uint8_t configNew=(configOLD&0x1F) |gyroStatusToSet;
+	writeRegister(GYRO_CONFIG,configNew);
+}
 /* writes a byte to MPU9250 register given a register address and data */
 int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
   /* write data to device */
-    if(!_useSPIHS&& !_useSPILSOLD){
-    	_SPIHSBOUDRATEPRESCALER=_MPU9250spi->Init.BaudRatePrescaler;
-    	_MPU9250spi->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+    if(_SPIHSBOUDRATEPRESCALERSLOW!=_MPU9250spi->Init.BaudRatePrescaler){
+    	_MPU9250spi->Init.BaudRatePrescaler = _SPIHSBOUDRATEPRESCALERSLOW;
     	HAL_SPI_Init(_MPU9250spi);
     	_useSPILSOLD=true;
     }
-    else if(!_useSPILSOLD){
+    if(_useSPIHS){
+    	if(_SPIHSBOUDRATEPRESCALERFAST!=_MPU9250spi->Init.BaudRatePrescaler){
+    	_MPU9250spi->Init.BaudRatePrescaler =_SPIHSBOUDRATEPRESCALERFAST;
+    	HAL_StatusTypeDef SpiRetVal= HAL_ERROR;
+    	while(SpiRetVal== HAL_ERROR){
+    		SpiRetVal=HAL_SPI_Init(_MPU9250spi);
+    	}
+    	_useSPILSOLD=false;
 
-    	_MPU9250spi->Init.BaudRatePrescaler =_SPIHSBOUDRATEPRESCALER;
-    	HAL_SPI_Init(_MPU9250spi);
+    }
     }
   	uint8_t buffer[2] = {subAddress, data };
   	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
@@ -1018,18 +1053,21 @@ int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
 /* reads registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */
 int MPU9250::readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest){
     // begin the transaction
-    if(!_useSPIHS){
-    	if(_useSPILSOLD==false){
-    	_SPIHSBOUDRATEPRESCALER=_MPU9250spi->Init.BaudRatePrescaler;
-    	}
-    	_MPU9250spi->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+    if(_SPIHSBOUDRATEPRESCALERSLOW!=_MPU9250spi->Init.BaudRatePrescaler){
+    	_MPU9250spi->Init.BaudRatePrescaler = _SPIHSBOUDRATEPRESCALERSLOW;
     	HAL_SPI_Init(_MPU9250spi);
     	_useSPILSOLD=true;
     }
-    else if(_useSPIHS&&_useSPILSOLD){
+    if(_useSPIHS){
+    	if(_SPIHSBOUDRATEPRESCALERFAST!=_MPU9250spi->Init.BaudRatePrescaler){
+    	_MPU9250spi->Init.BaudRatePrescaler =_SPIHSBOUDRATEPRESCALERFAST;
+    	HAL_StatusTypeDef SpiRetVal= HAL_ERROR;
+    	while(SpiRetVal== HAL_ERROR){
+    		SpiRetVal=HAL_SPI_Init(_MPU9250spi);
+    	}
     	_useSPILSOLD=false;
-    	_MPU9250spi->Init.BaudRatePrescaler =_SPIHSBOUDRATEPRESCALER;
-    	HAL_SPI_Init(_MPU9250spi);
+
+    }
     }
   	int retVal=0;
   	uint8_t tx[count+1]={0};

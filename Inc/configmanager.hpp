@@ -10,7 +10,6 @@
 
 #include "backupsram.h"
 #include "lwip/ip_addr.h"
-#include "main.h"
 #include "math.h"
 
 
@@ -68,6 +67,9 @@ public:
 	float getADCRMSNoise(uint8_t ADCNumber);
 	uint16_t getBaseID();
 	uint32_t getSensorBaseID(uint8_t SensorNumber);
+	bool getBT1AtStart(void){return _BT1atStart;}
+	bool getBT2AtStart(void){return _BT2atStart;}
+	void flushData();
 	/*
 	int pushData(double timeStamp, std::string info, double val);
 	int writeDataToCsv(std::string fileName);
@@ -79,6 +81,8 @@ public:
 private:
 	//Variables
 	uint32_t _Startcounts;
+	bool _BT1atStart=false;
+	bool _BT2atStart=false;
 
 	typedef struct {
 		float slope;
@@ -87,15 +91,20 @@ private:
 	}ADCCalCoevs;
 
 	ADCCalCoevs _ADCCalCoevs[3];
-	/*
-	const int maxFifoSize = 10000;
-	std::vector<double> timeStampVec;
-	std::vector<std::string> infoVec;
-	std::vector<double> dataVec;
-	int pushCounter;
-	*/
 	ConfigManager()
 	{
+		/*
+		reading GPIO Pins
+		#define BT_1_Pin GPIO_PIN_4
+		#define BT_1_GPIO_Port GPIOG
+		#define BT_2_Pin GPIO_PIN_5
+		#define BT_2_GPIO_Port GPIOG
+		*/
+		bool bt1_state= HAL_GPIO_ReadPin(BT_1_GPIO_Port, BT_1_Pin);
+		bool bt2_state= HAL_GPIO_ReadPin(BT_2_GPIO_Port, BT_2_Pin);
+		if(not bt1_state) {_BT1atStart=true;}
+		if(not bt2_state) {_BT2atStart=true;}
+
 		/*
 		 * Initialize backup SRAM peripheral
 		 */
@@ -103,8 +112,15 @@ private:
 			PWR->CSR1 |= PWR_CSR1_BRE;
 			while ((PWR->CSR1 & PWR_CSR1_BRR) == 0)
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);//dummy read
+			if(_BT1atStart==true)
+			{
+				///FLUSH SRAM
+				flushData();
+
+			}
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);
 		_Startcounts++;
+		BKPSRAM_Write32(STARTUPCOUNTADRESS,_Startcounts);
 		for (int i=0;i<3;i++)
 		{
 			_ADCCalCoevs[i].slope=BKPSRAM_ReadFloat(ADCCOEVSADRESS+i*12);
@@ -112,14 +128,6 @@ private:
 			_ADCCalCoevs[i].RMSNoise=BKPSRAM_ReadFloat(ADCCOEVSADRESS+i*12+8);
 		}
 
-		//memcpy(&_DeviceName,reinterpret_cast<unsigned char*>( (BKPSRAM_BASE + DEVICENAMEADRESS)),SIZEOFSRAMSTRINGS);
-		//memcpy(&_DeviceOwner,reinterpret_cast<unsigned char*>( (BKPSRAM_BASE + DEVICEOWNERADRESS)),SIZEOFSRAMSTRINGS);
-		/*
-		timeStampVec.resize(maxFifoSize);
-		infoVec.resize(maxFifoSize);
-		dataVec.resize(maxFifoSize);
-		pushCounter = 0;
-		*/
 	}           // verhindert, dass ein Objekt von au�erhalb von N erzeugt wird.
 				// protected, wenn man von der Klasse noch erben m�chte
 	ConfigManager(ConfigManager&); /* verhindert, dass eine weitere Instanz via

@@ -127,6 +127,8 @@
 
 #define g_to_ms2 9.80665
 #define SPI_TIMEOUT 100U
+
+#define	INIT_COUNT_LIM 100
 /**
  * BMA280 triple axis, digital interface, accelerometer.
  */

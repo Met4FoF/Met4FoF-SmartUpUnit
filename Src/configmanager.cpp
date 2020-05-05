@@ -142,6 +142,13 @@ uint16_t BaseID = gen_crc16(UDID, 12);
 return BaseID;
 }
 
+void ConfigManager::flushData(){
+	uint16_t size=TM_BKPSRAM_GetMemorySize();
+	for (int i=0;i<size;i=i+4){
+		BKPSRAM_Write32(i,0x00000000);
+	}
+}
+
 uint32_t ConfigManager::getSensorBaseID(uint8_t SensorNumber){
 uint16_t BaseID = getBaseID();
 uint32_t SensorBaseID=((uint32_t)BaseID<<16)+((uint32_t)SensorNumber<<8);

@@ -7,6 +7,7 @@ tools/log_files/
 tools/__pycache__/
 
 tools/data/
+!tools/data/1F_ADC1_AC_CAL_19V5_100HZ_5MHZ.json
 /Release/
 
 *.d
@@ -26,3 +27,7 @@ Debug/
 st-link\.cfg
 
 tools/linux_tty_lister\.sh
+
+tools/venv/
+
+Debug Internal/

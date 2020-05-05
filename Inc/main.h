@@ -118,8 +118,6 @@ void SystemClock_Config(void);
 #define USB_OverCurrent_GPIO_Port GPIOG
 #define USART6_RE_Pin GPIO_PIN_8
 #define USART6_RE_GPIO_Port GPIOC
-#define SENSOR_CS2_Pin GPIO_PIN_9
-#define SENSOR_CS2_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
 #define USB_SOF_GPIO_Port GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9
@@ -146,6 +144,8 @@ void SystemClock_Config(void);
 #define LD2_GPIO_Port GPIOB
 #define SENSOR_CS1_Pin GPIO_PIN_8
 #define SENSOR_CS1_GPIO_Port GPIOB
+#define SENSOR_CS2_Pin GPIO_PIN_9
+#define SENSOR_CS2_GPIO_Port GPIOC
 #define LED_BT1_Pin GPIO_PIN_0
 #define LED_BT1_GPIO_Port GPIOE
 #define LCD_DC_RS_Pin GPIO_PIN_1

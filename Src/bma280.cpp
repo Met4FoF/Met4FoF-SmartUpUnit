@@ -92,7 +92,14 @@ float BMA280::getConversionfactor() {
 void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur) {
 	_aRes=aRes;
 	_conversionfactor=getConversionfactor();
-	writeByte(BMA280_PMU_RANGE, _aRes);         // set full-scale range
+	writeByte(BMA280_PMU_RANGE, aRes);         // set full-scale range
+	uint8_t aresSet=readByte(BMA280_PMU_RANGE);
+	uint16_t count=0;
+	while(aresSet!=aRes && count<INIT_COUNT_LIM){
+		writeByte(BMA280_PMU_RANGE, aRes);         // set full-scale range
+		aresSet=readByte(BMA280_PMU_RANGE);
+		count++;
+	}
 	writeByte(BMA280_PMU_BW, BW);     // set bandwidth (and thereby sample rate)
 	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
 

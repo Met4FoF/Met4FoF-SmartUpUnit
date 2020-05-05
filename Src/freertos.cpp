@@ -54,7 +54,6 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "httpserver-netconn.h"
 //LCD
 #include "ILI9341/ILI9341_STM32_Driver.h"
 #include "ILI9341/ILI9341_GFX.h"
@@ -83,11 +82,10 @@
 
 #include "backupsram.h"
 
-#include "configmanager.hpp"
-
 #include "lwip/apps/sntp.h"
-
-#include "fatfs.h"//fat file System
+#include "configmanager.hpp"
+#include "lwip_return_ckeck.h"
+//#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -119,9 +117,9 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
-//BMA280 Sensor2(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor1(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -160,7 +158,7 @@ void MX_FREERTOS_Init(void) {
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
-			256);
+			512);
 	WebServerTID = osThreadCreate(osThread(WebserverTherad), NULL);
 
 	osThreadDef(LCDThread, StartLCDThread, osPriorityNormal, 0, 512);
@@ -195,11 +193,13 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
+
+
 	/* init code for LWIP */
 	MX_LWIP_Init();
 
 	/* init code for FATFS */
-	MX_FATFS_Init();
+	//MX_FATFS_Init();
 
 	Lwip_anf_FAT_init_finished=true;
 	/* USER CODE BEGIN StartDefaultTask */
@@ -303,9 +303,18 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	osDelay(10000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		osDelay(100);
+		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		osDelay(1);
+		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		osDelay(1000);
+		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		osDelay(1);
+		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		osDelay(500);
 	}
 	osThreadTerminate(NULL);
 }
@@ -364,6 +373,9 @@ void StartLCDThread(void const * argument) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 200, WHITE, 1, BLUE);
 
 		sprintf(Temp_Buffer_text, "Counting happy: %i",lcdupdatecnt);
+		ILI9341_Draw_Text(Temp_Buffer_text, 0, 210, WHITE, 1, BLUE);
+		uint32_t startcount=configMan.getStartcount();
+		sprintf(Temp_Buffer_text, "Start count: %i",startcount);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
 		if (lcdupdatecnt %10==0) {
 			iPadressBuffer[17]= {};
@@ -395,19 +407,27 @@ void StartDataStreamerThread(void const * argument) {
 			4.721804326558252e-3);
 
 	//MPU9250
+	uint32_t SensorID1=configMan.getSensorBaseID(1);
+
+	Sensor1.setBaseID(SensorID1);
+	Sensor1.begin();
+	Sensor1.enableDataReadyInterrupt();
+
+	//MPU9250
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
 
 	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
 	Sensor0.enableDataReadyInterrupt();
 
-	/*//BMA280
+	//BMA280
 	 // SET PS pin low
-	  * uint32_t SensorID2=configMan.getSensorBaseID(2);
+	/*
+	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	 Sensor2.setBaseID(SensorID);
-	 Sensor2.init(AFS_2G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	 */
+	 Sensor0.setBaseID(SensorID0);
+	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+*/
 	//Dummy Sensor
 	/*
 	 Sensor0.setBaseID(0);
@@ -418,21 +438,25 @@ void StartDataStreamerThread(void const * argument) {
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
 			UDID_Read8(4), UDID_Read8(5), UDID_Read8(6), UDID_Read8(7),
 			UDID_Read8(8), UDID_Read8(9), UDID_Read8(10), UDID_Read8(11));
-	//TODO add check that the if is up!! if this is not checked vPortRaiseBASEPRI( void ) infinity loop occurs
 	osDelay(4000);
 	uint32_t StartCount = configMan.getStartcount();
-	SEGGER_RTT_printf(0, "StartCount is= %d", StartCount);
+	SEGGER_RTT_printf(0, "StartCount is= %llu", StartCount);
 	struct netconn *conn;
 	struct netbuf *buf;
 	//TODO REMOVE THIS AND INTEGRATE IT in web interface
 	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
-	uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
-	IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
-			UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
-	configMan.setUDPTargetIP(targetipaddr);
+	ip_addr_t settargetipaddr=configMan.getUDPTargetIP();
+	if(settargetipaddr.addr==0x00000000)
+		{
 
-	//targetipaddr=configMan.getUDPTargetIP();
+		uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
+		IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
+				UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+		configMan.setUDPTargetIP(targetipaddr);
+		}
+
+	targetipaddr=configMan.getUDPTargetIP();
 	/* create a new connection */
 	conn = netconn_new(NETCONN_UDP);
 	/* connect the connection to the remote host */
@@ -570,6 +594,30 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
+
+
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Sensor1.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+
+
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				TempSensor0.getDescription(&Descriptionmsg,
@@ -626,97 +674,6 @@ void StartDataStreamerThread(void const * argument) {
 	osThreadTerminate(NULL);
 }
 
-void Check_LWIP_RETURN_VAL(err_t retVal) {
-	static uint32_t LWIP_RRT_PRINT_ErrorCount = 0;
-	if (retVal != ERR_OK) {
-		switch (retVal) {
-		case -1:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_MEM: Out of memory error.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -2:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_BUF: Buffer error.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -3:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_TIMEOUT: Time Out.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -4:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_RTE: Routing problem.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -5:
-			SEGGER_RTT_printf(0,
-					"%u LWIP ERR_INPROGRESS: Operation in progress.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -6:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_VAL: Illegal value.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -7:
-			SEGGER_RTT_printf(0,
-					"%u LWIP ERR_WOULDBLOCK: Operation would block.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -8:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_USE: Address in use.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -9:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_ALREADY: Already connecting.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -10:
-			SEGGER_RTT_printf(0,
-					"%u LWIP ERR_ISCONN: Conn already established.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -11:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_CONN: Not connected.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -12:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_IF: Low-level netif error.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -13:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_ABRT: Connection aborted.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -14:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_RST: Connection reset.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -15:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_CLSD: Connection closed.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		case -16:
-			SEGGER_RTT_printf(0, "%u LWIP ERR_ARG: Illegal argument.\r\n",
-					LWIP_RRT_PRINT_ErrorCount);
-			LWIP_RRT_PRINT_ErrorCount++;
-			break;
-		}
-	}
-}
-
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	ConfigManager& configMan = ConfigManager::instance();
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
@@ -734,19 +691,20 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		/*
+
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp, Channel1Tim2CaptureCount);
-		 //mptr->has_Data_11 = true;
-		 //mptr->Data_11 = (float) HAL_ADC_PollForConversion(&hadc1, 1);
+		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
 		 osStatus result = osMailPut(DataMail, mptr);
-		 */
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		if (Channel3Tim2CaptureCount % 1 == 0) {
 			timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
+			HAL_ADC_PollForConversion(&hadc1, 0);
+			float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
+			float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
+			float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
 			DataMessage *mptr0;
 			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
 			Sensor0.getData(mptr0, timestamp23, Channel3Tim2CaptureCount);
@@ -757,17 +715,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			//Sensor0.addData(int Channel,float value)
 
 			mptr0->has_Data_11 = true;
-			HAL_ADC_PollForConversion(&hadc1, 0);
-			float adcVal = (float) HAL_ADC_GetValue(&hadc1);
-			mptr0->Data_11 = configMan.getADCVoltage(0, adcVal);
+			mptr0->Data_11 = configMan.getADCVoltage(0, adcVal1);
 			mptr0->has_Data_12 = true;
-			HAL_ADC_PollForConversion(&hadc2, 0);
-			adcVal = (float) HAL_ADC_GetValue(&hadc2);
-			mptr0->Data_12 = configMan.getADCVoltage(1, adcVal);
+			mptr0->Data_12 = configMan.getADCVoltage(1, adcVal2);
 			mptr0->has_Data_13 = true;
-			HAL_ADC_PollForConversion(&hadc3, 0);
-			adcVal = (float) HAL_ADC_GetValue(&hadc3);
-			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal);
+			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal3);
 			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}

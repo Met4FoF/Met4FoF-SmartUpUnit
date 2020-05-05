@@ -73,10 +73,6 @@
 
 //Protbuff
 #include "pb.h"
-
-//Sensor
-#include "MPU9250.h"
-
 //BACKUP SRAM
 #include "backupsram.h"
 /* Private includes ----------------------------------------------------------*/
@@ -150,6 +146,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+
   MX_DMA_Init();
   MX_USART3_UART_Init();
   //MX_USB_DEVICE_Init(); USb usage results in hardfault needs to be debugged but has low priority
@@ -169,7 +166,8 @@ int main(void)
   MX_DAC_Init();
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_GPIO_WritePin(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
