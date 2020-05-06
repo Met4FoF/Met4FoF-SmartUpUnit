@@ -129,7 +129,7 @@ void http_server_serve(struct netconn *conn)
   			  ip4addr_ntoa_r((ip4_addr_t*)&UDPNetmask, NetMaskBuffer,sizeof(NetMaskBuffer));
 
   			  char HTMLBuff[300]={};
-  			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>Targ IP= %s NetMask %s Softreset to activate Changes if Battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer);
+  			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>UDPTargetIP= %s NetMask= %s softreset (black button) to activate changes if battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer);
   			  configMan.setUDPSubnetmarsk(UDPNetmask);
   			  configMan.setUDPTargetIP(UDPip);
   			  netconn_write(conn, (const unsigned char*)HTMLBuff, strlen(HTMLBuff), NETCONN_NOCOPY);
