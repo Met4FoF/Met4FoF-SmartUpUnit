@@ -10,7 +10,6 @@
 
 #include "backupsram.h"
 #include "lwip/ip_addr.h"
-#include "main.h"
 #include "math.h"
 
 
@@ -70,6 +69,7 @@ public:
 	uint32_t getSensorBaseID(uint8_t SensorNumber);
 	bool getBT1AtStart(void){return _BT1atStart;}
 	bool getBT2AtStart(void){return _BT2atStart;}
+	void flushData();
 	/*
 	int pushData(double timeStamp, std::string info, double val);
 	int writeDataToCsv(std::string fileName);
@@ -100,8 +100,11 @@ private:
 		#define BT_2_Pin GPIO_PIN_5
 		#define BT_2_GPIO_Port GPIOG
 		*/
-		if(HAL_GPIO_ReadPin(BT_1_GPIO_Port, BT_1_Pin)) {_BT1atStart=true;}
-		if(HAL_GPIO_ReadPin(BT_2_GPIO_Port, BT_2_Pin)) {_BT2atStart=true;}
+		bool bt1_state= HAL_GPIO_ReadPin(BT_1_GPIO_Port, BT_1_Pin);
+		bool bt2_state= HAL_GPIO_ReadPin(BT_2_GPIO_Port, BT_2_Pin);
+		if(not bt1_state) {_BT1atStart=true;}
+		if(not bt2_state) {_BT2atStart=true;}
+
 		/*
 		 * Initialize backup SRAM peripheral
 		 */
@@ -109,6 +112,12 @@ private:
 			PWR->CSR1 |= PWR_CSR1_BRE;
 			while ((PWR->CSR1 & PWR_CSR1_BRR) == 0)
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);//dummy read
+			if(_BT1atStart==true)
+			{
+				///FLUSH SRAM
+				flushData();
+
+			}
 		_Startcounts=BKPSRAM_Read32(STARTUPCOUNTADRESS);
 		_Startcounts++;
 		BKPSRAM_Write32(STARTUPCOUNTADRESS,_Startcounts);

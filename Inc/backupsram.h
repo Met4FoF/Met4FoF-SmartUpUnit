@@ -8,7 +8,6 @@
 #ifndef BACKUPSRAM_H_
 #define BACKUPSRAM_H_
 #include "stm32f7xx_hal.h"
-#include "main.h"
 
 #define SIZEOFSRAMSTRINGS 40
 

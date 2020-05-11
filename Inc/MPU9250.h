@@ -139,8 +139,9 @@ class MPU9250{
     void setGyroSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
     int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
+    uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
+    uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
   protected:
-    uint32_t _SPIHSBOUDRATEPRESCALER;
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U
     // spi
