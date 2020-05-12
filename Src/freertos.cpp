@@ -399,6 +399,7 @@ void StartDataStreamerThread(void const * argument) {
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
+	//TODO Make this availablte through web interface
 	configMan.setADCCalCoevs(0, 0.00488040211169927, -10.029208660668372,
 			4.6824163159348675e-3);
 	configMan.setADCCalCoevs(1, 0.004864769104581888, -9.911472983085314,
@@ -447,12 +448,11 @@ void StartDataStreamerThread(void const * argument) {
 	configMan.setUDPPort(7654);
 	ip_addr_t targetipaddr;
 	ip_addr_t settargetipaddr=configMan.getUDPTargetIP();
+	// OPK check if the ip adress is not empty if empty use default address an store this adress in memory
 	if(settargetipaddr.addr==0x00000000)
 		{
-
-		uint8_t UDP_TARGET_IP_ADDRESS[4] = { 192, 168, 0, 200 };
-		IP4_ADDR(&targetipaddr, UDP_TARGET_IP_ADDRESS[0], UDP_TARGET_IP_ADDRESS[1],
-				UDP_TARGET_IP_ADDRESS[2], UDP_TARGET_IP_ADDRESS[3]);
+		IP4_ADDR(&targetipaddr, UDP_TARGET_DEFAULT_IP_ADDRESS[0], UDP_TARGET_DEFAULT_IP_ADDRESS[1],
+				UDP_TARGET_DEFAULT_IP_ADDRESS[2], UDP_TARGET_DEFAULT_IP_ADDRESS[3]);
 		configMan.setUDPTargetIP(targetipaddr);
 		}
 
