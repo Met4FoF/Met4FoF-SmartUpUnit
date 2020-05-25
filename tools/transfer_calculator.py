@@ -390,7 +390,7 @@ class Databuffer:
         z : TYPE
             DESCRIPTION.
         REF : TYPE
-            DESCRIPTION.
+            DESCRIPTION.5
         t : TYPE
             DESCRIPTION.
 
@@ -1006,7 +1006,7 @@ if __name__ == "__main__":
         ADCChannel="ADC1",
     )
     DB1.setRefTransferFunction(
-        "D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.csv"
+       r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
     )
     # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
@@ -1024,7 +1024,7 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     DataReaderACCdumpLARGE(
         DB1,
-        "D:/data/2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0/mpu9250_imeko_10_hz_250_hz_6wdh.dump",
+        r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6rep.dump",
     )
     # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
 
