@@ -29,7 +29,7 @@ from uncertainties import ufloat
 
 class ReferencTransferFunction:
     def __init__(self, typ="hf_ref", filename="filename"):
-        self.CSVData = pd.read_csv(filename, delimiter=";").set_index(
+        self.CSVData = pd.read_csv(filename, delimiter=";",skiprows=[1,2]).set_index(
             ["loop", "frequency"]
         )
 
@@ -1005,6 +1005,8 @@ if __name__ == "__main__":
         ],
         ADCChannel="ADC1",
     )
+
+    #https://zenodo.org/record/3786587#.Xs5XuWgzaUk csv from zenodo
     DB1.setRefTransferFunction(
        r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
     )
@@ -1022,6 +1024,7 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
     DataReaderACCdumpLARGE(
         DB1,
         r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6rep.dump",
