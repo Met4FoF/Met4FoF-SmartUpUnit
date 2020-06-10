@@ -19,12 +19,14 @@ import csv
 import timeit
 from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
 import time
+from scipy.stats import chi2
+from cycler import cycler # for colored markers
 
 from uncertainties import ufloat
 
 
 # from termcolor import colored
-# plt.rcParams.update({"font.size": 30})
+plt.rcParams.update({"font.size": 30})
 # plt.rc("text", usetex=True)
 
 class ReferencTransferFunction:
@@ -44,6 +46,36 @@ class ReferencTransferFunction:
             return self.__GetNearestData(key[0], key[1])
         if len(key) == 3:
             return self.__GetNearestData(key[0], key[1])[key[2]]
+
+    def Plot(self, PlotType="lin"):
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        if PlotType == "logx":
+            ax1.set_xscale("log")
+            ax2.set_xscale("log")
+        fig.suptitle("Analog Calibration System Data")
+        ax1.set_ylabel("Absolute Amplitude $|A|$")
+        ax1.grid(True)
+        freq=[lis[1] for lis in self.CSVData.index.values]
+        ax1.errorbar(
+            freq,
+            self.CSVData['acceleration'].values,
+            yerr=self.CSVData['acceleration_std'].values,
+            markersize=20,
+            fmt=".",
+        )
+        ax2.errorbar(
+            freq,
+            np.unwrap(self.CSVData['phase'].values/180*np.pi)/ np.pi * 180,
+            yerr=self.CSVData['phase_std'],
+            markersize=20,
+            fmt=".",
+        )
+        ax2.set_xlabel(r"Frequency $f$ in Hz")
+        ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
+        ax2.grid(True)
+        ax1.legend(numpoints=1, fontsize=8, ncol=3)
+        ax2.legend(numpoints=1, fontsize=8, ncol=3)
+        plt.show()
 
 
 class CalTimeSeries:
@@ -639,7 +671,9 @@ class Databuffer:
                           'AmplitudeCoefficentUncer':np.zeros(FreqNum),
                           'Phase':np.zeros(FreqNum),
                           'PhaseUncer':np.zeros(FreqNum),
-                          'N':np.zeros(FreqNum)}
+                          'N':np.zeros(FreqNum),
+                          'AmpChiSquarePassed':[False] * FreqNum,
+                          'PhaseChiSquarePassed':[False] * FreqNum}
         roundedFreqs=np.rint(self.TransferFreqs*10)/10
         for i in range(len(nominalFreqs)):
             IDX=np.where(roundedFreqs==nominalFreqs[i])
@@ -647,36 +681,47 @@ class Databuffer:
             N=npIDX.size
             TMPAmplitudes=self.TransferAmpl[IDX]
             TMPAmplitudesErr = self.TransferAmplErr[IDX]
-            Amps=np.full(N,ufloat(0,0))
-            ampsum=ufloat(0,0)
-            weights=np.full(N,ufloat(0,0))
-            weighted = np.full(N,ufloat(0,0))
+            Amps=np.zeros(N)
+            weights=np.zeros(N)
+            weighted = np.zeros(N)
+            #calculate wigthed mean of phase and amplitude values
             for j in range(N):
-                Amps[j]=ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
-                ampsum=ampsum+ufloat(TMPAmplitudes[j],TMPAmplitudesErr[j])
-                weights[j]=ufloat(1/TMPAmplitudesErr[j],0)
+                Amps[j]=TMPAmplitudes[j]
+                weights[j]=1/TMPAmplitudesErr[j]
                 weighted[j]=Amps[j]*weights[j]
-            amp = ampsum/N
-            wightsum=np.sum(weights)
-            ampWMean=np.sum(weighted)/wightsum
-            tmpmean=np.mean(Amps)
-            diff=weighted-np.mean(weighted)
-            tmpstd=np.sum(diff)
-            #tmpstd = np.sum(diff)/wightsum
+            ampmean=np.sum(weighted)/np.sum(weights)
+            residualAmp=Amps-ampmean
+            ampstd=np.sqrt(np.sum(residualAmp*residualAmp)/N)
             TMPPhases=self.TransferPhase[IDX]
             TMPPhasesErr=self.TransferPhaseErr[IDX]
-            Phases = np.full(N,ufloat(0,0))
-            phasessum = ufloat(0, 0)
+            Phases = np.zeros(N)
+            phaseweights= np.zeros(N)
+            phaseweighted = np.zeros(N)
             for j in range(N):
-                Phases[j] = ufloat(TMPPhases[j], TMPPhasesErr[j])
-                phasessum = phasessum + ufloat(TMPPhases[j], TMPPhasesErr[j])
-            phase=np.mean(Phases)
-            phasetmp =phasessum/N
-            self.Transferfunction['AmplitudeCoefficent'][i]=amp.nominal_value
-            self.Transferfunction['AmplitudeCoefficentUncer'][i]=amp.std_dev
-            self.Transferfunction['Phase'][i]= phase.nominal_value
-            self.Transferfunction['PhaseUncer'][i] = phase.std_dev
+                Phases[j] = TMPPhases[j]
+                phaseweights[j]=1/TMPPhasesErr[j]
+                phaseweighted[j]=Phases[j]*phaseweights[j]
+            phasemean= np.sum(phaseweighted)/np.sum(phaseweights)
+            residualPhase=(Phases-phasemean)
+            RphaseSqare=residualPhase * residualPhase
+            phasestd=np.sqrt(np.sum(RphaseSqare)/N)
+
+            #do an CHI² test to check konsistency
+            TAmplitude=np.sum((residualAmp*residualAmp)/TMPAmplitudesErr)
+            TPhase = np.sum((residualPhase * residualPhase) / TMPPhasesErr)
+            AmplitudeChi2Pass=False
+            PhaseChi2Pass=False
+            if TAmplitude<chi2.pdf(N, N-1) and TAmplitude<0.05:
+                AmplitudeChi2Pass = True
+            if TPhase<chi2.pdf(N, N-1) and TPhase<0.05:
+                PhaseChi2Pass = True
+            self.Transferfunction['AmplitudeCoefficent'][i]=ampmean
+            self.Transferfunction['AmplitudeCoefficentUncer'][i]=ampstd*2
+            self.Transferfunction['Phase'][i] = phasemean
+            self.Transferfunction['PhaseUncer'][i] =phasestd*2
             self.Transferfunction['N'][i] = len(IDX)
+            self.Transferfunction['AmpChiSquarePassed'][i] = AmplitudeChi2Pass
+            self.Transferfunction['PhaseChiSquarePassed'][i] = PhaseChi2Pass
         return self.Transferfunction
 
     def PlotTransferFunction(self, PlotType="lin"):
@@ -687,6 +732,19 @@ class Databuffer:
         fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
+        jet = plt.cm.jet
+        AmpMarker=[None]*len(self.Transferfunction['AmpChiSquarePassed'])
+        for i in range (len(self.Transferfunction['AmpChiSquarePassed'])):
+            if(self.Transferfunction['AmpChiSquarePassed'][i]==False):
+                AmpMarker[i] = True
+            else:
+                AmpMarker[i] = False
+        PhaseMarker=[None]*len(self.Transferfunction['PhaseChiSquarePassed'])
+        for i in range(len(self.Transferfunction['PhaseChiSquarePassed'])):
+            if(self.Transferfunction['PhaseChiSquarePassed'][i]==False):
+                PhaseMarker[i] = True
+            else:
+                PhaseMarker[i] = False
         for run in range(int(np.max(self.TransferRunCount)) + 1):
             runIDX = self.TransferRunCount == run
             ax1.errorbar(
@@ -711,17 +769,19 @@ class Databuffer:
             self.Transferfunction['Frequencys'],
             self.Transferfunction['AmplitudeCoefficent'],
             yerr=self.Transferfunction['AmplitudeCoefficentUncer'],
-            fmt='s',
             markersize=5,
+            fmt=".",
             label='Mean',
+            uplims=AmpMarker, lolims=AmpMarker
         )
         ax2.errorbar(
             self.Transferfunction['Frequencys'],
             self.Transferfunction['Phase']/ np.pi * 180,
             yerr=self.Transferfunction['PhaseUncer']/ np.pi * 180,
-            fmt='s',
             markersize=5,
+            fmt=".",
             label='Mean',
+            uplims=PhaseMarker, lolims=PhaseMarker
         )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
@@ -1025,18 +1085,19 @@ if __name__ == "__main__":
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
-    DataReaderACCdumpLARGE(
-        DB1,
-        r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6rep.dump",
-    )
+    #DataReaderACCdumpLARGE(
+    #    DB1,
+    #    r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6rep.dump",
+    #)
     # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
 
     # reading data from file and proces all Data
-    DB1.DoAllFFT()
-    DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
-    DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
-    DB1.PlotTransferFunction()
-    DB1.PlotTransferFunction(PlotType="logx")
+    #DB1.DoAllFFT()
+    #DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
+    #DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
+    #DB1.PlotTransferFunction()
+    #DB1.PlotTransferFunction(PlotType="logx")
+    #DB1.PlotSTDandValid()
     print("--- %s seconds ---" % (time.time() - start_time))
     # fstats=yappi.get_func_stats()
     # fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
@@ -1050,3 +1111,5 @@ if __name__ == "__main__":
     # DB2.PlotTransferFunction(PlotType="logx")
 
     # callculate all the ffts
+
+
