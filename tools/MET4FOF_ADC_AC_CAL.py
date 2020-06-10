@@ -333,16 +333,16 @@ class Met4FOFADCCall:
 
 
 if __name__ == "__main__":
-    SMALL_SIZE = 12
-    MEDIUM_SIZE = 15
-    BIGGER_SIZE = 18
-    plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-    plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-    plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-    plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+    # SMALL_SIZE = 12
+    # MEDIUM_SIZE = 15
+    # BIGGER_SIZE = 18
+    # plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+    # plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+    # plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
     # ADCCall = Met4FOFADCCall(None,None,None,None,Filename='cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1V95_V195_1HZ_1MHZ.json')
     # ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     # ADCCall.PlotTransferfunction('ADC2',PlotType='log')
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json')
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json')
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
@@ -375,7 +375,7 @@ if __name__ == "__main__":
     ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200320_1FE4_ADC123_3CYCLES_V195_1HZ_1MHZ.json')
+    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CYCLES_V195_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
