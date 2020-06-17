@@ -1,20 +1,6 @@
 import numpy as np
 from nptdms import TdmsFile
 import SineTools as ST
-import json
-REFtdms_file=TdmsFile.open(r"D:\data\191218_MPU_9250_X_Achse_150_Wdh\PXI-5922{0}.tdms")
-SYNCtdms_file=TdmsFile.open(r"D:\data\191218_MPU_9250_X_Achse_150_Wdh\PXI-5922{1}.tdms")
-
-
-REFgroup = REFtdms_file['18.12.2019 13:49:21 - All Data']
-SYNCgroup = SYNCtdms_file['18.12.2019 13:49:21 - All Data']
-
-REFchannel=REFgroup['PXI-5922{0}']
-SYNCchannel=SYNCgroup['PXI-5922{1}']
-
-treshold=0.4
-ChunksInRow=5
-SubChunkingFactor = 20
 class Buffer:
     def __init__(self,DeltaT):
         self.DeltaT=DeltaT
@@ -43,14 +29,16 @@ class Buffer:
         return(self.RFFTFreqs[np.argmax(abs(self.RFFT))])
 
     def Finish(self):
-        cutoutlen=3*int(self.Samplerate)
-        self.Data=self.Data[cutoutlen:-cutoutlen]
+        cutoutlenStart=int(2.5*self.Samplerate)
+        cutoutlenStop =int(1 * self.Samplerate)
+        self.Data=self.Data[cutoutlenStart:-cutoutlenStop]
 
     def GetSinFit(self):
         if self.Flags['FFTDone'] == False:
             self.GetFFTMaxFreq()
         self.times=np.arange(self.Data.size)*self.DeltaT
-        self.FourParamsSineResultRaw=ST.seq_fourparsinefit(self.Data,self.times,self.Params["FFTFreq"],tol=5.0e-5,nmax=5000,periods=5)
+        tmpperiods=int(np.rint(self.Params["FFTFreq"]))
+        self.FourParamsSineResultRaw=ST.seq_fourparsinefit(self.Data,self.times,self.Params["FFTFreq"],tol=1.0e-10,nmax=5000,periods=tmpperiods)
         Complex = self.FourParamsSineResultRaw[:, 1] + 1j * self.FourParamsSineResultRaw[:, 0]
         DC = self.FourParamsSineResultRaw[:, 2]
         Freq = self.FourParamsSineResultRaw[:, 3]
@@ -66,10 +54,25 @@ class Buffer:
             'Frequency':np.std(Freq)*2,
             'Phase':np.std(Angles)*2,
             'N':self.FourParamsSineResultRaw.shape[0]}
+        self.Params['AngleRaw']=Angles
         print("Fitting Done")
         return 0
 
 if __name__ == '__main__':
+
+    REFtdms_file = TdmsFile.open(r"D:\data\17_06_2020_140751\vibrometer.tdms")
+    SYNCtdms_file = TdmsFile.open(r"D:\data\17_06_2020_140751\SYNC.tdms")
+
+    REFgroup = REFtdms_file['17.06.2020 14:07:51 - All Data']
+    SYNCgroup = SYNCtdms_file['17.06.2020 14:07:51 - All Data']
+
+    REFchannel = REFgroup['vibrometer']
+    SYNCchannel = SYNCgroup['SYNC']
+
+    treshold = 0.35
+    ChunksInRow = 7
+    SubChunkingFactor = 20
+
     REFFoundFFTFreqs = []
     SYNCFoundFFTFreqs = []
     REFFitResults = []
@@ -82,6 +85,7 @@ if __name__ == '__main__':
     MeanChunkSize = REFchannel.properties['wf_samples']
     NumOfCuncks = int(np.floor(REFDataPoints / MeanChunkSize))
     SignalSTD = np.zeros(NumOfCuncks * SubChunkingFactor)
+    SignalValide = np.zeros(NumOfCuncks * SubChunkingFactor)
     REFBuf = Buffer(REFchannel.properties['wf_increment'])
     SYNCBuf = Buffer(SYNCchannel.properties['wf_increment'])
     LastChunckCountainsValide = False
@@ -104,6 +108,7 @@ if __name__ == '__main__':
             if STDBiggerThanTreshold[j] == True:
                 TruesInRowSoFar = TruesInRowSoFar + 1
                 if TruesInRowSoFar > ChunksInRow:
+                    SignalValide[(i-1)*SubChunkingFactor+j]=1
                     REFBuf.PushData(REFSubChunkedData[j])
                     SYNCBuf.PushData(SYNCSubChunkedData[j])
             else:
@@ -122,16 +127,24 @@ if __name__ == '__main__':
         del REFchannel_chunk_data
         del SYNCchannel_chunk_data
 
-    T = np.zeros([len(SYNCFitResults),6])
+    T = np.zeros([len(SYNCFitResults),8])
     loop = 0
     lastFreq = 0
     for i in range(len(SYNCFitResults)):
-        if REFFitResults[i]['FitResult']['Frequency'] < lastFreq:
+        if REFFitResults[i]['FitResult']['Frequency']*1.05 < lastFreq:
             loop = loop + 1
+            #todo add unwrap here
         T[i,0]=loop
         T[i,2]=AMP = REFFitResults[i]['FitResult']['Amplitude']
         T[i,3]=AMPErr = REFFitResults[i]['FitResultErr']['Amplitude']
-        T[i,4]=Phase = REFFitResults[i]['FitResult']['Phase'] - SYNCFitResults[i]['FitResult']['Phase']
-        T[i,5]=PhaseErr = np.sqrt(np.power(REFFitResults[i]['FitResult']['Phase'], 2) + np.power(SYNCFitResults[i]['FitResult']['Phase'], 2))
+        T[i,4]=Phase = (REFFitResults[i]['FitResult']['Phase'] - SYNCFitResults[i]['FitResult']['Phase'])/np.pi*180
+        T[i,5]=PhaseErr = (np.sqrt(np.power(REFFitResults[i]['FitResultErr']['Phase'], 2) + np.power(SYNCFitResults[i]['FitResultErr']['Phase'], 2)))/np.pi*180
+        T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']
+        T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']
         T[i,1]=intFreq = np.rint(REFFitResults[i]['FitResult']['Frequency'])
         lastFreq = REFFitResults[i]['FitResult']['Frequency']
+
+    for i in range(int(np.max(T[:,0]))):
+        print(i)
+
+
