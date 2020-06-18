@@ -58,8 +58,8 @@ class ReferencTransferFunction:
         freq=[lis[1] for lis in self.CSVData.index.values]
         ax1.errorbar(
             freq,
-            self.CSVData['acceleration'].values,
-            yerr=self.CSVData['acceleration_std'].values,
+            self.CSVData['ex_amp'].values,
+            yerr=self.CSVData['ex_amp_std'].values,
             markersize=20,
             fmt=".",
         )
@@ -568,8 +568,8 @@ class Databuffer:
         if self.flags["RefTransFunctionSet"] == True:
             if not self.flags["RefGroupDelaySet"]:
                 return (
-                    self.RefTransferFunction[loop, freq, "acceleration"],
-                    self.RefTransferFunction[loop, freq, "acceleration_std"],
+                    self.RefTransferFunction[loop, freq, "ex_amp"],
+                    self.RefTransferFunction[loop, freq, "ex_amp_std"],
                     self.RefTransferFunction[loop, freq, "phase"] / 180 * np.pi,
                     self.RefTransferFunction[loop, freq, "phase_std"] / 180 * np.pi,
                 )
@@ -1060,15 +1060,18 @@ if __name__ == "__main__":
     DB1 = Databuffer()
     DB1.setRefADCTF(
         [
-            "cal_data/1FE4_AC_CAL/200318_1FE4_ADC123_19V5_1HZ_1MHZ.json",
-            "cal_data/1FE4_AC_CAL/200319_1FE4_ADC123_19V5_1HZ_1MHZ.json",
+            r"cal_data\1FE4_AC_CAL\200323_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
+            r"cal_data\1FE4_AC_CAL\200323_1FE4_ADC123_3CLCES_1V95_1HZ_1MHZ.json",
         ],
         ADCChannel="ADC1",
     )
 
     #https://zenodo.org/record/3786587#.Xs5XuWgzaUk csv from zenodo
+    #DB1.setRefTransferFunction(
+    #   r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
+    #)
     DB1.setRefTransferFunction(
-       r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
+       r"D:\data\17_06_2020_140751\200617_MPU9250_IMEKO_Z_ROT_10_1_TF.csv"
     )
     # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
@@ -1083,7 +1086,7 @@ if __name__ == "__main__":
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    # DataReaderGYROdumpLARGE(DB1,"/data/20191217100017_MPU_9250_0x1fe40000.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    DataReaderGYROdumpLARGE(DB1,r"D:\data\200617_MPU9250_IMEKO_Z_ROT_10_1.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
     #DataReaderACCdumpLARGE(
     #    DB1,
@@ -1092,12 +1095,12 @@ if __name__ == "__main__":
     # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
 
     # reading data from file and proces all Data
-    #DB1.DoAllFFT()
-    #DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
-    #DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
-    #DB1.PlotTransferFunction()
-    #DB1.PlotTransferFunction(PlotType="logx")
-    #DB1.PlotSTDandValid()
+    DB1.DoAllFFT()
+    DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
+    DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
+    DB1.PlotTransferFunction()
+    DB1.PlotTransferFunction(PlotType="logx")
+    DB1.PlotSTDandValid()
     print("--- %s seconds ---" % (time.time() - start_time))
     # fstats=yappi.get_func_stats()
     # fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')

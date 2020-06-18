@@ -1,6 +1,11 @@
 import numpy as np
 from nptdms import TdmsFile
 import SineTools as ST
+
+def GetNearestFreq(freq,TestFreqs):
+    frqIDX = abs(TestFreqs - freq).argmin()
+    return TestFreqs[frqIDX]
+
 class Buffer:
     def __init__(self,DeltaT):
         self.DeltaT=DeltaT
@@ -72,7 +77,9 @@ if __name__ == '__main__':
     treshold = 0.35
     ChunksInRow = 7
     SubChunkingFactor = 20
+    SensDegPerSecPerVolt=100
 
+    TestFreqs=[4.0,5.0,6.3,8.0,10.0,12.5,16.0,20.0,25.0,31.5,40.0,50.0,63.0,80.0,100.0,125.0,160.0,200.0,250.0]
     REFFoundFFTFreqs = []
     SYNCFoundFFTFreqs = []
     REFFitResults = []
@@ -127,7 +134,7 @@ if __name__ == '__main__':
         del REFchannel_chunk_data
         del SYNCchannel_chunk_data
 
-    T = np.zeros([len(SYNCFitResults),8])
+    T = np.zeros([len(SYNCFitResults),6])
     loop = 0
     lastFreq = 0
     for i in range(len(SYNCFitResults)):
@@ -139,12 +146,26 @@ if __name__ == '__main__':
         T[i,3]=AMPErr = REFFitResults[i]['FitResultErr']['Amplitude']
         T[i,4]=Phase = (REFFitResults[i]['FitResult']['Phase'] - SYNCFitResults[i]['FitResult']['Phase'])/np.pi*180
         T[i,5]=PhaseErr = (np.sqrt(np.power(REFFitResults[i]['FitResultErr']['Phase'], 2) + np.power(SYNCFitResults[i]['FitResultErr']['Phase'], 2)))/np.pi*180
-        T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']
-        T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']
-        T[i,1]=intFreq = np.rint(REFFitResults[i]['FitResult']['Frequency'])
+        #T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']
+        #T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']
+        T[i,1]=intFreq = GetNearestFreq(REFFitResults[i]['FitResult']['Frequency'],TestFreqs)
         lastFreq = REFFitResults[i]['FitResult']['Frequency']
 
-    for i in range(int(np.max(T[:,0]))):
-        print(i)
+    T[:, 2] = SensDegPerSecPerVolt * T[:, 2]
+    T[:, 3] = SensDegPerSecPerVolt * T[:, 3]
+
+
+    for i in range(len(SYNCFitResults)):
+        if T[i,4]>180:
+            T[i, 4]=T[i,4]-360
+        if T[i,4]<-180:
+            T[i, 4] = T[i, 4] + 360
+headerstr="""loop;frequency;ex_amp;ex_amp_std;phase;phase_std
+#Experiment Count;Excitation frequency;Excitation amplitude;Excitation amplitude uncertainty (2s 95%);Phase against reference signal;Phase against reference signal uncertainty (2s 95%)
+#Number;Hz;deg/s;deg/s;deg;deg"""
+np.savetxt("200617_MPU9250_IMEKO_Z_ROT_10_1_TF.csv", T, delimiter=';', header=headerstr,comments='',fmt='%1.5e')
+
+
+
 
 
