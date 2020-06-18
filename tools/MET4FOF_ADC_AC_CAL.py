@@ -281,7 +281,8 @@ class Met4FOFADCCall:
         if freq-Freqs[testFreqIDX]>0:
             DeltaInterpolIDX=1
         if testFreqIDX+DeltaInterpolIDX<0:
-            raise ValueError(str(freq)+" is to SMALL->Extrapolation not supported! minimal Frequency is "+str(Freqs[0]))
+            assert RuntimeWarning(str(freq)+" is to SMALL->Extrapolation is not recomended! minimal Frequency is "+str(Freqs[0]))
+            return[Ampls[0],AmplErr[0]]
         if testFreqIDX+DeltaInterpolIDX>=Freqs.size:
             raise ValueError(str(freq)+" is to BIG->Extrapolation not supported! maximal Frequency is "+str(Freqs[-1]))
         if DeltaInterpolIDX==0:
@@ -312,7 +313,8 @@ class Met4FOFADCCall:
         if freq-Freqs[testFreqIDX]>0:
             DeltaInterpolIDX=1
         if testFreqIDX+DeltaInterpolIDX<0:
-            raise ValueError("Extrapolation not supported! minimal Frequency is"+Freqs[0])
+            assert RuntimeWarning(str(freq)+" is to SMALL->Extrapolation is not recomended! minimal Frequency is "+str(Freqs[0]))
+            return[Phases[0],PhasesErr[0]]
         if testFreqIDX+DeltaInterpolIDX>=Freqs.size:
             raise ValueError("Extrapolation not supported! maximal Frequency is"+Freqs[-1])
         if DeltaInterpolIDX==0:
