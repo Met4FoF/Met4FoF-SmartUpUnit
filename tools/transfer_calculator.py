@@ -9,6 +9,8 @@ Created on Wed Aug  7 12:34:21 2019
 # !/usr/bin/env python
 # import rospy
 # from sensor_msgs.msg import Imu
+import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -65,7 +67,7 @@ class ReferencTransferFunction:
         )
         ax2.errorbar(
             freq,
-            np.unwrap(self.CSVData['phase'].values/180*np.pi)/ np.pi * 180,
+            self.CSVData['phase'].values,
             yerr=self.CSVData['phase_std'],
             markersize=20,
             fmt=".",
@@ -122,6 +124,7 @@ class CalTimeSeries:
             # when pushing the second block the reference is changed
             # and the second block gets added two times
             self.flags["BlockPushed"] = self.flags["BlockPushed"] + 1
+        self.length=self.length+Datablock.shape[0]
 
     def CalcTime(self):
         """
@@ -283,8 +286,8 @@ class CalTimeSeries:
                         self.Data[:-EndCutOut, 4],
                         self.FFTFreqPeak,
                         tol=1.0e-7,
-                        nmax=1000,
-                        periods=50,
+                        nmax=5000,
+                        periods=int(self.FFTFreqPeak),
                     )
                 except AssertionError as error:
                     print(error)
@@ -379,13 +382,13 @@ class Databuffer:
 
         """
         self.params = {
-            "IntegrationLength": 64,
+            "IntegrationLength": 512,
             "MaxChunks": 100000,
-            "axixofintest": 1,
+            "axixofintest": 2,
             "stdvalidaxis": 2,
             "minValidChunksInRow": 10,
-            "minSTDforVailid": 1,
-            "defaultEndCutOut": 750,
+            "minSTDforVailid": 10,
+            "defaultEndCutOut": 2500,
         }
         self.flags = {
             "AllSinFitCalculated": False,
@@ -567,15 +570,15 @@ class Databuffer:
     def getNearestReFTPoint(self, freq, loop=0):
         if self.flags["RefTransFunctionSet"] == True:
             if not self.flags["RefGroupDelaySet"]:
-                return (
+                return np.array([
                     self.RefTransferFunction[loop, freq, "ex_amp"],
                     self.RefTransferFunction[loop, freq, "ex_amp_std"],
                     self.RefTransferFunction[loop, freq, "phase"] / 180 * np.pi,
                     self.RefTransferFunction[loop, freq, "phase_std"] / 180 * np.pi,
-                )
+                ]).flatten()
             else:
                 # print("Using GROUPDELAY WITHOUT AMPLITUDE AS REFERENCE TRANSFER FUNCTION")
-                return (
+                return np.array([
                     1,  # Asume Amplitude as One
                     0,  # No amplitude Error asumed
                     freq
@@ -585,10 +588,10 @@ class Databuffer:
                     * -1,  # -1 because we are seeing this aus transferfunction of the Ref Mesurment
                     # so an positiv grouddelay results in in linear increasing negative phase
                     0,
-                )  # No Phase Error asumed
+                ]).flatten() # No Phase Error asumed
         else:
             raise RuntimeWarning("REFTransferFunction NOT SET RETURNING 0,0")
-            return (1, 0, 0, 0)
+            return np.array([1, 0, 0, 0]).flatten()
 
     def getTransferCoevs(
         self, axisDUT, AxisRef=3, RefPhaseDC=-np.pi
@@ -652,9 +655,8 @@ class Databuffer:
             i = i + 1
         for run in range(Runcount + 1):
             runIDX = self.TransferRunCount == run
-            transferfunctionunwraped = np.unwrap(DB1.TransferPhase[runIDX])
-            if all(transferfunctionunwraped <= (-2 * np.pi)):
-                transferfunctionunwraped = transferfunctionunwraped + 2 * np.pi
+            arctanResult=np.unwrap(np.arctan2(np.sin(DB1.TransferPhase[runIDX]),np.cos(DB1.TransferPhase[runIDX])))
+            transferfunctionunwraped = np.unwrap(arctanResult)
             self.TransferPhase[runIDX] = transferfunctionunwraped
 
     def GetTransferFunction(self,axisDUT, AxisRef=3, RefPhaseDC=-np.pi):
@@ -698,7 +700,7 @@ class Databuffer:
             phaseweights= np.zeros(N)
             phaseweighted = np.zeros(N)
             for j in range(N):
-                Phases[j] = TMPPhases[j]
+                Phases[j] = np.arctan2(np.sin(TMPPhases[j]),np.cos(TMPPhases[j]))
                 phaseweights[j]=1/TMPPhasesErr[j]
                 phaseweighted[j]=Phases[j]*phaseweights[j]
             phasemean= np.sum(phaseweighted)/np.sum(phaseweights)
@@ -911,63 +913,10 @@ class Databuffer:
         ax1.grid(True)
         plt.show()
 
-
-def DataReaderGYROdump(ProtoCSVFilename):
-    sdf = pd.read_csv(ProtoCSVFilename, delimiter=";", index_col=False, skiprows=1)
-    print(sdf.columns.values)
-    chunkSize = DB1.params["IntegrationLength"]
-    for Index in np.arange(0, len(sdf), chunkSize)[
-        :-1
-    ]:  # don't use last chuck since this will propably not have chnukSize elements
-        DB1.pushBlock(
-            sdf["GYR_x"][Index : Index + chunkSize] * (180 / np.pi),
-            sdf["GYR_y"][Index : Index + chunkSize] * (180 / np.pi),
-            sdf["GYR_z"][Index : Index + chunkSize] * (180 / np.pi),
-            sdf["ADC_1"][Index : Index + chunkSize] * 100,
-            (sdf["unix_time"][Index : Index + chunkSize])
-            + (sdf["unix_time_nsecs"][Index : Index + chunkSize]) * 1e-9,
-        )
-
-
-def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
-    reader = csv.reader(open(ProtoCSVFilename), delimiter=";")
-    print("reading first to rows")
-    print(next(reader))
-    print(next(reader))
-    # we sacrifice a line to set the start time stamp
-    line = next(reader)
-    startsec = float(line[2])
-    i = 0
-    if i == 0:
-        linestoread = (
-            Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
-        )
-    # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
-    while i < linestoread:
-        # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
-        try:
-            line = next(reader)
-            time = float(line[2]) - startsec + (float(line[3]) * 1e-9)
-            # pushData(self, x, y, z, REF, t)
-            Databuffer.pushData(
-                float(line[8]) * (180 / np.pi),
-                float(line[9]) * (180 / np.pi),
-                float(line[10]) * (180 / np.pi),
-                float(line[15]) * 100,
-                time,
-            )
-            i = i + 1
-        except Exception as e:
-            print(e)
-            break
-    print(str(i) + " Lines read Data Parsing finsihed")
-    return
-
-
 def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     chunksize = Databuffer.params["IntegrationLength"]
     reader = csv.reader(open(ProtoCSVFilename), delimiter=";")
-    print("reading first to rows")
+    print("reading first two rows")
     print(next(reader))
     print(next(reader))
     # we sacrifice a line to set the start time stamp
@@ -1031,6 +980,72 @@ def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     )
     return
 
+def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
+    chunksize = Databuffer.params["IntegrationLength"]
+    reader = csv.reader(open(ProtoCSVFilename), delimiter=";")
+    print("reading first two rows")
+    print(next(reader))
+    print(next(reader))
+    # we sacrifice a line to set the start time stamp
+    line = next(reader)
+    startsec = float(line[2])
+    j = 0
+    i = 0
+    x = np.zeros(chunksize)
+    y = np.zeros(chunksize)
+    z = np.zeros(chunksize)
+    REF = np.zeros(chunksize)
+    t = np.zeros(chunksize)
+
+    if i == 0:
+        linestoread = (
+            Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
+        )
+    # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
+    while i < linestoread:
+        # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
+        #  0      1                2               3                    4               5           6          7         8          9         10
+        try:
+            line = next(reader)
+            time = float(line[2]) - startsec + (float(line[3]) * 1e-9)
+            # pushData(self, x, y, z, REF, t)
+            if j < chunksize:
+                x[j] = float(line[8])/np.pi*180
+                y[j] = float(line[9])/np.pi*180
+                z[j] = float(line[10])/np.pi*180
+                REF[j] = float(line[15])
+                t[j] = time
+                j = j + 1
+            if j == chunksize:
+                Databuffer.pushBlock(x, y, z, REF, t)
+                j = 0
+                x = np.zeros(chunksize)
+                y = np.zeros(chunksize)
+                z = np.zeros(chunksize)
+                REF = np.zeros(chunksize)
+                t = np.zeros(chunksize)
+                x[j] = float(line[8])
+                y[j] = float(line[9])
+                z[j] = float(line[10])
+                REF[j] = float(line[15])
+                t[j] = time
+                j = j + 1
+            # Databuffer.pushData(float(line[5]),
+            #                     float(line[6]),
+            #                     float(line[7]),
+            #                     float(line[15])*100,
+            #                     time)
+            i = i + 1
+        except Exception as e:
+            print(e)
+            break
+    print(
+        str(i)
+        + "for a max of "
+        + str(linestoread)
+        + " Lines read Data Parsing finsihed"
+    )
+    return
 
 # Column Names
 # 'id'
@@ -1060,8 +1075,8 @@ if __name__ == "__main__":
     DB1 = Databuffer()
     DB1.setRefADCTF(
         [
-            r"cal_data\1FE4_AC_CAL\200323_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
-            r"cal_data\1FE4_AC_CAL\200323_1FE4_ADC123_3CLCES_1V95_1HZ_1MHZ.json",
+            r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
+            r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json",
         ],
         ADCChannel="ADC1",
     )
@@ -1086,7 +1101,7 @@ if __name__ == "__main__":
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    DataReaderGYROdumpLARGE(DB1,r"D:\data\200617_MPU9250_IMEKO_Z_ROT_10_1.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    DataReaderGYROdumpLARGE(DB1,r"D:\data\17_06_2020_140751\200617_MPU9250_IMEKO_Z_ROT_10_1.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
     #DataReaderACCdumpLARGE(
     #    DB1,
