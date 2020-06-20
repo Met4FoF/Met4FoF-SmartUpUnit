@@ -382,13 +382,13 @@ class Databuffer:
 
         """
         self.params = {
-            "IntegrationLength": 512,
+            "IntegrationLength": 128,
             "MaxChunks": 100000,
             "axixofintest": 2,
             "stdvalidaxis": 2,
-            "minValidChunksInRow": 10,
+            "minValidChunksInRow": 40,
             "minSTDforVailid": 10,
-            "defaultEndCutOut": 2500,
+            "defaultEndCutOut": 128*10,
         }
         self.flags = {
             "AllSinFitCalculated": False,
@@ -808,7 +808,8 @@ class Databuffer:
         return PDTransferParams
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0):
-        fig, (ax1, ax2) = plt.subplots(2, 1)
+        fig, (ax1) = plt.subplots(1, 1)
+        ax2 = ax1.twinx()
         self.Chunktimes = np.arange(self.STDArray.shape[0])
         tmpdeltaT = (
             DB1.DataLoopBuffer[self.params["IntegrationLength"] - 1, 4]
@@ -851,6 +852,14 @@ class Databuffer:
         ax1.set_ylabel("STD  $\sigma$ in a.u.")
         ax1.legend()
         ax1.grid(True)
+        # calculate valide after cut out
+        coutOutCunks=np.rint(self.params["defaultEndCutOut"]/self.params["IntegrationLength"])
+        self.isValidCalChunkAfterCutOut=self.isValidCalChunk
+        for i in range(len(self.isValidCalChunk-coutOutCunks)):
+            start=int(i)
+            stop=int(i+coutOutCunks)
+            valideToTest=self.isValidCalChunk[start:stop]
+            self.isValidCalChunkAfterCutOut=np.all(valideToTest)
         if startIDX == 0 and stopIDX == 0:
             ax2.plot(self.Chunktimes, self.isValidCalChunk)
         else:
@@ -860,10 +869,10 @@ class Databuffer:
                 ".",
             )
             ax2.set_yticks([0, 1])
-        ax2.title.set_text("Valid data")
-        ax2.set_xlabel("Time in s")
+        #ax2.title.set_text("Valid data")
         ax2.set_ylabel("Valid = 1")
-        ax2.xaxis.grid()  # vertical lines
+        ax2.xaxis.grid()
+        ax2.legend()# vertical lines
         plt.subplots_adjust(hspace=0.3)
         plt.show()
 
@@ -1111,10 +1120,10 @@ if __name__ == "__main__":
 
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
-    DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
-    DB1.PlotTransferFunction()
-    DB1.PlotTransferFunction(PlotType="logx")
+    #DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
+    #DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
+    #DB1.PlotTransferFunction()
+    #DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     print("--- %s seconds ---" % (time.time() - start_time))
     # fstats=yappi.get_func_stats()
