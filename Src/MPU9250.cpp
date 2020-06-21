@@ -1194,6 +1194,11 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 	Message->has_Data_10=true;
 	Message->Data_10=_t;
 	return result;
+	_SampleCount++;
+}
+
+uint32_t MPU9250::getSampleCount(){
+	return _SampleCount;
 }
 
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){

@@ -303,14 +303,25 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	uint32_t lastSampleCount=0;
+	uint32_t actualSampleCount=0;
 	osDelay(10000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(1000);
+		osDelay(500);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		//Hack to gether Watchdog
+		actualSampleCount=Sensor0.getSampleCount();
+		if(actualSampleCount==lastSampleCount){
+			Sensor0.begin();
+			Sensor0.enableDataReadyInterrupt();
+			lastSampleCount=0;
+		}
+		lastSampleCount=actualSampleCount;
+
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment

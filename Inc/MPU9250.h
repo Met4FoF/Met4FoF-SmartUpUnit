@@ -141,6 +141,7 @@ class MPU9250{
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
+    uint32_t getSampleCount();
   protected:
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U
@@ -151,6 +152,7 @@ class MPU9250{
     uint32_t _ID;
     uint32_t _BaseID;
     uint8_t _SetingsID;
+    uint32_t _SampleCount=0;
     // the sensor can not handle fullspeed spi communication for setup registers we have to read the prescaler register and change it acordingly
     bool _useSPI=true;
     bool _useSPIHS=false;
