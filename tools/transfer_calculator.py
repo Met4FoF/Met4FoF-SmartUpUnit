@@ -28,8 +28,25 @@ from uncertainties import ufloat
 
 
 # from termcolor import colored
-plt.rcParams.update({"font.size": 30})
+scalefactor=5
+SMALL_SIZE = 8*scalefactor
+MEDIUM_SIZE = 10*scalefactor
+BIGGER_SIZE = 12*scalefactor
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)
+plt.rc('lines', linewidth=scalefactor)
 # plt.rc("text", usetex=True)
+
+
+def GetNearestTestFreq(freq,TestFreqs=[4.0,5.0,6.3,8.0,10.0,12.5,16.0,20.0,25.0,31.5,40.0,50.0,63.0,80.0,100.0,125.0,160.0,200.0,250.0]):
+    frqIDX = abs(TestFreqs - freq).argmin()
+    return TestFreqs[frqIDX]
 
 class ReferencTransferFunction:
     def __init__(self, typ="hf_ref", filename="filename"):
@@ -100,6 +117,7 @@ class CalTimeSeries:
             "BlockPushed": 0,
             "SineFitCalculated": [False, False, False, False],
         }
+        self.params={ "sinFitEndCutOut":0}
 
     def pushBlock(self, Datablock):
         """
@@ -201,7 +219,7 @@ class CalTimeSeries:
         ax.legend()
         fig.show()
 
-    def SinFit(self, EndCutOut, Methode="ST4SEQ", SimulateTimingErrors=False):
+    def SinFit(self, EndCutOut, Methode="ST3SEQ", SimulateTimingErrors=False):
         """
         
 
@@ -232,15 +250,13 @@ class CalTimeSeries:
         self.popt = np.zeros([4, 4])
         self.pcov = np.zeros([4, 4, 4])
         # self.poptRaw=[None,None,None,None]
-        self.sinFitEndCutOut = EndCutOut
+        self.params['sinFitEndCutOut'] = EndCutOut
         if not (self.flags["FFTCalculated"]):  # recusive calling
             self.CalcFFT()
         tmpbounds = (
             [0, -12, self.FFTFreqPeak - 3 * self.fftFreqs[1], -np.pi],
             [20, 12, self.FFTFreqPeak + 3 * self.fftFreqs[1], np.pi],
         )
-
-        # TODO get bounds from FFT params
         for i in range(4):  # TODO remove this hard coded 4
             if Methode == "curve_fit":
                 tmpp0 = [
@@ -281,13 +297,17 @@ class CalTimeSeries:
             if Methode == "ST4SEQ":
                 # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
                 try:
+                    if int(self.FFTFreqPeak)==0:
+                        N=10;
+                    else:
+                        N=int(self.FFTFreqPeak)*3
                     tmpparams = st.seq_fourparsinefit(
                         self.Data[:-EndCutOut, i],
                         self.Data[:-EndCutOut, 4],
                         self.FFTFreqPeak,
-                        tol=1.0e-7,
+                        tol=1.0e-9,
                         nmax=5000,
-                        periods=int(self.FFTFreqPeak),
+                        periods=N,
                     )
                 except AssertionError as error:
                     print(error)
@@ -310,21 +330,65 @@ class CalTimeSeries:
                 self.pcov[i] = np.cov(
                     CoVarData, bias=True
                 )  # bias=True Nomation With N like np.std
-
+            if Methode == "ST3SEQ":
+                # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+                try:
+                    if int(self.FFTFreqPeak)==0:
+                        N=10;
+                    else:
+                        N=int(self.FFTFreqPeak)*3
+                    testFfreq=GetNearestTestFreq(self.FFTFreqPeak)
+                    abcd=st.fourparsinefit(self.Data[:-EndCutOut, i],
+                        self.Data[:-EndCutOut, 4],
+                        testFfreq,
+                        tol=1.0e-11,
+                        nmax=5000,)
+                    testfreqFitted=abcd[3]
+                    #seq_threeparsinefit(y, t, f0):
+                    tmpparams = st.seq_threeparsinefit(
+                        self.Data[:-EndCutOut, i],
+                        self.Data[:-EndCutOut, 4],
+                        testfreqFitted,
+                        periods=N,
+                    )
+                except AssertionError as error:
+                    print(error)
+                    print("Skipping this fit")
+                    tmpparams = np.zeros((4, 4))
+                Complex = tmpparams[:, 1] + 1j * tmpparams[:, 0]
+                DC = tmpparams[:, 2]
+                Freq = np.ones_like(DC)*testfreqFitted
+                tmpAngles=np.angle(Complex)
+                DeltatmpAngles=(tmpAngles-np.mean(tmpAngles))/np.pi*180
+                self.popt[i] = [
+                    np.mean(abs(Complex)),
+                    np.mean(DC),
+                    np.mean(Freq),
+                    np.mean(np.unwrap(np.angle(Complex))),
+                ]
+                # np.fill_diagonal(self.pcov[i],tmpParamsSTD)
+                # self.poptRaw[i]=CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
+                CoVarData = np.stack(
+                    (abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0
+                )
+                self.pcov[i] = np.cov(
+                    CoVarData, bias=True
+                )  # bias=True Nomation With N like np.std
+                #print(self.pcov[i])
         self.flags["SineFitCalculated"] = True
 
     def PlotSinFit(self, AxisofIntrest):
         fig, ax = plt.subplots()
         ax.plot(
-            self.Data[: -self.sinFitEndCutOut, 4],
-            self.Data[: -self.sinFitEndCutOut, AxisofIntrest],
+            self.Data[: -self.params['sinFitEndCutOut'] , 4],
+            self.Data[: -self.params['sinFitEndCutOut'] , AxisofIntrest],
             ".-",
             label="Raw Data",
         )
         ax.plot(
-            self.Data[: -self.sinFitEndCutOut, 4],
+            self.Data[: -self.params['sinFitEndCutOut'] , 4],
             self.SinFunc(
-                self.Data[: -self.sinFitEndCutOut, 4], *self.popt[AxisofIntrest]
+                self.Data[: -self.params['sinFitEndCutOut'] , 4], *self.popt[AxisofIntrest]
             ),
             label="Fit",
         )
@@ -385,10 +449,10 @@ class Databuffer:
             "IntegrationLength": 128,
             "MaxChunks": 100000,
             "axixofintest": 2,
-            "stdvalidaxis": 2,
-            "minValidChunksInRow": 40,
+            "stdvalidaxis": 3,
+            "minValidChunksInRow": 100,
             "minSTDforVailid": 10,
-            "defaultEndCutOut": 128*10,
+            "defaultEndCutOut": 128*30,
         }
         self.flags = {
             "AllSinFitCalculated": False,
@@ -404,8 +468,6 @@ class Databuffer:
             [self.params["MaxChunks"], self.params["IntegrationLength"], 4]
         )
         self.STDArray = np.zeros([self.params["MaxChunks"], 4])
-        # min STD to be an vaild chunk (there is AC-Component in the Signal)
-        self.params["minValidChunksInRow"] = 10
         # at least this amount of chunks in a row have to be vaild to create an
         # CalTimeSeries object in CalData
         self.isValidCalChunk = np.zeros([self.params["MaxChunks"], 4])
@@ -809,6 +871,7 @@ class Databuffer:
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0):
         fig, (ax1) = plt.subplots(1, 1)
+        ax1.set_xlabel("Time stince expermient start in s")
         ax2 = ax1.twinx()
         self.Chunktimes = np.arange(self.STDArray.shape[0])
         tmpdeltaT = (
@@ -819,10 +882,10 @@ class Databuffer:
         self.Chunktimes = self.Chunktimes * tmpdeltaT
         # calculationg delta time from last vaild chunk
         if startIDX == 0 and stopIDX == 0:
-            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label="Sensor x")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label="Sensor y")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label="Sensor z")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label="Ref")
+            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label="Sensor x",color='purple')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label="Sensor y",color='red')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label="Sensor z",color='green')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label="Ref",color='orange')
         else:
             ax1.plot(
                 self.Chunktimes[startIDX:stopIDX],
@@ -845,35 +908,42 @@ class Databuffer:
                 label="Ref",
             )
         ax1.title.set_text(
-            "Short term standard deviation  $\sigma$ (width of "
+            "Short term standard deviation  $\sigma$ (width "
             + str(self.params["IntegrationLength"])
-            + ") of signal amplitude"
+            + " samples) of signal amplitude"
         )
-        ax1.set_ylabel("STD  $\sigma$ in a.u.")
-        ax1.legend()
+        ax1.set_ylabel("STD  $\sigma$ in °/s")
+        ax1.legend(loc='lower center')
+
         ax1.grid(True)
         # calculate valide after cut out
         coutOutCunks=np.rint(self.params["defaultEndCutOut"]/self.params["IntegrationLength"])
-        self.isValidCalChunkAfterCutOut=self.isValidCalChunk
-        for i in range(len(self.isValidCalChunk-coutOutCunks)):
+        self.isValidCalChunkAfterCutOut=np.zeros(self.isValidCalChunk.shape)
+        for i in range(int(len(self.isValidCalChunk)-coutOutCunks)):
             start=int(i)
             stop=int(i+coutOutCunks)
             valideToTest=self.isValidCalChunk[start:stop]
-            self.isValidCalChunkAfterCutOut=np.all(valideToTest)
+            tmp=np.all(valideToTest)
+            self.isValidCalChunkAfterCutOut[i]=tmp
+
         if startIDX == 0 and stopIDX == 0:
-            ax2.plot(self.Chunktimes, self.isValidCalChunk)
+            #ax2.plot(self.Chunktimes, self.isValidCalChunk[:,0],label="beforeCutOut")
+            ax2.plot(self.Chunktimes, self.isValidCalChunkAfterCutOut[:,0],":", label="Data validity")
         else:
+            #ax2.plot(
+            #    self.Chunktimes[startIDX:stopIDX,0],
+            #    self.isValidCalChunk[startIDX:stopIDX,0],
+            #    ".", label="beforeCutOut"
+            #)
             ax2.plot(
-                self.Chunktimes[startIDX:stopIDX],
-                self.isValidCalChunk[startIDX:stopIDX],
-                ".",
+                self.Chunktimes[startIDX:stopIDX,0],
+                self.isValidCalChunkAfterCutOut[startIDX:stopIDX,0],
+                ":", label="Data validity"
             )
-            ax2.set_yticks([0, 1])
-        #ax2.title.set_text("Valid data")
-        ax2.set_ylabel("Valid = 1")
+        ax2.set_yticks([0,1])
+        ax2.set_ylabel("Data used for sine aproximation", color=ax2.get_lines()[0].get_color())
+        ax2.set_yticklabels(['False','True'], color=ax2.get_lines()[0].get_color())
         ax2.xaxis.grid()
-        ax2.legend()# vertical lines
-        plt.subplots_adjust(hspace=0.3)
         plt.show()
 
     def PlotSTD(self, startIDX=0, stopIDX=0):
@@ -946,7 +1016,7 @@ def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
     while i < linestoread:
         # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
-        #  0      1                2               3                    4               5           6          7         8          9         10
+        #  0      1                2               3                    4               5           6          7         8          9         10            11          12         13       14          15          16          17      18          19          20
         try:
             line = next(reader)
             time = float(line[2]) - startsec + (float(line[3]) * 1e-9)
@@ -969,7 +1039,7 @@ def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
                 x[j] = float(line[5])
                 y[j] = float(line[6])
                 z[j] = float(line[7])
-                REF[j] = float(line[15]) * 100.0
+                REF[j] = float(line[15])*100
                 t[j] = time
                 j = j + 1
             # Databuffer.pushData(float(line[5]),
@@ -1005,8 +1075,7 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     z = np.zeros(chunksize)
     REF = np.zeros(chunksize)
     t = np.zeros(chunksize)
-
-    if i == 0:
+    if linestoread==0:
         linestoread = (
             Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
         )
@@ -1022,7 +1091,7 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
                 x[j] = float(line[8])/np.pi*180
                 y[j] = float(line[9])/np.pi*180
                 z[j] = float(line[10])/np.pi*180
-                REF[j] = float(line[15])
+                REF[j] = float(line[15])/np.pi*180
                 t[j] = time
                 j = j + 1
             if j == chunksize:
@@ -1033,10 +1102,10 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
                 z = np.zeros(chunksize)
                 REF = np.zeros(chunksize)
                 t = np.zeros(chunksize)
-                x[j] = float(line[8])
-                y[j] = float(line[9])
-                z[j] = float(line[10])
-                REF[j] = float(line[15])
+                x[j] = float(line[8])/np.pi*180
+                y[j] = float(line[9])/np.pi*180
+                z[j] = float(line[10])/np.pi*180
+                REF[j] = float(line[15])/np.pi*180
                 t[j] = time
                 j = j + 1
             # Databuffer.pushData(float(line[5]),
@@ -1095,7 +1164,7 @@ if __name__ == "__main__":
     #   r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
     #)
     DB1.setRefTransferFunction(
-       r"D:\data\17_06_2020_140751\200617_MPU9250_IMEKO_Z_ROT_10_1_TF.csv"
+       r"D:\data\200620_MPU_9250_X_Achse_5\200620_MPU9250_IMEKO_X_Achse_5_TF.csv"
     )
     # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
     # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
@@ -1110,7 +1179,7 @@ if __name__ == "__main__":
     # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
     # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
     # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    DataReaderGYROdumpLARGE(DB1,r"D:\data\17_06_2020_140751\200617_MPU9250_IMEKO_Z_ROT_10_1.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
+    DataReaderGYROdumpLARGE(DB1,r"D:\data\200620_MPU_9250_X_Achse_5\200620_MPU_9250_X_Achse_5.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
     #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
     #DataReaderACCdumpLARGE(
     #    DB1,
@@ -1120,10 +1189,10 @@ if __name__ == "__main__":
 
     # reading data from file and proces all Data
     DB1.DoAllFFT()
-    #DB1.getTransferCoevs(2, RefPhaseDC=-np.pi)
-    #DB1.GetTransferFunction(2, RefPhaseDC=-np.pi)
-    #DB1.PlotTransferFunction()
-    #DB1.PlotTransferFunction(PlotType="logx")
+    DB1.getTransferCoevs(1, RefPhaseDC=-np.pi)
+    DB1.GetTransferFunction(1, RefPhaseDC=-np.pi)
+    DB1.PlotTransferFunction()
+    DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     print("--- %s seconds ---" % (time.time() - start_time))
     # fstats=yappi.get_func_stats()
