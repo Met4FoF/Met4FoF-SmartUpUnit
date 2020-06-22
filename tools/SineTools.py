@@ -178,7 +178,7 @@ def phase_delay(A1, A2, deg=False):
 
 
 # periodical sinefit at known frequency
-def seq_threeparsinefit(y, t, f0):
+def seq_threeparsinefit(y, t, f0,periods=1):
     """
     period-wise sine-fit at a known frequency\n
     y vector of sample values \n
@@ -190,7 +190,7 @@ def seq_threeparsinefit(y, t, f0):
     """
     Tau = 1.0 / f0
     dt = t[1] - t[0]
-    N = int(Tau / dt)  ## samples per section
+    N = int(Tau / dt) *periods  ## samples per section
     M = int(sp.floor(t.size / N))  ## number of sections or periods
 
     abc = sp.zeros((M, 3))
