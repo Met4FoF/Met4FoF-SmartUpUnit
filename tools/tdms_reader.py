@@ -2,8 +2,11 @@ import numpy as np
 from nptdms import TdmsFile
 import SineTools as ST
 
+testFreqRelOffset=[]
 def GetNearestFreq(freq,TestFreqs):
     frqIDX = abs(TestFreqs - freq).argmin()
+    Freqoffset=freq/TestFreqs[frqIDX]
+    testFreqRelOffset.append(Freqoffset)
     return TestFreqs[frqIDX]
 
 class Buffer:
@@ -43,10 +46,11 @@ class Buffer:
             self.GetFFTMaxFreq()
         self.times=np.arange(self.Data.size)*self.DeltaT
         tmpperiods=int(np.rint(self.Params["FFTFreq"]))
-        self.FourParamsSineResultRaw=ST.seq_fourparsinefit(self.Data,self.times,self.Params["FFTFreq"],tol=1.0e-10,nmax=5000,periods=tmpperiods)
-        Complex = self.FourParamsSineResultRaw[:, 1] + 1j * self.FourParamsSineResultRaw[:, 0]
-        DC = self.FourParamsSineResultRaw[:, 2]
-        Freq = self.FourParamsSineResultRaw[:, 3]
+        self.Sine4ParamResultRaw=ST.fourparsinefit(self.Data, self.times, self.Params["FFTFreq"], tol=1.0e-7, nmax=8000)
+        self.SineResultRaw = ST.seq_threeparsinefit(self.Data, self.times,self.Sine4ParamResultRaw[3],periods=tmpperiods)
+        Complex = self.SineResultRaw[:, 1] + 1j * self.SineResultRaw[:, 0]
+        DC = self.SineResultRaw[:, 2]
+        Freq = self.Sine4ParamResultRaw[3]
         Angles=np.unwrap(np.angle(Complex))
         self.Params['FitResult']={
             'Amplitude':np.mean(abs(Complex)),
@@ -58,18 +62,18 @@ class Buffer:
             'DC':np.std(DC)*2,
             'Frequency':np.std(Freq)*2,
             'Phase':np.std(Angles)*2,
-            'N':self.FourParamsSineResultRaw.shape[0]}
+            'N':self.SineResultRaw.shape[0]}
         self.Params['AngleRaw']=Angles
         print("Fitting Done")
         return 0
 
 if __name__ == '__main__':
 
-    REFtdms_file = TdmsFile.open(r"D:\data\17_06_2020_140751\vibrometer.tdms")
-    SYNCtdms_file = TdmsFile.open(r"D:\data\17_06_2020_140751\SYNC.tdms")
+    REFtdms_file = TdmsFile.open(r"D:\data\200620_MPU_9250_X_Achse_5\20_06_2020_155732\vibrometer.tdms")
+    SYNCtdms_file = TdmsFile.open(r"D:\data\200620_MPU_9250_X_Achse_5\20_06_2020_155732\SYNC.tdms")
 
-    REFgroup = REFtdms_file['17.06.2020 14:07:51 - All Data']
-    SYNCgroup = SYNCtdms_file['17.06.2020 14:07:51 - All Data']
+    REFgroup = REFtdms_file['20.06.2020 15:57:32 - All Data']
+    SYNCgroup = SYNCtdms_file['20.06.2020 15:57:32 - All Data']
 
     REFchannel = REFgroup['vibrometer']
     SYNCchannel = SYNCgroup['SYNC']
@@ -146,8 +150,8 @@ if __name__ == '__main__':
         T[i,3]=AMPErr = REFFitResults[i]['FitResultErr']['Amplitude']
         T[i,4]=Phase = (REFFitResults[i]['FitResult']['Phase'] - SYNCFitResults[i]['FitResult']['Phase'])/np.pi*180
         T[i,5]=PhaseErr = (np.sqrt(np.power(REFFitResults[i]['FitResultErr']['Phase'], 2) + np.power(SYNCFitResults[i]['FitResultErr']['Phase'], 2)))/np.pi*180
-        #T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']
-        #T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']
+        #T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']/np.pi*180
+        #T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']/np.pi*180
         T[i,1]=intFreq = GetNearestFreq(REFFitResults[i]['FitResult']['Frequency'],TestFreqs)
         lastFreq = REFFitResults[i]['FitResult']['Frequency']
 
@@ -163,7 +167,7 @@ if __name__ == '__main__':
 headerstr="""loop;frequency;ex_amp;ex_amp_std;phase;phase_std
 #Experiment Count;Excitation frequency;Excitation amplitude;Excitation amplitude uncertainty (2s 95%);Phase against reference signal;Phase against reference signal uncertainty (2s 95%)
 #Number;Hz;deg/s;deg/s;deg;deg"""
-np.savetxt("200617_MPU9250_IMEKO_Z_ROT_10_1_TF.csv", T, delimiter=';', header=headerstr,comments='',fmt='%1.5e')
+np.savetxt("200620_MPU9250_IMEKO_X_Achse_5_TF.csv", T, delimiter=';', header=headerstr,comments='',fmt='%1.5e')
 
 
 
