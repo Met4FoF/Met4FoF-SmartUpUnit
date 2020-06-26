@@ -67,13 +67,12 @@ class Buffer:
         print("Fitting Done")
         return 0
 
-if __name__ == '__main__':
+def generateTFCSV(folder,tdmsChannel,outputfile):
+    REFtdms_file = TdmsFile.open(folder+r"\vibrometer.tdms")
+    SYNCtdms_file = TdmsFile.open(folder+r"\SYNC.tdms")
 
-    REFtdms_file = TdmsFile.open(r"D:\data\200620_MPU_9250_X_Achse_5\20_06_2020_155732\vibrometer.tdms")
-    SYNCtdms_file = TdmsFile.open(r"D:\data\200620_MPU_9250_X_Achse_5\20_06_2020_155732\SYNC.tdms")
-
-    REFgroup = REFtdms_file['20.06.2020 15:57:32 - All Data']
-    SYNCgroup = SYNCtdms_file['20.06.2020 15:57:32 - All Data']
+    REFgroup = REFtdms_file[tdmsChannel]
+    SYNCgroup = SYNCtdms_file[tdmsChannel]
 
     REFchannel = REFgroup['vibrometer']
     SYNCchannel = SYNCgroup['SYNC']
@@ -152,6 +151,7 @@ if __name__ == '__main__':
         T[i,5]=PhaseErr = (np.sqrt(np.power(REFFitResults[i]['FitResultErr']['Phase'], 2) + np.power(SYNCFitResults[i]['FitResultErr']['Phase'], 2)))/np.pi*180
         #T[i,6]=PhaseErr = REFFitResults[i]['FitResultErr']['Phase']/np.pi*180
         #T[i,7] = PhaseErr = SYNCFitResults[i]['FitResultErr']['Phase']/np.pi*180
+        #T[i, 8] = AMPTF= REFFitResults[i]['FitResult']['Amplitude']/SYNCFitResults[i]['FitResult']['Amplitude']
         T[i,1]=intFreq = GetNearestFreq(REFFitResults[i]['FitResult']['Frequency'],TestFreqs)
         lastFreq = REFFitResults[i]['FitResult']['Frequency']
 
@@ -164,10 +164,12 @@ if __name__ == '__main__':
             T[i, 4]=T[i,4]-360
         if T[i,4]<-180:
             T[i, 4] = T[i, 4] + 360
-headerstr="""loop;frequency;ex_amp;ex_amp_std;phase;phase_std
-#Experiment Count;Excitation frequency;Excitation amplitude;Excitation amplitude uncertainty (2s 95%);Phase against reference signal;Phase against reference signal uncertainty (2s 95%)
-#Number;Hz;deg/s;deg/s;deg;deg"""
-np.savetxt("200620_MPU9250_IMEKO_X_Achse_5_TF.csv", T, delimiter=';', header=headerstr,comments='',fmt='%1.5e')
+    headerstr="""loop;frequency;ex_amp;ex_amp_std;phase;phase_std;
+    #Experiment Count;Excitation frequency;Excitation amplitude;Excitation amplitude uncertainty (2s 95%);Phase against reference signal;Phase against reference signal uncertainty (2s 95%)
+    #Number;Hz;deg/s;deg/s;deg;deg"""
+    np.savetxt(folder+outputfile+r'_TDMS_TF.csv', T, delimiter=';', header=headerstr,comments='')
+
+
 
 
 

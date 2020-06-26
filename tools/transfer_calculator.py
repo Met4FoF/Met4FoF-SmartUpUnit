@@ -22,13 +22,14 @@ import timeit
 from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
 import time
 from scipy.stats import chi2
+import json
 from cycler import cycler # for colored markers
 
 from uncertainties import ufloat
 
 
 # from termcolor import colored
-scalefactor=5
+scalefactor=4
 SMALL_SIZE = 8*scalefactor
 MEDIUM_SIZE = 10*scalefactor
 BIGGER_SIZE = 12*scalefactor
@@ -44,8 +45,16 @@ plt.rc('lines', linewidth=scalefactor)
 # plt.rc("text", usetex=True)
 
 
+#https://stackoverflow.com/questions/26646362/numpy-array-is-not-json-serializable
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
 def GetNearestTestFreq(freq,TestFreqs=[4.0,5.0,6.3,8.0,10.0,12.5,16.0,20.0,25.0,31.5,40.0,50.0,63.0,80.0,100.0,125.0,160.0,200.0,250.0]):
     frqIDX = abs(TestFreqs - freq).argmin()
+    #print("got "+str(freq)+" will return "+str(TestFreqs[frqIDX]))
     return TestFreqs[frqIDX]
 
 class ReferencTransferFunction:
@@ -55,6 +64,7 @@ class ReferencTransferFunction:
         )
 
     def __GetNearestData(self, loop, freq):
+        print("loop "+str(loop)+" freq "+str(freq))
         freqs = self.CSVData.loc[loop].index.values
         frqIDX = abs(freqs - freq).argmin()
         Nearestfreq = freqs[frqIDX]
@@ -94,6 +104,7 @@ class ReferencTransferFunction:
         ax2.grid(True)
         ax1.legend(numpoints=1, fontsize=8, ncol=3)
         ax2.legend(numpoints=1, fontsize=8, ncol=3)
+        plt.tight_layout()
         plt.show()
 
 
@@ -118,6 +129,7 @@ class CalTimeSeries:
             "SineFitCalculated": [False, False, False, False],
         }
         self.params={ "sinFitEndCutOut":0}
+        print("CalTimeSeries created")
 
     def pushBlock(self, Datablock):
         """
@@ -217,6 +229,7 @@ class CalTimeSeries:
         )
         ax.grid()
         ax.legend()
+        plt.tight_layout()
         fig.show()
 
     def SinFit(self, EndCutOut, Methode="ST3SEQ", SimulateTimingErrors=False):
@@ -341,8 +354,8 @@ class CalTimeSeries:
                     abcd=st.fourparsinefit(self.Data[:-EndCutOut, i],
                         self.Data[:-EndCutOut, 4],
                         testFfreq,
-                        tol=1.0e-11,
-                        nmax=5000,)
+                        tol=1.0e-8,
+                        nmax=10000,)
                     testfreqFitted=abcd[3]
                     #seq_threeparsinefit(y, t, f0):
                     tmpparams = st.seq_threeparsinefit(
@@ -398,6 +411,7 @@ class CalTimeSeries:
             title="Rawdata and IEEE 1075 4 Param sine fit",
         )
         ax.legend()
+        plt.tight_layout()
         fig.show()
 
     def PlotRaw(self, startIDX=0, stopIDX=0):
@@ -411,32 +425,61 @@ class CalTimeSeries:
             ax.plot(
                 self.Data[startIDX:stopIDX, 4],
                 self.Data[startIDX:stopIDX, 0],
-                label="Sensor x",
+                label="x Axis",
             )
             ax.plot(
                 self.Data[startIDX:stopIDX, 4],
                 self.Data[startIDX:stopIDX, 1],
-                label="Sensor y",
+                label="Y Axis",
             )
             ax.plot(
                 self.Data[startIDX:stopIDX, 4],
                 self.Data[startIDX:stopIDX, 2],
-                label="Sensor z",
+                label="Z Axis",
             )
             ax.plot(
                 self.Data[startIDX:stopIDX, 4],
                 self.Data[startIDX:stopIDX, 3],
-                label="Ref z",
+                label="Sync",
             )
         ax.set(xlabel="Time /s", ylabel="Amplitude /AU", title="Rawdata CalTimeSeries")
         ax.grid()
         ax.legend()
+        plt.tight_layout()
         fig.show()
+
+    def PlotSamplingFreq(self,fig = None,ax = None,label=None,legend=True,color='blue',fset=1000,average=0):
+        if fig==None and ax==None:
+            fig, ax = plt.subplots()
+        if label==None:
+            label = "Sampling frequency"
+        time=self.Data[:-1, 4]
+        time=time-self.Data[0, 4]
+        DeltaT=np.diff(time)
+        DeltaFSample=1/DeltaT-fset
+        T = self.Data[-1, 4]-self.Data[0, 4]
+        if average!=0:
+            DeltaFSample = np.convolve(DeltaFSample,np.ones(average), 'valid')/average
+            time=time[:-average]
+        ax.plot(
+            time,
+            DeltaFSample,
+            label=label,
+            linewidth=1,
+            color=color
+            )
+        ax.set(xlabel="Time /s", ylabel="Sampling frequency deviation in Hz", title="Sampling frequency deviation from set Value ("+str(fset)+" Hz)")
+        if legend:
+            ax.legend()
+        fig.show()
+        return fig,ax
+
+
 
 
 class Databuffer:
     # TODO reject packages after i= Dataarraysize
-    def __init__(self):
+    def __init__(self,params={}):
         """
 
 
@@ -445,15 +488,17 @@ class Databuffer:
         None.
 
         """
-        self.params = {
+        self.Defaultparams = {
             "IntegrationLength": 128,
-            "MaxChunks": 100000,
+            "MaxChunks": 250000,
             "axixofintest": 2,
             "stdvalidaxis": 3,
             "minValidChunksInRow": 100,
             "minSTDforVailid": 10,
             "defaultEndCutOut": 128*30,
         }
+        self.params = self.Defaultparams.copy()  # start with x's keys and values
+        self.params.update(params)
         self.flags = {
             "AllSinFitCalculated": False,
             "AllFFTCalculated": False,
@@ -630,6 +675,7 @@ class Databuffer:
         self.params["RefGroupDelay"] = GropuDelay
 
     def getNearestReFTPoint(self, freq, loop=0):
+        print(freq,loop)
         if self.flags["RefTransFunctionSet"] == True:
             if not self.flags["RefGroupDelaySet"]:
                 return np.array([
@@ -666,6 +712,7 @@ class Databuffer:
             self.DoAllSinFit(self.params["defaultEndCutOut"])
         self.TransferFreqs = np.zeros(len(self.CalData))
         self.TransferAmpl = np.zeros(len(self.CalData))
+        self.ExAmpl = np.zeros(len(self.CalData))
         self.TransferAmplErr = np.zeros(len(self.CalData))
         self.TransferPhase = np.zeros(len(self.CalData))
         self.TransferPhaseErr = np.zeros(len(self.CalData))
@@ -676,8 +723,9 @@ class Databuffer:
         )
         for item in self.CalData:
             Freq = self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
-            RefData = self.getNearestReFTPoint(Freq, loop=self.TransferRunCount[i])
+            RefData = self.getNearestReFTPoint(Freq, loop=int(self.TransferRunCount[i]))
             AmplTF = RefData[0]
+            self.ExAmpl[i]=AmplTF
             AmplTFErr = RefData[1]*2# 2* for 95% coverage
             PhaseTF = RefData[2]
             PhaseTFErr = RefData[3]*2# 2* for 95% coverage
@@ -733,17 +781,23 @@ class Databuffer:
         self.Transferfunction={'Frequencys':np.array(nominalFreqs),
                           'AmplitudeCoefficent':np.zeros(FreqNum),
                           'AmplitudeCoefficentUncer':np.zeros(FreqNum),
+                          'AmplitudeCoefficentUncerRelPercent': np.zeros(FreqNum),
+                          'ExAmp': np.zeros(FreqNum),
                           'Phase':np.zeros(FreqNum),
                           'PhaseUncer':np.zeros(FreqNum),
+                          'PhaseDeg': np.zeros(FreqNum),
+                          'PhaseUncerDeg': np.zeros(FreqNum),
                           'N':np.zeros(FreqNum),
                           'AmpChiSquarePassed':[False] * FreqNum,
-                          'PhaseChiSquarePassed':[False] * FreqNum}
+                          'PhaseChiSquarePassed':[False] * FreqNum,
+                          'Tau': np.zeros(FreqNum)}
         roundedFreqs=np.rint(self.TransferFreqs*10)/10
         for i in range(len(nominalFreqs)):
             IDX=np.where(roundedFreqs==nominalFreqs[i])
             npIDX=np.array(IDX[0])
             N=npIDX.size
             TMPAmplitudes=self.TransferAmpl[IDX]
+            TMPExAmplitudes = self.ExAmpl[IDX]
             TMPAmplitudesErr = self.TransferAmplErr[IDX]
             Amps=np.zeros(N)
             weights=np.zeros(N)
@@ -781,14 +835,19 @@ class Databuffer:
                 PhaseChi2Pass = True
             self.Transferfunction['AmplitudeCoefficent'][i]=ampmean
             self.Transferfunction['AmplitudeCoefficentUncer'][i]=ampstd*2
+            self.Transferfunction['AmplitudeCoefficentUncerRelPercent'][i] = (ampstd * 2)/ampmean*100
+            self.Transferfunction['ExAmp'][i] = np.mean(TMPExAmplitudes)
             self.Transferfunction['Phase'][i] = phasemean
             self.Transferfunction['PhaseUncer'][i] =phasestd*2
-            self.Transferfunction['N'][i] = len(IDX)
+            self.Transferfunction['PhaseDeg'][i] = phasemean/np.pi*180
+            self.Transferfunction['PhaseUncerDeg'][i] =phasestd*2/np.pi*180
+            self.Transferfunction['N'][i] = N
             self.Transferfunction['AmpChiSquarePassed'][i] = AmplitudeChi2Pass
             self.Transferfunction['PhaseChiSquarePassed'][i] = PhaseChi2Pass
+            self.Transferfunction['Tau'][i]=(self.Transferfunction['Phase'][i]/(2*np.pi))*(1/self.Transferfunction['Frequencys'][i])
         return self.Transferfunction
 
-    def PlotTransferFunction(self, PlotType="lin"):
+    def PlotTransferFunction(self, PlotType="lin",fileName=None):
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType == "logx":
             ax1.set_xscale("log")
@@ -847,14 +906,20 @@ class Databuffer:
             label='Mean',
             uplims=PhaseMarker, lolims=PhaseMarker
         )
-        ax2.set_xlabel(r"Frequency $f$ in Hz")
+        ax2.set_xlabel(r"Frequency $\omega$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
         ax2.grid(True)
         ax1.legend(numpoints=1, fontsize=8, ncol=3)
         ax2.legend(numpoints=1, fontsize=8, ncol=3)
-        plt.show()
+        plt.tight_layout()
+        if fileName != None:
+            fig.savefig(fileName+'.png')
+            fig.savefig(fileName+'.svg')
+            fig.show()
+        else:
+            fig.show()
 
-    def PrintTransferParams(self):
+    def PrintTransferParamsRaw(self):
         PDTransferParams = pd.DataFrame(
             {
                 "Freq": self.TransferFreqs,
@@ -863,15 +928,43 @@ class Databuffer:
                 "Phase Deg": self.TransferPhase / np.pi * 180,
                 "Phase Deg Err": self.TransferPhaseErr / np.pi * 180,
                 "Phase Rad": self.TransferPhase,
-                "Phase Rad Err": self.TransferPhase,
+                "Phase Rad Err": self.TransferPhaseErr,
             }
         )
         print(PDTransferParams)
         return PDTransferParams
 
-    def PlotSTDandValid(self, startIDX=0, stopIDX=0):
+    def ExportTFasLatex(self,filename):
+        all=pd.DataFrame.from_dict(self.Transferfunction)
+        out=all[['Frequencys', 'ExAmp', 'AmplitudeCoefficent', 'AmplitudeCoefficentUncerRelPercent', 'PhaseDeg',
+         'PhaseUncerDeg', 'Tau']]
+        out['Tau']*=1000
+        out.to_latex(filename+'_TF.tex',index=False,float_format="{:0.3g}".format)
+
+    def exportTF(self,filename):
+        tmp = pd.DataFrame.from_dict(self.Transferfunction)
+        tmp.to_csv(filename+'TF.csv',index=False)
+        with open(filename+'TF.json', 'w') as f:
+            json.dump(self.Transferfunction, f,cls=NumpyEncoder)
+        TFRaw={
+            "Freq": self.TransferFreqs,
+            "Ampl": self.TransferAmpl,
+            "AmplErr": self.TransferAmplErr,
+            "Phase Deg": self.TransferPhase / np.pi * 180,
+            "Phase Deg Err": self.TransferPhaseErr / np.pi * 180,
+            "Phase Rad": self.TransferPhase,
+            "Phase Rad Err": self.TransferPhaseErr,
+        }
+        tmp = pd.DataFrame.from_dict(TFRaw)
+        tmp.to_csv(filename+'TF_RAW.csv',index=False)
+        with open(filename+'TF_RAW.json', 'w') as f:
+            json.dump(TFRaw, f,cls=NumpyEncoder)
+
+
+    def PlotSTDandValid(self, startIDX=0, stopIDX=0,fileName=None):
         fig, (ax1) = plt.subplots(1, 1)
-        ax1.set_xlabel("Time stince expermient start in s")
+        fig.set_size_inches(16, 9)
+        ax1.set_xlabel("Time in s")
         ax2 = ax1.twinx()
         self.Chunktimes = np.arange(self.STDArray.shape[0])
         tmpdeltaT = (
@@ -882,35 +975,35 @@ class Databuffer:
         self.Chunktimes = self.Chunktimes * tmpdeltaT
         # calculationg delta time from last vaild chunk
         if startIDX == 0 and stopIDX == 0:
-            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label="Sensor x",color='purple')
-            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label="Sensor y",color='red')
-            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label="Sensor z",color='green')
-            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label="Ref",color='orange')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label="X Axis",color='green')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label="Y Axis",color='red')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label="Z Axis",color='purple')
+            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label="Sync in A.U.",color='orange')
         else:
             ax1.plot(
                 self.Chunktimes[startIDX:stopIDX],
                 self.STDArray[startIDX:stopIDX, 0],
-                label="Sensor x",
+                label="X Axis",
             )
             ax1.plot(
                 self.Chunktimes[startIDX:stopIDX],
                 self.STDArray[startIDX:stopIDX, 1],
-                label="Sensor y",
+                label="Y Axis",
             )
             ax1.plot(
                 self.Chunktimes[startIDX:stopIDX],
                 self.STDArray[startIDX:stopIDX, 2],
-                label="Sensor z",
+                label="Z Axis",
             )
             ax1.plot(
                 self.Chunktimes[startIDX:stopIDX],
                 self.STDArray[startIDX:stopIDX, 3],
-                label="Ref",
+                label="Sync in A.U.",
             )
         ax1.title.set_text(
-            "Short term standard deviation  $\sigma$ (width "
+            "Short term standard deviation $\sigma$ (width "
             + str(self.params["IntegrationLength"])
-            + " samples) of signal amplitude"
+            + " samples) of signal amplitude."
         )
         ax1.set_ylabel("STD  $\sigma$ in °/s")
         ax1.legend(loc='lower center')
@@ -944,53 +1037,29 @@ class Databuffer:
         ax2.set_ylabel("Data used for sine aproximation", color=ax2.get_lines()[0].get_color())
         ax2.set_yticklabels(['False','True'], color=ax2.get_lines()[0].get_color())
         ax2.xaxis.grid()
-        plt.show()
-
-    def PlotSTD(self, startIDX=0, stopIDX=0):
-        fig, ax1 = plt.subplots(1, 1)
-        self.Chunktimes = np.arange(self.STDArray.shape[0])
-        tmpdeltaT = (
-            DB1.DataLoopBuffer[self.params["IntegrationLength"] - 1, 4]
-            - DB1.DataLoopBuffer[0, 4]
-        )
-        self.Chunktimes = self.Chunktimes * tmpdeltaT
-        # calculationg delta time from last vaild chunk
-        if startIDX == 0 and stopIDX == 0:
-            ax1.plot(self.Chunktimes, self.STDArray[:, 0], label="Sensor x")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 1], label="Sensor y")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 2], label="Sensor z")
-            ax1.plot(self.Chunktimes, self.STDArray[:, 3], label="Ref z")
+        plt.tight_layout()
+        if fileName!=None:
+            fig.savefig(fileName+'.png')
+            fig.savefig(fileName+'.svg')
+            fig.show()
         else:
-            ax1.plot(
-                self.Chunktimes[startIDX:stopIDX],
-                self.STDArray[startIDX:stopIDX, 0],
-                label="Sensor x",
-            )
-            ax1.plot(
-                self.Chunktimes[startIDX:stopIDX],
-                self.STDArray[startIDX:stopIDX, 1],
-                label="Sensor y",
-            )
-            ax1.plot(
-                self.Chunktimes[startIDX:stopIDX],
-                self.STDArray[startIDX:stopIDX, 2],
-                label="Sensor z",
-            )
-            ax1.plot(
-                self.Chunktimes[startIDX:stopIDX],
-                self.STDArray[startIDX:stopIDX, 3],
-                label="Ref z",
-            )
-        ax1.title.set_text(
-            "Short term standard deviation  $\sigma$ (width of "
-            + str(self.params["IntegrationLength"])
-            + ") of signal amplitude"
-        )
-        ax1.set_ylabel("STD  $\sigma$ in a.u.")
-        ax1.set_xlabel("Time in s")
-        ax1.legend()
-        ax1.grid(True)
-        plt.show()
+            fig.show()
+
+    def PlotSamplingFreq(self,fset=1000,averages=10,fileName=None):
+        fig, ax = plt.subplots(1, 1)
+        fig.set_size_inches(16, 9)
+        colors = plt.cm.jet(np.linspace(0, 1, len(self.CalData)))
+        i=0
+        for CTS in self.CalData:
+            #(self,fig = None,ax = None,label=None,legend=True,fset=1000):
+            CTS.PlotSamplingFreq(fig=fig,ax=ax,legend=False,fset=fset,color=colors[i],average=averages)
+            i=i+1
+        plt.tight_layout()
+        if fileName!=None:
+            fig.savefig(fileName+'.png')
+            fig.savefig(fileName+'.svg')
+            fig.show()
+
 
 def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     chunksize = Databuffer.params["IntegrationLength"]
@@ -1015,6 +1084,8 @@ def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
         )
     # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
     while i < linestoread:
+        if i%1e5==0:
+            print(str(i)+" lines read so far.")
         # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
         #  0      1                2               3                    4               5           6          7         8          9         10            11          12         13       14          15          16          17      18          19          20
         try:
@@ -1081,6 +1152,8 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
         )
     # TODO add "static" var for first time stamp to have relative times to avoid quantisation error
     while i < linestoread:
+        if i%1e5==0:
+            print(str(i)+"Lines read so far.")
         # ['id', 'sample_number', 'unix_time', 'unix_time_nsecs', 'time_uncertainty', 'Data_01', 'Data_02', 'Data_03', 'Data_04', 'Data_05', 'Data_06', 'Data_07', 'Data_08', 'Data_09', 'Data_10', 'Data_11', 'Data_12', 'Data_13', 'Data_14', 'Data_15', 'Data_16']
         #  0      1                2               3                    4               5           6          7         8          9         10
         try:
@@ -1091,7 +1164,7 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
                 x[j] = float(line[8])/np.pi*180
                 y[j] = float(line[9])/np.pi*180
                 z[j] = float(line[10])/np.pi*180
-                REF[j] = float(line[15])/np.pi*180
+                REF[j] = float(line[15])*60
                 t[j] = time
                 j = j + 1
             if j == chunksize:
@@ -1105,7 +1178,7 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
                 x[j] = float(line[8])/np.pi*180
                 y[j] = float(line[9])/np.pi*180
                 z[j] = float(line[10])/np.pi*180
-                REF[j] = float(line[15])/np.pi*180
+                REF[j] = float(line[15])*60
                 t[j] = time
                 j = j + 1
             # Databuffer.pushData(float(line[5]),
@@ -1150,7 +1223,13 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
 
 if __name__ == "__main__":
     start_time = time.time()
-    DB1 = Databuffer()
+    testAxis=0
+    refPhase=0
+    folder=r'D:\data\200625_MPU_9250_SN_12_X_Achse_1_COLAREF'
+    os.chdir(folder)
+    refName=r'25_06_2020_095051200625_MPU_9250_SN_12_X_Achse_1_COLAREFTDMS_TF.csv'
+    dumpName="200625_MPU_9250_SN_12_X_Achse_1_COLAREF"
+    DB1 = Databuffer(params={"stdvalidaxis": testAxis})
     DB1.setRefADCTF(
         [
             r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
@@ -1158,54 +1237,17 @@ if __name__ == "__main__":
         ],
         ADCChannel="ADC1",
     )
-
-    #https://zenodo.org/record/3786587#.Xs5XuWgzaUk csv from zenodo
-    #DB1.setRefTransferFunction(
-    #   r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6reps.csv"
-    #)
-    DB1.setRefTransferFunction(
-       r"D:\data\200620_MPU_9250_X_Achse_5\200620_MPU9250_IMEKO_X_Achse_5_TF.csv"
-    )
-    # DataReaderPROTOdump('data/20190826_300Hz_LP_10-250Hz_10ms2.csv')
-    # DataReaderPROTOdump('data/20190819_1500_10_250hz_10_ms2_woairatstart.dump')
-    # DataReaderPROTOdump('data/20190827_300Hz_LP_10x_10_250Hz_10ms2.csv')
-    # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_1_4bar.csv')
-    # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar.csv')
-    # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms2_10_4bar_2.csv')
-    # DataReaderPROTOdump('data/20190904_300Hz_LP_1x_10_250Hz_10ms_BK4809_1.csv')
-    # DataReaderPROTOdump("data/20190918_10_250_HZ_10_ms2_300HzTP_neuer_halter.csv")
-    # DataReaderPROTOdump("data/191001_BMA280_10_250_10ms2_1.csv")
-    # DataReaderGYROdump("data/20191112_frequenzgang_0.4Hz-100Hz_100deg_s.csv")
-    # DataReaderGYROdump("data/20191112_10Hz_amplgang_100_200_400_800_1600_degSek.csv")
-    # DataReaderGYROdumpLARGE(DB1,"/media/seeger01/Part1/191216_MPU_9250_Z_Achse/191612_MPU_9250_Z_Rot_150_Wdh/20191216153445_MPU_9250_0x1fe40000.dump")
-    # DataReaderGYROdumpLARGE(DB1,"/data/191218_MPU_9250_X_Achse_150_Wdh/20191218134946_MPU_9250_0x1fe40000.dump")
-    DataReaderGYROdumpLARGE(DB1,r"D:\data\200620_MPU_9250_X_Achse_5\200620_MPU_9250_X_Achse_5.dump")#/191617_MPU_9250_Y_Rot_100_Wdh/
-    #https://zenodo.org/record/3786587#.Xs5XuWgzaUk dump from zenodo
-    #DataReaderACCdumpLARGE(
-    #    DB1,
-    #    r"D:\data\2020-03-03_Messungen_MPU9250_SN_IMEKO_Frequenzgang_Firmware_0.3.0\Met4FOF_mpu9250_Z_Acc_10_hz_250_hz_6rep.dump",
-    #)
-    # DataReaderACCdumpLARGE(DB1,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-
-    # reading data from file and proces all Data
+    DB1.setRefTransferFunction(folder+r'\\'+refName)
+    DataReaderGYROdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=16000000)#
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(1, RefPhaseDC=-np.pi)
-    DB1.GetTransferFunction(1, RefPhaseDC=-np.pi)
+    DB1.getTransferCoevs(testAxis, RefPhaseDC=refPhase)
+    DB1.GetTransferFunction(testAxis, RefPhaseDC=refPhase)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
+    DB1.PlotSamplingFreq()
+    DB1.exportTF(folder+r'\\'+dumpName)
+    DB1.ExportTFasLatex(folder+r'\\'+dumpName)
     print("--- %s seconds ---" % (time.time() - start_time))
-    # fstats=yappi.get_func_stats()
-    # fstats.save(datetime.datetime.now().strftime("%Y%m%d%H%M%S")+'performance.out.', 'CALLGRIND')
-    # DB2 = Databuffer()
-    # DataReaderACCdumpLARGE(DB2,"D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.dump")
-    # DB2.setRefTransferFunction("D:/data/2020-03-03_Messungen_MPU9250_SN12 Frequenzgang_Firmware_0.3.0/mpu9250_12_10_hz_250_Hz_6wdh.csv")
-    # reading data from file and proces all Data
-    # DB2.DoAllFFT()
-    # DB2.getTransferFunction(2,RefPhaseDC=-np.pi)
-    # DB2.PlotTransferFunction()
-    # DB2.PlotTransferFunction(PlotType="logx")
-
-    # callculate all the ffts
 
 
