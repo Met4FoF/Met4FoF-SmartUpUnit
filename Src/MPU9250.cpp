@@ -1193,8 +1193,8 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Captur
 	Message->Data_09=_hz;
 	Message->has_Data_10=true;
 	Message->Data_10=_t;
-	return result;
 	_SampleCount++;
+	return result;
 }
 
 uint32_t MPU9250::getSampleCount(){

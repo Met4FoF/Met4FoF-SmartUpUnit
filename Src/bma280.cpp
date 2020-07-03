@@ -241,6 +241,10 @@ bool BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 	return retVal;
 }
 
+uint32_t BMA280::getSampleCount(){
+	return _SampleCount;
+}
+
 int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
@@ -266,6 +270,7 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Capture
 	Message->has_Data_10=true;
 	Message->Data_10=23.0+0.5*int8_t(rawData[6]);
 	result=1;
+	_SampleCount++;
 	}
 	return result;
 }

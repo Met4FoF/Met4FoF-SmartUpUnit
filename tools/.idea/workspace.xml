@@ -2,8 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7a0d19d-d9b6-4ec5-8eed-213b22ee2263" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/MET4FOF_ADC_AC_CAL.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.settings/language.settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.settings/language.settings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Inc/bma280.h" beforeDir="false" afterPath="$PROJECT_DIR$/../Inc/bma280.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../NUCLEO-F767ZI.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../NUCLEO-F767ZI.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Src/MPU9250.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/MPU9250.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Src/bma280.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/bma280.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Src/freertos.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/freertos.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -24,6 +31,17 @@
       <option value="ADC_cal_example.ipynb" />
     </option>
   </component>
+  <component name="ProjectConfigurationFiles">
+    <option name="files">
+      <list>
+        <option value="$PROJECT_DIR$/.idea/tools.iml" />
+        <option value="$PROJECT_DIR$/.idea/vcs.xml" />
+        <option value="$PROJECT_DIR$/.idea/misc.xml" />
+        <option value="$PROJECT_DIR$/.idea/modules.xml" />
+        <option value="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" />
+      </list>
+    </option>
+  </component>
   <component name="ProjectId" id="1d2mUvQREkPzQlQTSzRi0FjLhP0" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -34,7 +52,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$USER_HOME$/datareceiver" />
     <property name="settings.editor.selected.configurable" value="PyScientificConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -42,11 +60,48 @@
       <recent name="D:\Met4FoF-SmartUpUnit\tools" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.MET4FOFDataReceiver">
+    <configuration name="MET4FOFDataReceiver" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="tools" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="C:\Users\seeger01\Met4FoF-SmartUpUnit\tools\venv\Scripts\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/datareceiver" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$USER_HOME$/datareceiver/MET4FOFDataReceiver.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="transfer_calculator" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="tools" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="D:\met4FOF_venv\Scripts\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
@@ -62,6 +117,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.transfer_calculator" />
+      <item itemvalue="Python.MET4FOFDataReceiver" />
+    </list>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -76,11 +135,26 @@
       <workItem from="1591631582719" duration="5221000" />
       <workItem from="1591685457832" duration="27037000" />
       <workItem from="1591790936997" duration="6140000" />
+      <workItem from="1593772487378" duration="572000" />
+      <workItem from="1593773060808" duration="61000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="2" />
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="WindowStateProjectService">
     <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1591631741590">

@@ -115,11 +115,8 @@ osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
 
 //TODO insert sensor manager array in config manager
-//DummySensor Sensor0(0);
-//DummySensor Sensor1(1);
-//BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor1(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
+BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -303,8 +300,10 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
-	uint32_t lastSampleCount=0;
-	uint32_t actualSampleCount=0;
+	uint32_t lastSampleCount0=0;
+	uint32_t actualSampleCount0=0;
+	uint32_t lastSampleCount1=0;
+	uint32_t actualSampleCount1=0;
 	osDelay(10000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
@@ -314,14 +313,21 @@ void StartBlinkThread(void const * argument) {
 		osDelay(500);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		//Hack to gether Watchdog
-		actualSampleCount=Sensor0.getSampleCount();
-		if(actualSampleCount==lastSampleCount){
+		actualSampleCount0=Sensor0.getSampleCount();
+		if(actualSampleCount0==lastSampleCount0){
 			Sensor0.begin();
 			Sensor0.enableDataReadyInterrupt();
-			lastSampleCount=0;
+			lastSampleCount0 = 0;
+			actualSampleCount0 = 0;
 		}
-		lastSampleCount=actualSampleCount;
-
+		actualSampleCount1=Sensor1.getSampleCount();
+		if(actualSampleCount1==lastSampleCount1){
+			 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+				lastSampleCount1 = 0;
+				actualSampleCount1 = 0;
+		}
+		lastSampleCount0=actualSampleCount0;
+		lastSampleCount1=actualSampleCount1;
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -338,7 +344,7 @@ void StartLCDThread(void const * argument) {
 	osDelay(10);
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
 	uint16_t BaseID = configMan.getBaseID();
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
@@ -411,35 +417,35 @@ void StartDataStreamerThread(void const * argument) {
 	}
 	ConfigManager& configMan = ConfigManager::instance();
 	//TODO Make this availablte through web interface
-	configMan.setADCCalCoevs(0, 0.00488040211169927, -10.029208660668372,
-			4.6824163159348675e-3);
-	configMan.setADCCalCoevs(1, 0.004864769104581888, -9.911472983085314,
-			13.68572038605262e-3);
-	configMan.setADCCalCoevs(2, 0.004884955868836948, -10.031544601902738,
-			4.721804326558252e-3);
+	configMan.setADCCalCoevs(0, 0.00080566406, 0,
+			0);
+	configMan.setADCCalCoevs(1, 0.00080566406, 0,
+			0);
+	configMan.setADCCalCoevs(2, 0.00080566406, 0,
+			0);
 
 	//MPU9250
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 
-	Sensor1.setBaseID(SensorID1);
-	Sensor1.begin();
-	Sensor1.enableDataReadyInterrupt();
-
-	//MPU9250
-	uint32_t SensorID0=configMan.getSensorBaseID(0);
-
-	Sensor0.setBaseID(SensorID0);
+	Sensor0.setBaseID(SensorID1);
 	Sensor0.begin();
 	Sensor0.enableDataReadyInterrupt();
 
+	//MPU9250
+
+/*
+ 	uint32_t SensorID0=configMan.getSensorBaseID(0);
+	Sensor0.setBaseID(SensorID0);
+	Sensor0.begin();
+	Sensor0.enableDataReadyInterrupt();
+*/
 	//BMA280
 	 // SET PS pin low
-	/*
+
 	 uint32_t SensorID0=configMan.getSensorBaseID(0);
-	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
-	 Sensor0.setBaseID(SensorID0);
-	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-*/
+	 Sensor1.setBaseID(SensorID0);
+	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+
 	//Dummy Sensor
 	/*
 	 Sensor0.setBaseID(0);
@@ -702,35 +708,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-
+		HAL_ADC_PollForConversion(&hadc1, 0);
+		float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
+		float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
+		float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
+			mptr->has_Data_11 = true;
+			mptr->Data_11 = configMan.getADCVoltage(0, adcVal1);
+			mptr->has_Data_12 = true;
+			mptr->Data_12 = configMan.getADCVoltage(1, adcVal2);
+			mptr->has_Data_13 = true;
+			mptr->Data_13 = configMan.getADCVoltage(2, adcVal3);
 		 osStatus result = osMailPut(DataMail, mptr);
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		if (Channel3Tim2CaptureCount % 1 == 0) {
 			timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
-			HAL_ADC_PollForConversion(&hadc1, 0);
-			float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
-			float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
-			float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
+
 			DataMessage *mptr0;
 			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
 			Sensor0.getData(mptr0, timestamp23, Channel3Tim2CaptureCount);
-			//TODO move this functionality into the sensor api!!!
-			//Sensor0.addDescriptionStr(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,const char * Description)
-			//Sensor0.addDescriptionFloat(DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE,int Channel,float Description)
-			//after configuring the channels the can be used with this command
-			//Sensor0.addData(int Channel,float value)
-
-			mptr0->has_Data_11 = true;
-			mptr0->Data_11 = configMan.getADCVoltage(0, adcVal1);
-			mptr0->has_Data_12 = true;
-			mptr0->Data_12 = configMan.getADCVoltage(1, adcVal2);
-			mptr0->has_Data_13 = true;
-			mptr0->Data_13 = configMan.getADCVoltage(2, adcVal3);
 			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}
