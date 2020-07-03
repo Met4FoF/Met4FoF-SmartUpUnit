@@ -253,10 +253,10 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-		/*
+
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
-	HAL_StatusTypeDef result;
+	HAL_StatusTypeDef i2cresult;
  	uint8_t i;
  	for (i=1; i<128; i++)
  	{
@@ -267,19 +267,19 @@ void StartTempSensorThread(void const * argument) {
  	   // retries 2
  	   // timeout 2
  	   //
- 	  result = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 2, 2);
- 	  if (result != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
+ 	  i2cresult = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 2, 2);
+ 	  if (i2cresult != HAL_OK) // HAL_ERROR or HAL_BUSY or HAL_TIMEOUT
  	  {
  		 SEGGER_RTT_printf(0,"."); // No ACK received at that address
  	  }
- 	  if (result == HAL_OK)
+ 	  if (i2cresult == HAL_OK)
  	  {
  		 SEGGER_RTT_printf(0,"0x%X", i); // Received an ACK at that address
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
 		osDelay(1000);
-*/
+
 
 	}
 }
