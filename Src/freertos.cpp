@@ -118,7 +118,7 @@ osThreadId TempSensorTID;
 BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
-BMP280 AirPressSensor(hi2c1);
+//BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 
@@ -394,6 +394,25 @@ void StartLCDThread(void const * argument) {
 		uint32_t startcount=configMan.getStartcount();
 		sprintf(Temp_Buffer_text, "Start count: %i",startcount);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
+		if (lcdupdatecnt %100==0) {
+			ILI9341_Init();		//initial driver setup to drive ili9341
+			ILI9341_Fill_Screen(BLUE);
+			ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
+			uint16_t BaseID = configMan.getBaseID();
+			ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
+			sprintf(Temp_Buffer_text, "Rev:%d.%d.%d  ID:%x", VERSION_MAJOR,
+					VERSION_MINOR, VERSION_PATCH, BaseID);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 20, WHITE, 2, BLUE);
+			sprintf(Temp_Buffer_text, "Build:%s %s", __DATE__, __TIME__);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 40, WHITE, 1, BLUE);
+			ip_addr_t UDPTargetIP = configMan.getUDPTargetIP();
+			ip4addr_ntoa_r(&(UDPTargetIP), iPadressBuffer, sizeof(iPadressBuffer));
+			sprintf(Temp_Buffer_text, "UPD Targ:%s", iPadressBuffer);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
+			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
+			sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
+			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
+		}
 		if (lcdupdatecnt %10==0) {
 			iPadressBuffer[17]= {};
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
