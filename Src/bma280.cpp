@@ -245,14 +245,15 @@ uint32_t BMA280::getSampleCount(){
 	return _SampleCount;
 }
 
-int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount){
+int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
+	_SampleCount++;
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
-	Message->sample_number=CaptureCount;
+	Message->sample_number=	_SampleCount;
 	uint8_t  rawData[7];  // x/y/z accel register data stored here
 	int16_t rawArray[3]={0,0,0};
 	if(readBytes( BMA280_ACCD_X_LSB, 7, &rawData[0])==true){ // Read the 6 raw data registers into data array
@@ -270,7 +271,7 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Capture
 	Message->has_Data_10=true;
 	Message->Data_10=23.0+0.5*int8_t(rawData[6]);
 	result=1;
-	_SampleCount++;
+
 	}
 	return result;
 }
