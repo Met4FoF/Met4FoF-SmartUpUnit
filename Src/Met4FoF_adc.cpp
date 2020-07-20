@@ -67,7 +67,7 @@ int Met4FoF_adc::getDescription(DescriptionMessage * Message,DescriptionMessage_
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	Message->id=_ID;
-	strncpy(Message->Sensor_name,"BMA 280\0",sizeof(Message->Sensor_name));
+	strncpy(Message->Sensor_name,"STM32 Internal ADC\0",sizeof(Message->Sensor_name));
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{

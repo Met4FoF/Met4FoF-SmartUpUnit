@@ -120,7 +120,7 @@ BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
-Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,128);
+Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
@@ -256,7 +256,7 @@ void StartTempSensorThread(void const * argument) {
 		osDelay(10);
 
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
-
+/*
 	HAL_StatusTypeDef i2cresult;
  	uint8_t i;
  	for (i=1; i<128; i++)
@@ -279,6 +279,7 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
+ 	*/
 		osDelay(1000);
 
 
@@ -449,6 +450,10 @@ void StartDataStreamerThread(void const * argument) {
 	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 Sensor1.setBaseID(SensorID0);
 	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+
+	 //Internal ADC
+	 uint32_t SensorID10=configMan.getSensorBaseID(10);
+	 Met4FoFADC.setBaseID(SensorID10);
 
 
 	SEGGER_RTT_printf(0,
@@ -656,7 +661,27 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Met4FoFADC.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
 
+			}
+/*
 			 for (int DescriptionType =
 			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 			 DescriptionType != DescriptionMessage_LAST;
@@ -681,7 +706,9 @@ void StartDataStreamerThread(void const * argument) {
 			 Met4FoFADC.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
 			 pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 			 &Descriptionmsg, PB_ENCODE_DELIMITED);
+
 			 }
+			 			 */
 
 		}
 
@@ -706,10 +733,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		HAL_ADC_PollForConversion(&hadc1, 0);
-		float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
-		float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
-		float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 DataMessage *mptrADC;
