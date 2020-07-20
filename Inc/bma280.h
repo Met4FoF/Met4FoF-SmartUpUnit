@@ -139,7 +139,7 @@ class BMA280
   BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID);
   void init(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
   void reset();
-  int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
+  int getData(DataMessage * Message,uint64_t RawTimeStamps);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   int setBaseID(uint32_t BaseID);
   uint8_t getChipID();
@@ -148,11 +148,13 @@ class BMA280
   void fastCompensation();
   void selfTest();
   void activateDataRDYINT();
+  uint32_t getSampleCount();
   private:
   float getConversionfactor();
   void writeByte(uint8_t subAddress, uint8_t data);
   uint8_t readByte(uint8_t subAddress);
   bool readBytes(uint8_t subAddress, uint8_t count, uint8_t* dest);
+
   float _conversionfactor;
   GPIO_TypeDef* _SPICSTypeDef;
   uint16_t _SPICSPin;
@@ -161,6 +163,7 @@ class BMA280
   uint32_t _BaseID;
   uint16_t _SetingsID;
   uint8_t _aRes;
+  uint32_t _SampleCount=0;
 };
 
 #endif /*__ BMA280_H */
