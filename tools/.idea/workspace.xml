@@ -3,11 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a7a0d19d-d9b6-4ec5-8eed-213b22ee2263" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/../.settings/language.settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.settings/language.settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Inc/bma280.h" beforeDir="false" afterPath="$PROJECT_DIR$/../Inc/bma280.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../NUCLEO-F767ZI.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../NUCLEO-F767ZI.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Src/MPU9250.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/MPU9250.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Src/bma280.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/bma280.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Src/freertos.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../Src/freertos.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../met4FOF_SSU_V2 Debug (1).cfg" beforeDir="false" afterPath="$PROJECT_DIR$/../met4FOF_SSU_V2 Debug (1).cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -51,8 +47,9 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$USER_HOME$/datareceiver" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="PyScientificConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -72,7 +69,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.MET4FOFDataReceiver">
+  <component name="RunManager" selected="Python.transfer_calculator">
     <configuration name="MET4FOFDataReceiver" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="tools" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -99,9 +96,6 @@
       <module name="tools" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
       <option name="SDK_HOME" value="D:\met4FOF_venv\Scripts\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
@@ -137,6 +131,7 @@
       <workItem from="1591790936997" duration="6140000" />
       <workItem from="1593772487378" duration="572000" />
       <workItem from="1593773060808" duration="61000" />
+      <workItem from="1594639768584" duration="3814000" />
     </task>
     <servers />
   </component>
