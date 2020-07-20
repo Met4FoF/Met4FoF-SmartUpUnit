@@ -97,8 +97,8 @@
 #define HSPI_INSTANCE							&hspi3
 
 //CHIP SELECT PIN AND PORT, STANDARD GPIO
-#define LCD_CS_PORT								LCD_CS_GPIO_Port
-#define LCD_CS_PIN								LCD_CS_Pin
+//#define LCD_CS_PORT								LCD_CS_GPIO_Port
+//#define LCD_CS_PIN								LCD_CS_Pin
 
 //DATA COMMAND PIN AND PORT, STANDARD GPIO
 #define LCD_DC_PORT								LCD_DC_RS_GPIO_Port
