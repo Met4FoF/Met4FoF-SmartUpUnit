@@ -468,7 +468,7 @@ class CalTimeSeries:
             linewidth=1,
             color=color
             )
-        ax.set(xlabel="Time /s", ylabel="Sampling frequency deviation in Hz", title="Sampling frequency deviation from set Value ("+str(fset)+" Hz)")
+        ax.set(xlabel="Time /s", ylabel="Sampling frequency deviation in Hz")# ,title="Sampling frequency deviation from set Value ("+str(fset)+" Hz)")
         if legend:
             ax.legend()
         fig.show()
@@ -852,7 +852,7 @@ class Databuffer:
         if PlotType == "logx":
             ax1.set_xscale("log")
             ax2.set_xscale("log")
-        fig.suptitle("Transfer function ")
+        #fig.suptitle("Transfer function ")
         ax1.set_ylabel("Relative magnitude $|S|$")
         ax1.grid(True)
         jet = plt.cm.jet
@@ -906,11 +906,11 @@ class Databuffer:
             label='Mean',
             uplims=PhaseMarker, lolims=PhaseMarker
         )
-        ax2.set_xlabel(r"Frequency $\omega$ in Hz")
-        ax2.set_ylabel(r"Phase $\Delta\varphi$ in °")
+        ax2.set_xlabel(r"Frequency $f$ in Hz")
+        ax2.set_ylabel(r"Phase $\Delta\varphi$ in deg")
         ax2.grid(True)
-        ax1.legend(numpoints=1, fontsize=8, ncol=3)
-        ax2.legend(numpoints=1, fontsize=8, ncol=3)
+        #ax1.legend(numpoints=1, fontsize=8, ncol=3)
+        #ax2.legend(numpoints=1, fontsize=8, ncol=3)
         plt.tight_layout()
         if fileName != None:
             fig.savefig(fileName+'.png')
@@ -1000,12 +1000,12 @@ class Databuffer:
                 self.STDArray[startIDX:stopIDX, 3],
                 label="Sync in A.U.",
             )
-        ax1.title.set_text(
-            "Short term standard deviation $\sigma$ (width "
-            + str(self.params["IntegrationLength"])
-            + " samples) of signal amplitude."
-        )
-        ax1.set_ylabel("STD  $\sigma$ in °/s")
+        #ax1.title.set_text(
+        #    "Short term standard deviation $\sigma$ (width "
+        #    + str(self.params["IntegrationLength"])
+        #    + " samples) of signal amplitude."
+        #)
+        ax1.set_ylabel("STD  $\sigma$ in deg/s")
         ax1.legend(loc='lower center')
 
         ax1.grid(True)
@@ -1225,10 +1225,10 @@ if __name__ == "__main__":
     start_time = time.time()
     testAxis=0
     refPhase=0
-    folder=r'D:\data\200625_MPU_9250_SN_12_X_Achse_1_COLAREF'
+    folder=r'D:\data\processed\200621_MPU_9250_X_Achse_5'
     os.chdir(folder)
-    refName=r'25_06_2020_095051200625_MPU_9250_SN_12_X_Achse_1_COLAREFTDMS_TF.csv'
-    dumpName="200625_MPU_9250_SN_12_X_Achse_1_COLAREF"
+    refName=r'21_06_2020_134323200621_MPU_9250_X_Achse_5TDMS_TF.csv'
+    dumpName="200621_MPU_9250_X_Achse_5"
     DB1 = Databuffer(params={"stdvalidaxis": testAxis})
     DB1.setRefADCTF(
         [
@@ -1240,14 +1240,14 @@ if __name__ == "__main__":
     DB1.setRefTransferFunction(folder+r'\\'+refName)
     DataReaderGYROdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=16000000)#
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(testAxis, RefPhaseDC=refPhase)
-    DB1.GetTransferFunction(testAxis, RefPhaseDC=refPhase)
+    DB1.getTransferCoevs(0, RefPhaseDC=refPhase)
+    DB1.GetTransferFunction(0, RefPhaseDC=refPhase)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     DB1.PlotSamplingFreq()
-    DB1.exportTF(folder+r'\\'+dumpName)
-    DB1.ExportTFasLatex(folder+r'\\'+dumpName)
+   # DB1.exportTF(folder+r'\\'+dumpName)
+   # DB1.ExportTFasLatex(folder+r'\\'+dumpName)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 

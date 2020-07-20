@@ -17,7 +17,7 @@ plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)
 plt.rc('lines', linewidth=scalefactor)
-plt.rc("text", usetex=True)
+#plt.rc("text", usetex=True)
 
 DataSet1={'Name':'Sensor 1 X-Axis','fmt':'s','color':'darkblue','Data':pd.read_csv(r'D:\data\processed\200621_MPU_9250_X_Achse_5\200621_MPU_9250_X_Achse_5TF.csv')}
 DataSet3={'Name':'Sensor 1 X-Axis','fmt':'s','color':'navy','Data':pd.read_csv(r'D:\data\processed\200622_MPU_9250_X_Achse_6\200622_MPU_9250_X_Achse_6TF.csv')}
@@ -34,7 +34,7 @@ AMPMean/=len(DataSetList)
 
 fig, ax = plt.subplots()
 ax.set_xscale("log", nonposx='clip')
-ax.set(xlabel="Frequency $\omega$ in Hz", ylabel=r" $|S(\omega)|-\overline{|S(\omega)|}$", title="Deviation of magnitudes Response from average value per frequency")
+ax.set(xlabel=r"Frequency $f$ in Hz", ylabel=r" $|S(f)|-\overline{|S(f)|}$" )#, title="Deviation of magnitudes Response from average value per frequency"
 i=0
 fScale=0.01
 for DataSet in DataSetList:
@@ -51,7 +51,7 @@ AMPMean/=len(DataSetList)
 
 fig, ax = plt.subplots()
 ax.set_xscale("log", nonposx='clip')
-ax.set(xlabel="Frequency $\omega$ in Hz", ylabel=r"$\Delta\varphi(\omega)-\overline{\Delta\varphi(\omega)}$~in~$^\circ$", title="Deviation of phase response from average value per frequency")
+ax.set(xlabel=r"Frequency $f$ in Hz", ylabel=r"$\Delta\varphi(f)-\overline{\Delta\varphi(f)}$ in deg")#, title="Deviation of phase response from average value per frequency"
 i=0
 fScale=0.01
 for DataSet in DataSetList:
