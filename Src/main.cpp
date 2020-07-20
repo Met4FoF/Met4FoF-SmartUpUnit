@@ -152,19 +152,18 @@ int main(void)
   //MX_USB_DEVICE_Init(); USb usage results in hardfault needs to be debugged but has low priority
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_SPI1_Init();
-  MX_SPI2_Init();
   MX_SPI3_Init();
-  MX_SPI4_Init();
-  MX_SPI5_Init();
+  MX_SPI1_Init();
   MX_I2C1_Init();
   MX_USART6_UART_Init();
+  MX_CAN1_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_UART7_Init();
   MX_SDMMC2_SD_Init();
   MX_RTC_Init();
+  MX_DAC_Init();
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, GPIO_PIN_SET);

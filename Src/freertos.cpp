@@ -68,6 +68,7 @@
 #include "MPU9250.h"
 #include "bma280.h"
 #include "MS5837.h"
+#include "Met4FoF_adc.h"
 #include "dummy_sensor.h"
 #include "bmp280.h"
 
@@ -119,9 +120,9 @@ BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
+Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
-
 bool Lwip_anf_FAT_init_finished=false;
 
 /**
@@ -249,13 +250,13 @@ void StartTempSensorThread(void const * argument) {
 			}
 		}
 		//int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount)
-		TempSensor0.getData(mptr,(uint32_t)SampelPointUtc.tv_sec,(uint32_t)SampelPointUtc.tv_nsec,40e6,TempsensoreCaptureCount);
+		TempSensor0.getData(mptr,(uint32_t)SampelPointUtc.tv_sec,(uint32_t)SampelPointUtc.tv_nsec,40e6);
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
 
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
-
+/*
 	HAL_StatusTypeDef i2cresult;
  	uint8_t i;
  	for (i=1; i<128; i++)
@@ -278,6 +279,7 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
+ 	*/
 		osDelay(1000);
 
 
@@ -435,13 +437,6 @@ void StartDataStreamerThread(void const * argument) {
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
-	//TODO Make this availablte through web interface
-	configMan.setADCCalCoevs(0, 0.00080566406, 0,
-			0);
-	configMan.setADCCalCoevs(1, 0.00080566406, 0,
-			0);
-	configMan.setADCCalCoevs(2, 0.00080566406, 0,
-			0);
 
 	//MPU9250
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
@@ -450,26 +445,17 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.begin();
 	Sensor0.enableDataReadyInterrupt();
 
-	//MPU9250
-
-/*
- 	uint32_t SensorID0=configMan.getSensorBaseID(0);
-	Sensor0.setBaseID(SensorID0);
-	Sensor0.begin();
-	Sensor0.enableDataReadyInterrupt();
-*/
 	//BMA280
-	 // SET PS pin low
 
 	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 Sensor1.setBaseID(SensorID0);
 	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
-	//Dummy Sensor
-	/*
-	 Sensor0.setBaseID(0);
-	 Sensor1.setBaseID(1);crc
-	 */
+	 //Internal ADC
+	 uint32_t SensorID10=configMan.getSensorBaseID(10);
+	 Met4FoFADC.setBaseID(SensorID10);
+
+
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
@@ -529,6 +515,7 @@ void StartDataStreamerThread(void const * argument) {
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
 	//__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 	/* Enable ADCs external trigger */
+	//TODO check if this belonges into the adc functionality
 	HAL_ADC_Start_IT(&hadc1);
 	HAL_ADC_Start_IT(&hadc2);
 	HAL_ADC_Start_IT(&hadc3);
@@ -674,7 +661,27 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-			/*
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Met4FoFADC.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+/*
 			 for (int DescriptionType =
 			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 			 DescriptionType != DescriptionMessage_LAST;
@@ -696,13 +703,12 @@ void StartDataStreamerThread(void const * argument) {
 			 (const pb_byte_t*) &DescriptionString, 4);
 			 }
 			 DescriptionMessage Descriptionmsg;
-			 Sensor1.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
+			 Met4FoFADC.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
 			 pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 			 &Descriptionmsg, PB_ENCODE_DELIMITED);
 
-
 			 }
-			 */
+			 			 */
 
 		}
 
@@ -727,20 +733,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		HAL_ADC_PollForConversion(&hadc1, 0);
-		float adcVal1 = (float) HAL_ADC_GetValue(&hadc1);
-		float adcVal2 = (float) HAL_ADC_GetValue(&hadc2);
-		float adcVal3 = (float) HAL_ADC_GetValue(&hadc3);
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
-			mptr->has_Data_11 = true;
-			mptr->Data_11 = configMan.getADCVoltage(0, adcVal1);
-			mptr->has_Data_12 = true;
-			mptr->Data_12 = configMan.getADCVoltage(1, adcVal2);
-			mptr->has_Data_13 = true;
-			mptr->Data_13 = configMan.getADCVoltage(2, adcVal3);
-		 osStatus result = osMailPut(DataMail, mptr);
+		 DataMessage *mptrADC;
+		 mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
+		 Sensor1.getData(mptr, timestamp21);
+		 Met4FoFADC.getData(mptrADC, timestamp21);
+		 osMailPut(DataMail, mptr);
+		 osStatus result = osMailPut(DataMail, mptrADC);
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
@@ -749,7 +749,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 			DataMessage *mptr0;
 			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
-			Sensor0.getData(mptr0, timestamp23, Channel3Tim2CaptureCount);
+			Sensor0.getData(mptr0, timestamp23);
 			osStatus result = osMailPut(DataMail, mptr0);
 		}
 	}

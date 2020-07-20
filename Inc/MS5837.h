@@ -80,11 +80,11 @@ public:
 	 */
 	float altitude();
 
-	int getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount);
+	int getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty);
 
 	int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
 
-
+	uint32_t getSampleCount(){return _SampleCount;};
 
 private:
 	I2C_HandleTypeDef * _I2C;
@@ -94,6 +94,7 @@ private:
 	int32_t P;
 	uint8_t _model;
 	uint32_t _ID;
+	uint32_t _SampleCount=0;
 	float fluidDensity;
 
 	/** Performs calculations per the sensor data sheet for conversion and

@@ -183,14 +183,15 @@ float MS5837::altitude() {
 	return (1-pow((pressure()/1013.25),.190284))*145366.45*.3048;
 }
 
-int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount){
+int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
+	_SampleCount++;
 	Message->id=_ID;
 	Message->unix_time=unix_time;
 	Message->time_uncertainty=time_uncertainty;
 	Message->unix_time_nsecs=unix_time_nsecs;
-	Message->sample_number=CaptureCount;
+	Message->sample_number=_SampleCount;
 	MS5837::read();
 	MS5837::calculate();
 	Message->Data_01=MS5837::temperature();

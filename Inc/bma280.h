@@ -139,7 +139,7 @@ class BMA280
   BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID);
   void init(uint8_t aRes,uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur);
   void reset();
-  int getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t CaptureCount);
+  int getData(DataMessage * Message,uint64_t RawTimeStamps);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   int setBaseID(uint32_t BaseID);
   uint8_t getChipID();
