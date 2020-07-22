@@ -71,11 +71,11 @@ int MPU9250::begin(){
 	  // reset the MPU9250
 	  writeRegister(PWR_MGMNT_1,PWR_RESET);
 	  // wait for MPU-9250 to come back up
-	  HAL_Delay(200);
+	  HAL_Delay(80);
 	  // reset the AK8963
 	  writeAK8963Register(AK8963_CNTL2,AK8963_RESET);
 
-	  HAL_Delay(200);
+	  HAL_Delay(80);
 	  // select clock source to gyro
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
 	    return -4;
@@ -109,10 +109,16 @@ int MPU9250::begin(){
 	  }
 	  _bandwidth = DLPF_BANDWIDTH_184HZ;
 	  // setting the sample rate divider to 0 as default
-	  if(writeRegister(SMPDIV,0x00) < 0){
+	  if(writeRegister(SMPDIV,0x02) < 0){
 	    return -11;
 	  }
-	  _srd = 0;
+	  if(writeRegister(SMPDIV,0x02) < 0){
+	    return -11;
+	  }
+	  if(writeRegister(SMPDIV,0x02) < 0){
+	    return -11;
+	  }
+	  _srd = 2;
 	  // enable I2C master mode
 	  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
 	  	return -12;
@@ -130,12 +136,12 @@ int MPU9250::begin(){
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
 	    //return -15;
 	  }
-	  HAL_Delay(200); // long wait between AK8963 mode changes
+	  HAL_Delay(80); // long wait between AK8963 mode changes
 	  // set AK8963 to FUSE ROM access
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_FUSE_ROM) < 0){
 	    //return -16;
 	  }
-	  HAL_Delay(200); // long wait between AK8963 mode changes
+	  HAL_Delay(80); // long wait between AK8963 mode changes
 	  // read the AK8963 ASA registers and compute magnetometer scale factors
 	  readAK8963Registers(AK8963_ASA,3,_buffer);
 	  _magScaleX = ((((float)_buffer[0]) - 128.0f)/(256.0f) + 1.0f) * 4912.0f / 32760.0f; // micro Tesla
@@ -145,17 +151,17 @@ int MPU9250::begin(){
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) < 0){
 	    //return -17;
 	  }
-	  HAL_Delay(200); // long wait between AK8963 mode changes
+	  HAL_Delay(80); // long wait between AK8963 mode changes
 	  // set AK8963 to 16 bit resolution, 100 Hz update rate
 	  if(writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) < 0){
 	    //return -18;
 	  }
-	 HAL_Delay(200); // long wait between AK8963 mode changes
+	 HAL_Delay(80); // long wait between AK8963 mode changes
 	  // select clock source to gyro
 	  if(writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) < 0){
 	    //return -19;
 	  }
-	  HAL_Delay(200);
+	  HAL_Delay(80);
 	  // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
 	  readAK8963Registers(AK8963_HXL,7,_buffer);
 	  // estimate gyro bias

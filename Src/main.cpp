@@ -158,7 +158,7 @@ int main(void)
   MX_SPI4_Init();
   MX_SPI5_Init();
   MX_I2C1_Init();
-  MX_USART6_UART_Init();
+  //MX_USART6_UART_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();

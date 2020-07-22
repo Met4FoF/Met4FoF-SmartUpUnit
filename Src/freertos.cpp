@@ -116,8 +116,11 @@ osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
 
 //TODO insert sensor manager array in config manager
-BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
+MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
@@ -152,7 +155,7 @@ void MX_FREERTOS_Init(void) {
 	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
 	IOTID = osThreadCreate(osThread(defaultTask), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityLow, 0, 256);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityHigh, 0, 256);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
@@ -222,7 +225,7 @@ void StartTempSensorThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 
 	static uint32_t TempsensoreCaptureCount=0;
-	uint32_t SensorID3=configMan.getSensorBaseID(3);
+	uint32_t SensorID3=configMan.getSensorBaseID(5);
 	TempSensor0.init(SensorID3);
 	for (;;) {
 		osDelay(2000);
@@ -306,7 +309,13 @@ void StartBlinkThread(void const * argument) {
 	uint32_t actualSampleCount0=0;
 	uint32_t lastSampleCount1=0;
 	uint32_t actualSampleCount1=0;
-	osDelay(10000);
+	uint32_t lastSampleCount2=0;
+	uint32_t actualSampleCount2=0;
+	uint32_t lastSampleCount3=0;
+	uint32_t actualSampleCount3=0;
+	bool justRestarted=false;
+	bool justRestartedDelay=false;
+	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -314,22 +323,66 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(500);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		//Hack to gether Watchdog
 		actualSampleCount0=Sensor0.getSampleCount();
-		if(actualSampleCount0==lastSampleCount0){
+		actualSampleCount1=Sensor1.getSampleCount();
+		actualSampleCount2=Sensor2.getSampleCount();
+		actualSampleCount3=Sensor3.getSampleCount();
+
+		//Hack to gether Watchdog
+
+
+		if(actualSampleCount0-lastSampleCount0<350||actualSampleCount0-lastSampleCount0>600){
+			if(justRestarted==false){
 			Sensor0.begin();
+			Sensor0.setSrd(1);
 			Sensor0.enableDataReadyInterrupt();
 			lastSampleCount0 = 0;
 			actualSampleCount0 = 0;
+			justRestarted=true;
+			}
 		}
-		actualSampleCount1=Sensor1.getSampleCount();
-		if(actualSampleCount1==lastSampleCount1){
-			 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-				lastSampleCount1 = 0;
-				actualSampleCount1 = 0;
+		if(actualSampleCount1-lastSampleCount1<350||actualSampleCount1-lastSampleCount1>600){
+			if(justRestarted==false){
+			Sensor1.begin();
+			Sensor1.setSrd(1);
+			Sensor1.enableDataReadyInterrupt();
+			lastSampleCount1 = 0;
+			actualSampleCount1 = 0;
+			justRestarted=true;
+			}
+		}
+		if(actualSampleCount2-lastSampleCount2<350||actualSampleCount2-lastSampleCount2>600){
+			if(justRestarted==false){
+			Sensor2.begin();
+			Sensor2.setSrd(1);
+			Sensor2.enableDataReadyInterrupt();
+			lastSampleCount2 = 0;
+			actualSampleCount2 = 0;
+			justRestarted=true;
+			}
+		}
+		if(actualSampleCount3-lastSampleCount3<350||actualSampleCount3-lastSampleCount3>600){
+			if(justRestarted==false){
+			Sensor3.begin();
+			Sensor3.setSrd(1);
+			Sensor3.enableDataReadyInterrupt();
+			lastSampleCount3 = 0;
+			actualSampleCount3 = 0;
+			justRestarted=true;
+			}
+		}
+		if(justRestartedDelay==true && justRestarted==true){
+			justRestartedDelay=false;
+			justRestarted=false;
+		}
+		if(justRestartedDelay==false && justRestarted==true){
+			justRestartedDelay=true;
 		}
 		lastSampleCount0=actualSampleCount0;
 		lastSampleCount1=actualSampleCount1;
+		lastSampleCount2=actualSampleCount2;
+		lastSampleCount3=actualSampleCount3;
+		SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -439,17 +492,39 @@ void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 
 	//MPU9250
-	uint32_t SensorID1=configMan.getSensorBaseID(1);
-
-	Sensor0.setBaseID(SensorID1);
+	uint32_t SensorID0=configMan.getSensorBaseID(0);
+	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
+	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 
+	//MPU9250
+	uint32_t SensorID1=configMan.getSensorBaseID(1);
+	Sensor1.setBaseID(SensorID1);
+	Sensor1.begin();
+	Sensor1.setSrd(1);
+	Sensor1.enableDataReadyInterrupt();
+
+	//MPU9250
+
+	uint32_t SensorID2=configMan.getSensorBaseID(2);
+	Sensor2.setBaseID(SensorID2);
+	Sensor2.begin();
+	Sensor2.setSrd(1);
+	Sensor2.enableDataReadyInterrupt();
+
+
+	//MPU9250
+	uint32_t SensorID3=configMan.getSensorBaseID(3);
+	Sensor3.setBaseID(SensorID3);
+	Sensor3.begin();
+	Sensor3.setSrd(1);
+	Sensor3.enableDataReadyInterrupt();
 	//BMA280
 
-	 uint32_t SensorID0=configMan.getSensorBaseID(0);
-	 Sensor1.setBaseID(SensorID0);
-	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+	 //uint32_t SensorID0=configMan.getSensorBaseID(0);
+	 //Sensor1.setBaseID(SensorID0);
+	 //Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
@@ -509,11 +584,11 @@ void StartDataStreamerThread(void const * argument) {
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
-	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
-	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
-	//__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
+	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 	/* Enable ADCs external trigger */
 	//TODO check if this belonges into the adc functionality
 	HAL_ADC_Start_IT(&hadc1);
@@ -727,32 +802,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t Channel3Tim2CaptureCount = 0;
 	static uint32_t Channel4Tim2CaptureCount = 0;
 	static uint32_t GPScaptureCount = 0;
+	uint64_t timestamp11 = 0;
+	uint64_t timestamp12 = 0;
 	uint64_t timestamp21 = 0;
 	uint64_t timestamp23 = 0;
 	uint64_t timestamp24 = 0;
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		Channel1Tim2CaptureCount++;
-		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		 DataMessage *mptr;
-		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 DataMessage *mptrADC;
-		 mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp21);
-		 Met4FoFADC.getData(mptrADC, timestamp21);
-		 osMailPut(DataMail, mptr);
-		 osStatus result = osMailPut(DataMail, mptrADC);
-	}
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-		Channel3Tim2CaptureCount++;
-		if (Channel3Tim2CaptureCount % 1 == 0) {
-			timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
-
-			DataMessage *mptr0;
-			mptr0 = (DataMessage *) osMailAlloc(DataMail, 0);
-			Sensor0.getData(mptr0, timestamp23);
-			osStatus result = osMailPut(DataMail, mptr0);
-		}
-	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
@@ -787,14 +841,41 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			GPScaptureCount++;
 		}
 	}
-
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		//Channel1Tim1CaptureCount++;
-		//timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
+	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		Channel1Tim2CaptureCount++;
+		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		 DataMessage *mptr;
+		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		 DataMessage *mptrADC;
+		 mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
+		 Sensor0.getData(mptr, timestamp21);
+		 Met4FoFADC.getData(mptrADC, timestamp21);
+		 osMailPut(DataMail, mptr);
+		 osStatus result = osMailPut(DataMail, mptrADC);
 	}
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-		//Channel4Tim1CaptureCount++;
-		//timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
+	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		Channel3Tim2CaptureCount++;
+		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		DataMessage *mptr;
+		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		Sensor1.getData(mptr, timestamp23);
+		osStatus result = osMailPut(DataMail, mptr);
+	}
+	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		Channel1Tim1CaptureCount++;
+		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
+		DataMessage *mptr;
+		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		Sensor2.getData(mptr, timestamp11);
+		osStatus result = osMailPut(DataMail, mptr);
+	}
+	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+		Channel4Tim2CaptureCount++;
+		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
+		DataMessage *mptr;
+		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		Sensor3.getData(mptr, timestamp12);
+		osStatus result = osMailPut(DataMail, mptr);
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
