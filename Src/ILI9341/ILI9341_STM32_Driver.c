@@ -144,11 +144,16 @@ ILI9341_Write_Command(0x2C);
 void ILI9341_Reset(void)
 {
 HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_RESET);
-HAL_Delay(200);
+HAL_Delay(20);
 //HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_RESET);
 HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_SET);	
 }
 
+void ILI9341_Soft_Reset(void)
+{
+
+	ILI9341_Write_Command(0x01);
+}
 /*Ser rotation of the screen - changes x0 and y0*/
 void ILI9341_Set_Rotation(uint8_t Rotation) 
 {
@@ -202,15 +207,15 @@ ILI9341_Reset();
 
 //SOFTWARE RESET
 ILI9341_Write_Command(0x01);
-HAL_Delay(1000);
+HAL_Delay(100);
 	
 //POWER CONTROL A
-ILI9341_Write_Command(0xCB);
-ILI9341_Write_Data(0x39);
-ILI9341_Write_Data(0x2C);
-ILI9341_Write_Data(0x00);
-ILI9341_Write_Data(0x34);
-ILI9341_Write_Data(0x02);
+ILI9341_Write_Command(0xCB); // POWER CONTROL A
+ILI9341_Write_Data(0x39);    // 1. (default)
+ILI9341_Write_Data(0x2C);    // 2. (default)
+ILI9341_Write_Data(0x00);    // 3. (default)
+ILI9341_Write_Data(0x34);    // 4. (Vcore Controll: 1.55V, default)
+ILI9341_Write_Data(0x02);    // 5. (DDVDH: 5.8V, default)
 
 //POWER CONTROL B
 ILI9341_Write_Command(0xCF);

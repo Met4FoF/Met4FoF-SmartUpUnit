@@ -108,19 +108,12 @@ void SystemClock_Config(void);
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
-
-#define SENSOR_CS1_Pin GPIO_PIN_8
-#define SENSOR_CS1_GPIO_Port GPIOB
-
-#define SENSOR_CS2_Pin GPIO_PIN_9
-#define SENSOR_CS2_GPIO_Port GPIOC
-
 #define SENSOR_CS3_Pin GPIO_PIN_6
 #define SENSOR_CS3_GPIO_Port GPIOC
-
 #define SENSOR_CS4_Pin GPIO_PIN_8
 #define SENSOR_CS4_GPIO_Port GPIOC
-
+#define SENSOR_CS2_Pin GPIO_PIN_9
+#define SENSOR_CS2_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
 #define USB_SOF_GPIO_Port GPIOA
 #define USB_VBUS_Pin GPIO_PIN_9
@@ -135,10 +128,10 @@ void SystemClock_Config(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define T_CS_Pin GPIO_PIN_2
+#define T_CS_GPIO_Port GPIOD
 #define SD_DETECT_Pin GPIO_PIN_4
 #define SD_DETECT_GPIO_Port GPIOD
-#define T_CS_Pin GPIO_PIN_10
-#define T_CS_GPIO_Port GPIOG
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
@@ -149,6 +142,8 @@ void SystemClock_Config(void);
 #define SD_DETECTB4_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
+#define SENSOR_CS1_Pin GPIO_PIN_8
+#define SENSOR_CS1_GPIO_Port GPIOB
 #define LED_BT1_Pin GPIO_PIN_0
 #define LED_BT1_GPIO_Port GPIOE
 #define LCD_DC_RS_Pin GPIO_PIN_1

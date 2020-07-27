@@ -397,6 +397,7 @@ void StartLCDThread(void const * argument) {
 	}
 	ConfigManager& configMan = ConfigManager::instance();
 	osDelay(10);
+	HAL_GPIO_WritePin(T_CS_GPIO_Port, T_CS_Pin, GPIO_PIN_SET);
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
