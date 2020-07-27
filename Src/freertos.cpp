@@ -580,15 +580,19 @@ void StartDataStreamerThread(void const * argument) {
 
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 	//Start timer and arm inputcapture
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
-	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+	//Slave (TIM1) before Master (TIM2)
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
 	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
+
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_CHANNEL_1);
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_CHANNEL_3);
+	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
+
+
 	/* Enable ADCs external trigger */
 	//TODO check if this belonges into the adc functionality
 	HAL_ADC_Start_IT(&hadc1);

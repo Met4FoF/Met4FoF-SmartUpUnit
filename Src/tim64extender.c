@@ -43,7 +43,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 				tim2_race_condition_up_date = true;
 				tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
 				tim2_update_counts++;
-				tim2_upper_bits_mask = (uint64_t)(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+				tim2_upper_bits_mask = (uint64_t)(tim2_update_counts-1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 			}
 		}
 	}
@@ -58,7 +58,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 				tim1_race_condition_up_date = true;
 				tim1_upper_bits_mask_race_condition = tim1_upper_bits_mask;
 				tim1_update_counts++;
-				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 			}
 		}
 	}
@@ -66,17 +66,17 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 				if (tim1_race_condition_up_date == false) {
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask
-							+ (uint64_t) __HAL_TIM_GetCounter(&htim1);
+							+ (uint64_t) __HAL_TIM_GetCounter(&htim1)+1;
 				} else {
 					uint32_t timestamp_raw = __HAL_TIM_GetCounter(&htim1);
-					if (timestamp_raw < TIM32OLDTIMERVALMIN)
+					if (timestamp_raw < TIM16OLDTIMERVALMIN)
 					//the timer has overflowen tak the updateted bitmask
 					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw;
+						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
 					} else {
 						//this is an old value using the old bitmask
 						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw;
+								+ (uint64_t) timestamp_raw+1;
 					}
 				}
 
@@ -135,7 +135,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					tim2_race_condition_up_date = true;
 					tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
 					tim2_update_counts++;
-					tim2_upper_bits_mask = (uint64_t)(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+					tim2_upper_bits_mask = (uint64_t)(tim2_update_counts-1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 				}
 			}
 		}
@@ -151,7 +151,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					tim1_race_condition_up_date = true;
 					tim1_upper_bits_mask_race_condition = tim1_upper_bits_mask;
 					tim1_update_counts++;
-					tim1_upper_bits_mask = (uint64_t)(tim1_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+					tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 				}
 			}
 		}
@@ -221,18 +221,18 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 				//this is the nromal case
 				timestamp = tim1_upper_bits_mask
 						+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-								TIM_CHANNEL_1);
+								TIM_CHANNEL_1)+1;
 			} else {
 				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
 				TIM_CHANNEL_1);
-				if (timestamp_raw < TIM32OLDTIMERVALMIN)
+				if (timestamp_raw < TIM16OLDTIMERVALMIN)
 				//the timer has overflowen tak the updateted bitmask
 				{
-					timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw;
+					timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
 				} else {
 					//this is an old value using the old bitmask
 					timestamp = tim1_upper_bits_mask_race_condition
-							+ (uint64_t) timestamp_raw;
+							+ (uint64_t) timestamp_raw+1;
 				}
 			}
 		}
@@ -242,18 +242,18 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask
 							+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-									TIM_CHANNEL_2);
+									TIM_CHANNEL_2)+1;
 				} else {
 					uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
 					TIM_CHANNEL_1);
-					if (timestamp_raw < TIM32OLDTIMERVALMIN)
+					if (timestamp_raw < TIM16OLDTIMERVALMIN)
 					//the timer has overflowen tak the updateted bitmask
 					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw;
+						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
 					} else {
 						//this is an old value using the old bitmask
 						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw;
+								+ (uint64_t) timestamp_raw+1;
 					}
 				}
 		}
@@ -262,18 +262,18 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask
 							+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-									TIM_CHANNEL_3);
+									TIM_CHANNEL_3)+1;
 				} else {
 					uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
 					TIM_CHANNEL_1);
-					if (timestamp_raw < TIM32OLDTIMERVALMIN)
+					if (timestamp_raw < TIM16OLDTIMERVALMIN)
 					//the timer has overflowen tak the updateted bitmask
 					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw;
+						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
 					} else {
 						//this is an old value using the old bitmask
 						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw;
+								+ (uint64_t) timestamp_raw+1;
 					}
 				}
 		}
@@ -303,7 +303,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (htim->Instance == TIM1) {
 			{
 				tim1_update_counts++;
-				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts - 1) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 
 			}
 	}
