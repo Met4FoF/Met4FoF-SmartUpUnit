@@ -257,9 +257,9 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-
+		/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
-/*
+
 	HAL_StatusTypeDef i2cresult;
  	uint8_t i;
  	for (i=1; i<128; i++)
@@ -382,7 +382,7 @@ void StartBlinkThread(void const * argument) {
 		lastSampleCount1=actualSampleCount1;
 		lastSampleCount2=actualSampleCount2;
 		lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
+		//SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d\n\r",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -586,7 +586,7 @@ void StartDataStreamerThread(void const * argument) {
 	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
-	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
+	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
 	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 	/* Enable ADCs external trigger */
@@ -804,12 +804,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	static uint32_t GPScaptureCount = 0;
 	uint64_t timestamp11 = 0;
 	uint64_t timestamp12 = 0;
+	uint64_t timestamp13 = 0;
 	uint64_t timestamp21 = 0;
 	uint64_t timestamp23 = 0;
 	uint64_t timestamp24 = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		SEGGER_RTT_printf(0,
+				"TIM2: %"PRIu64"\n\r",timestamp24);
 
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
@@ -870,12 +873,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		osStatus result = osMailPut(DataMail, mptr);
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-		Channel4Tim2CaptureCount++;
+		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor3.getData(mptr, timestamp12);
 		osStatus result = osMailPut(DataMail, mptr);
+	}
+	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		Channel3Tim1CaptureCount++;
+		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
+		SEGGER_RTT_printf(0,
+				"TIM1: %"PRIu64"\n\r",timestamp13);
+
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
