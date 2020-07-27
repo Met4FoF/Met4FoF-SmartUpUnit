@@ -382,7 +382,7 @@ void StartBlinkThread(void const * argument) {
 		lastSampleCount1=actualSampleCount1;
 		lastSampleCount2=actualSampleCount2;
 		lastSampleCount3=actualSampleCount3;
-		//SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d\n\r",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
+		SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d\n\r",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -587,9 +587,9 @@ void StartDataStreamerThread(void const * argument) {
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
 	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 
-	__HAL_TIM_ENABLE_IT(&htim2, TIM_CHANNEL_1);
-	__HAL_TIM_ENABLE_IT(&htim2, TIM_CHANNEL_3);
-	__HAL_TIM_ENABLE_IT(&htim2, TIM_IT_UPDATE);
+	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
+	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 
 
