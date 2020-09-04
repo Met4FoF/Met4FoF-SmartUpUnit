@@ -631,7 +631,7 @@ class Sensor:
                 + ' '
                 + self.Description.SensorName
                 + ' '
-                + self.Description.ChannelCount
+                + str(self.Description.ChannelCount)
                 + ' Channel Sensor')
 
     def StartDumpingToFileASCII(self, filename=""):
