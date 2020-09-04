@@ -76,7 +76,7 @@ int Met4FoF_adc::getDescription(DescriptionMessage * Message,DescriptionMessage_
 		Message->has_str_Data_03=true;
 		strncpy(Message->str_Data_01,"Voltage Ch 1\0",sizeof(Message->str_Data_01));
 		strncpy(Message->str_Data_02,"Voltage Ch 2\0",sizeof(Message->str_Data_02));
-		strncpy(Message->str_Data_03,"Voltagr Ch 3\0",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_03,"Voltage Ch 3\0",sizeof(Message->str_Data_03));
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
@@ -113,7 +113,6 @@ int Met4FoF_adc::getDescription(DescriptionMessage * Message,DescriptionMessage_
 		Message->f_Data_01=_Offsets[0]+_Slopes[0]*4096;
 		Message->f_Data_02=_Offsets[1]+_Slopes[1]*4096;
 		Message->f_Data_03=_Offsets[2]+_Slopes[2]*4096;
-		Message->f_Data_10=86.5;
 	}
 	return retVal;
 }
