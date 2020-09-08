@@ -762,7 +762,26 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Met4FoFADC.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
 
+			}
 
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
@@ -785,26 +804,7 @@ void StartDataStreamerThread(void const * argument) {
 
 			}
 
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Met4FoFADC.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
 
-			}
 /*
 			 for (int DescriptionType =
 			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
@@ -857,12 +857,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	uint64_t timestamp21 = 0;
 	uint64_t timestamp23 = 0;
 	uint64_t timestamp24 = 0;
+	static uint64_t timestamp13OLD = 0;
+	static uint64_t timestamp21OLD = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM2: %"PRIu64"\n\r",timestamp24);
-
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
@@ -894,8 +893,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		SEGGER_RTT_printf(0,
+				"TIM2: %llx\n\r",timestamp21);
+		if(timestamp21<timestamp21OLD)
+		{
+			SEGGER_RTT_printf(0,
+					"TIM2: %llx is smaler than  %llx !!!!!!!\n\r",timestamp21,timestamp21OLD);
+		}
+		timestamp21OLD=timestamp21;
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 DataMessage *mptrADC;
@@ -916,6 +924,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
+		SEGGER_RTT_printf(0,
+				"TIM1: %"PRIu64"\n\r",timestamp11);
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp11);
@@ -933,7 +943,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
 		SEGGER_RTT_printf(0,
-				"TIM1: %"PRIu64"\n\r",timestamp13);
+				"TIM1: %llx\n\r",timestamp13);
+		if(timestamp13<timestamp13OLD)
+		{
+			SEGGER_RTT_printf(0,
+					"TIM1: %llx is smaler than  %llx !!!!!!!\n\r",timestamp13,timestamp13OLD);
+		}
+		timestamp13OLD=timestamp13;
 
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
