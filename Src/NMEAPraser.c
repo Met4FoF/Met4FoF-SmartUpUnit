@@ -635,7 +635,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     double intpart, fractpart;
     long tmp;
 
-    CHECK_NULL(utc);
+    //CHECK_NULL(utc);
     if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
         DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> UTC CONVERSION\n\r");
         return LGW_GPS_ERROR;
