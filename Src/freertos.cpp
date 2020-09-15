@@ -50,6 +50,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 //TODO clean up includes
+#include <configmanager.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -84,7 +85,6 @@
 #include "backupsram.h"
 
 #include "lwip/apps/sntp.h"
-#include "configmanager.hpp"
 #include "lwip_return_ckeck.h"
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
@@ -257,7 +257,7 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-		/*
+
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
 	HAL_StatusTypeDef i2cresult;
@@ -282,7 +282,6 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
- 	*/
 		osDelay(1000);
 
 
@@ -307,12 +306,19 @@ void StartWebserverThread(void const * argument) {
 void StartBlinkThread(void const * argument) {
 	uint32_t lastSampleCount0=0;
 	uint32_t actualSampleCount0=0;
+	float nominalSamplingFreq0=-1;
+
 	uint32_t lastSampleCount1=0;
 	uint32_t actualSampleCount1=0;
+	float nominalSamplingFreq1=-1;
+
 	uint32_t lastSampleCount2=0;
 	uint32_t actualSampleCount2=0;
+	float nominalSamplingFreq2=-1;
+
 	uint32_t lastSampleCount3=0;
 	uint32_t actualSampleCount3=0;
+	float nominalSamplingFreq3=-1;
 	bool justRestarted=false;
 	bool justRestartedDelay=false;
 	osDelay(12000);
@@ -327,11 +333,14 @@ void StartBlinkThread(void const * argument) {
 		actualSampleCount1=Sensor1.getSampleCount();
 		actualSampleCount2=Sensor2.getSampleCount();
 		actualSampleCount3=Sensor3.getSampleCount();
-
+		nominalSamplingFreq0=Sensor0.getNominalSamplingFreq();
+		nominalSamplingFreq1=Sensor1.getNominalSamplingFreq();
+		nominalSamplingFreq2=Sensor2.getNominalSamplingFreq();
+		nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
 		//Hack to gether Watchdog
 
 
-		if(actualSampleCount0-lastSampleCount0<350||actualSampleCount0-lastSampleCount0>600){
+		if(actualSampleCount0-lastSampleCount0<nominalSamplingFreq0*0.75||actualSampleCount0-lastSampleCount0>nominalSamplingFreq0*1.25){
 			if(justRestarted==false){
 			Sensor0.begin();
 			Sensor0.setSrd(1);
@@ -341,7 +350,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount1-lastSampleCount1<350||actualSampleCount1-lastSampleCount1>600){
+		if(actualSampleCount1-lastSampleCount1<nominalSamplingFreq1*0.75||actualSampleCount1-lastSampleCount1>nominalSamplingFreq1*1.25){
 			if(justRestarted==false){
 			Sensor1.begin();
 			Sensor1.setSrd(1);
@@ -351,7 +360,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount2-lastSampleCount2<350||actualSampleCount2-lastSampleCount2>600){
+		if(actualSampleCount2-lastSampleCount2<nominalSamplingFreq2*0.75||actualSampleCount2-lastSampleCount2>nominalSamplingFreq2*1.25){
 			if(justRestarted==false){
 			Sensor2.begin();
 			Sensor2.setSrd(1);
@@ -361,7 +370,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount3-lastSampleCount3<350||actualSampleCount3-lastSampleCount3>600){
+		if(actualSampleCount3-lastSampleCount3<nominalSamplingFreq3*0.75||actualSampleCount3-lastSampleCount3>nominalSamplingFreq3*1.25){
 			if(justRestarted==false){
 			Sensor3.begin();
 			Sensor3.setSrd(1);
@@ -896,8 +905,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM2: %llx\n\r",timestamp21);
+		//SEGGER_RTT_printf(0,
+		//		"TIM2: %llx\n\r",timestamp21);
 		if(timestamp21<timestamp21OLD)
 		{
 			SEGGER_RTT_printf(0,
@@ -924,8 +933,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM1: %"PRIu64"\n\r",timestamp11);
+	//	SEGGER_RTT_printf(0,
+	//			"TIM1: %"PRIu64"\n\r",timestamp11);
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp11);
@@ -942,8 +951,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM1: %llx\n\r",timestamp13);
+//SEGGER_RTT_printf(0,
+	//			"TIM1: %llx\n\r",timestamp13);
 		if(timestamp13<timestamp13OLD)
 		{
 			SEGGER_RTT_printf(0,
