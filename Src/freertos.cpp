@@ -257,7 +257,7 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-
+/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
 	HAL_StatusTypeDef i2cresult;
@@ -282,6 +282,7 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
+ 	*/
 		osDelay(1000);
 
 
@@ -306,21 +307,25 @@ void StartWebserverThread(void const * argument) {
 void StartBlinkThread(void const * argument) {
 	uint32_t lastSampleCount0=0;
 	uint32_t actualSampleCount0=0;
+	uint32_t deltaSamples0=0;
 	float nominalSamplingFreq0=-1;
 
 	uint32_t lastSampleCount1=0;
 	uint32_t actualSampleCount1=0;
+	uint32_t deltaSamples1=0;
 	float nominalSamplingFreq1=-1;
 /*
 	uint32_t lastSampleCount2=0;
 	uint32_t actualSampleCount2=0;
+	uint32_t deltaSamples2=0;
 	float nominalSamplingFreq2=-1;
 
 	uint32_t lastSampleCount3=0;
 	uint32_t actualSampleCount3=0;
+	uint32_t deltaSamples3=0;
 	float nominalSamplingFreq3=-1;
 	*/
-	bool justRestarted=false;
+	bool justRestarted=true;
 	bool justRestartedDelay=false;
 	osDelay(12000);
 	while (1) {
@@ -328,7 +333,6 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(500);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		actualSampleCount0=Sensor0.getSampleCount();
 		actualSampleCount1=Sensor1.getSampleCount();
@@ -340,23 +344,28 @@ void StartBlinkThread(void const * argument) {
 		//nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
 		//Hack to gether Watchdog
 
-
-		if(actualSampleCount0-lastSampleCount0<nominalSamplingFreq0*0.75||actualSampleCount0-lastSampleCount0>nominalSamplingFreq0*1.25){
+		deltaSamples0=actualSampleCount0-lastSampleCount0;
+		if(deltaSamples0<nominalSamplingFreq0*0.75||deltaSamples0>nominalSamplingFreq0*1.25){
 			if(justRestarted==false){
+			HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
 			Sensor0.begin();
-			Sensor0.setSrd(1);
+			Sensor0.setSrd(0);
 			Sensor0.enableDataReadyInterrupt();
 			lastSampleCount0 = 0;
 			actualSampleCount0 = 0;
 			justRestarted=true;
+			HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 			}
 		}
-		if(actualSampleCount1-lastSampleCount1<nominalSamplingFreq1*0.75||actualSampleCount1-lastSampleCount1>nominalSamplingFreq1*1.25){
+		deltaSamples1=actualSampleCount1-lastSampleCount1;
+		if(deltaSamples1<nominalSamplingFreq1*0.75||deltaSamples1>nominalSamplingFreq1*1.25){
 			if(justRestarted==false){
+				HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_1);
 			Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 			lastSampleCount1 = 0;
 			actualSampleCount1 = 0;
 			justRestarted=true;
+			HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 			}
 		}
 		/*
@@ -392,11 +401,11 @@ void StartBlinkThread(void const * argument) {
 		lastSampleCount1=actualSampleCount1;
 		//lastSampleCount2=actualSampleCount2;
 		//lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Capture Counts = %d %d\n\r",lastSampleCount0,lastSampleCount1);
+		SEGGER_RTT_printf(0,"Delta Samples = %d %d\n\r",deltaSamples0,deltaSamples1);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(500);
+		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
 }
