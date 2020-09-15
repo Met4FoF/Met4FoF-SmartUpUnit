@@ -101,6 +101,17 @@ void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_du
 		count++;
 	}
 	writeByte(BMA280_PMU_BW, BW);     // set bandwidth (and thereby sample rate)
+	switch(BW) {
+		case BW_1000Hz:  _NominalSamplingFreq=2000.0; break;
+		case BW_500Hz:  _NominalSamplingFreq=1000.0; break;
+		case BW_250Hz:  _NominalSamplingFreq=500.0; break;
+		case BW_125Hz:  _NominalSamplingFreq=250.0; break;
+		case BW_62_5Hz:  _NominalSamplingFreq=125.0; break;
+		case BW_31_25Hz:  _NominalSamplingFreq=62.5; break;
+		case BW_15_63Hz:  _NominalSamplingFreq=15.63*2; break;
+		case BW_7_81Hz:  _NominalSamplingFreq=15.62; break;
+		default:_NominalSamplingFreq=-1 ; break;
+	}
 	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
 
 	writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
@@ -245,6 +256,9 @@ uint32_t BMA280::getSampleCount(){
 	return _SampleCount;
 }
 
+float BMA280::getNominalSamplingFreq(){
+	return _NominalSamplingFreq;
+}
 int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;

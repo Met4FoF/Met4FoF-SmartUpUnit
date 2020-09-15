@@ -1161,6 +1161,14 @@ int MPU9250::whoAmIAK8963(){
   return _buffer[0];
 }
 
+uint32_t MPU9250::getSampleCount(){
+	return _SampleCount;
+}
+
+float MPU9250::getNominalSamplingFreq(){
+	return _NominalSamplingFreq;
+}
+
 int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
@@ -1204,15 +1212,6 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_10=_t;
 	return result;
 }
-
-uint32_t MPU9250::getSampleCount(){
-	return _SampleCount;
-}
-
-float MPU9250::getNominalSamplingFreq(){
-	return _NominalSamplingFreq;
-}
-
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
