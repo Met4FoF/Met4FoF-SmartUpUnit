@@ -109,13 +109,7 @@ int MPU9250::begin(){
 	  }
 	  _bandwidth = DLPF_BANDWIDTH_184HZ;
 	  // setting the sample rate divider to 0 as default
-	  if(writeRegister(SMPDIV,0x02) < 0){
-	    return -11;
-	  }
-	  if(writeRegister(SMPDIV,0x02) < 0){
-	    return -11;
-	  }
-	  if(writeRegister(SMPDIV,0x02) < 0){
+	  if(writeRegister(SMPDIV,0x00) < 0){
 	    return -11;
 	  }
 	  _srd = 0;
