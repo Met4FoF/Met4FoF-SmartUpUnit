@@ -172,6 +172,7 @@ int MPU9250::begin(){
 	  //Dummy read to active High speed SPI
 	  readSensor();
 	  readSensor();
+	  _SampleCount=0;
 	  // successful init, return 1
 	  return 1;
 	}

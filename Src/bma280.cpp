@@ -92,6 +92,7 @@ float BMA280::getConversionfactor() {
 void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur) {
 	_aRes=aRes;
 	_conversionfactor=getConversionfactor();
+
 	writeByte(BMA280_PMU_RANGE, aRes);         // set full-scale range
 	uint8_t aresSet=readByte(BMA280_PMU_RANGE);
 	uint16_t count=0;
@@ -101,6 +102,10 @@ void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_du
 		count++;
 	}
 	writeByte(BMA280_PMU_BW, BW);     // set bandwidth (and thereby sample rate)
+	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
+	writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
+	writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
+	writeByte(BMA280_INT_OUT_CTRL, 0x04 | 0x01); // interrupts push-pull, active HIGH (bits 0:3)
 	switch(BW) {
 		case BW_1000Hz:  _NominalSamplingFreq=2000.0; break;
 		case BW_500Hz:  _NominalSamplingFreq=1000.0; break;
@@ -112,11 +117,7 @@ void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_du
 		case BW_7_81Hz:  _NominalSamplingFreq=15.62; break;
 		default:_NominalSamplingFreq=-1 ; break;
 	}
-	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
-
-	writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
-	writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
-	writeByte(BMA280_INT_OUT_CTRL, 0x04 | 0x01); // interrupts push-pull, active HIGH (bits 0:3)
+	_SampleCount=0;
 }
 
 void BMA280::fastCompensation() {
