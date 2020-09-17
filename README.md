@@ -22,15 +22,15 @@
     ```
 If every thing works correctly you will see that a new sensor is found
 
-    ```python
-    Data receiver now running wating for packets 
-    FOUND NEW SENSOR WITH ID=hex0x37300000==>dec:925892608
-    ```
+```python
+Data receiver now running wating for packets 
+FOUND NEW SENSOR WITH ID=hex0x37300000==>dec:925892608
+```
 Attach your callback function to Sensor
     
-    ```python
-    DR.AllSensors[925892608].SetCallback(DumpDataMPU9250)
-    ```
+```python
+DR.AllSensors[925892608].SetCallback(DumpDataMPU9250)
+```
     
 # Misc
 ### Build System.
