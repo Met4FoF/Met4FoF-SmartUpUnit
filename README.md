@@ -5,7 +5,7 @@
 1. Download this repo
 1. install Python dependencies [add needed deps]
 
-    ```python
+    ```shell
     pip install protobuf
     ```
 1. Flash the µC with the newest release [see this link] (doc/flash_stm32_fimware.md)
