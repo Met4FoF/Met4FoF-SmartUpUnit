@@ -22,7 +22,7 @@
     ```
 If every thing works correctly you will see that a new sensor is found
 
-```python
+```
 Data receiver now running wating for packets 
 FOUND NEW SENSOR WITH ID=hex0x37300000==>dec:925892608
 ```
