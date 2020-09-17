@@ -116,11 +116,11 @@ osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
 
 //TODO insert sensor manager array in config manager
-BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-//MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
-//MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
+MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
@@ -314,7 +314,7 @@ void StartBlinkThread(void const * argument) {
 	uint32_t actualSampleCount1=0;
 	uint32_t deltaSamples1=0;
 	float nominalSamplingFreq1=-1;
-/*
+
 	uint32_t lastSampleCount2=0;
 	uint32_t actualSampleCount2=0;
 	uint32_t deltaSamples2=0;
@@ -324,7 +324,7 @@ void StartBlinkThread(void const * argument) {
 	uint32_t actualSampleCount3=0;
 	uint32_t deltaSamples3=0;
 	float nominalSamplingFreq3=-1;
-	*/
+
 	bool justRestarted=true;
 	bool justRestartedDelay=false;
 	osDelay(12000);
@@ -336,40 +336,40 @@ void StartBlinkThread(void const * argument) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		actualSampleCount0=Sensor0.getSampleCount();
 		actualSampleCount1=Sensor1.getSampleCount();
-		//actualSampleCount2=Sensor2.getSampleCount();
-		//actualSampleCount3=Sensor3.getSampleCount();
+		actualSampleCount2=Sensor2.getSampleCount();
+		actualSampleCount3=Sensor3.getSampleCount();
 		nominalSamplingFreq0=Sensor0.getNominalSamplingFreq();
 		nominalSamplingFreq1=Sensor1.getNominalSamplingFreq();
-		//nominalSamplingFreq2=Sensor2.getNominalSamplingFreq();
-		//nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
+		nominalSamplingFreq2=Sensor2.getNominalSamplingFreq();
+		nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
 		//Hack to gether Watchdog
 
 		deltaSamples0=actualSampleCount0-lastSampleCount0;
+		deltaSamples1=actualSampleCount1-lastSampleCount1;
+		deltaSamples2=actualSampleCount2-lastSampleCount2;
+		deltaSamples3=actualSampleCount3-lastSampleCount3;
+
 		if(deltaSamples0<nominalSamplingFreq0*0.75||deltaSamples0>nominalSamplingFreq0*1.25){
 			if(justRestarted==false){
-			HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_3);
 			Sensor0.begin();
-			Sensor0.setSrd(0);
+			Sensor0.setSrd(1);
 			Sensor0.enableDataReadyInterrupt();
 			lastSampleCount0 = 0;
 			actualSampleCount0 = 0;
 			justRestarted=true;
-			HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 			}
 		}
-		deltaSamples1=actualSampleCount1-lastSampleCount1;
 		if(deltaSamples1<nominalSamplingFreq1*0.75||deltaSamples1>nominalSamplingFreq1*1.25){
 			if(justRestarted==false){
-				HAL_TIM_IC_Stop_IT(&htim2, TIM_CHANNEL_1);
-			Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-			lastSampleCount1 = 0;
-			actualSampleCount1 = 0;
-			justRestarted=true;
-			HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+				Sensor1.begin();
+				Sensor1.setSrd(1);
+				Sensor1.enableDataReadyInterrupt();
+				lastSampleCount0 = 0;
+				actualSampleCount0 = 0;
+				justRestarted=true;
 			}
 		}
-		/*
-		if(actualSampleCount2-lastSampleCount2<nominalSamplingFreq2*0.75||actualSampleCount2-lastSampleCount2>nominalSamplingFreq2*1.25){
+		if(deltaSamples2<nominalSamplingFreq2*0.75||deltaSamples2>nominalSamplingFreq2*1.25){
 			if(justRestarted==false){
 			Sensor2.begin();
 			Sensor2.setSrd(1);
@@ -379,7 +379,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount3-lastSampleCount3<nominalSamplingFreq3*0.75||actualSampleCount3-lastSampleCount3>nominalSamplingFreq3*1.25){
+		if(deltaSamples3<nominalSamplingFreq3*0.75||deltaSamples3>nominalSamplingFreq3*1.25){
 			if(justRestarted==false){
 			Sensor3.begin();
 			Sensor3.setSrd(1);
@@ -389,7 +389,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		*/
+
 		if(justRestartedDelay==true && justRestarted==true){
 			justRestartedDelay=false;
 			justRestarted=false;
@@ -399,9 +399,9 @@ void StartBlinkThread(void const * argument) {
 		}
 		lastSampleCount0=actualSampleCount0;
 		lastSampleCount1=actualSampleCount1;
-		//lastSampleCount2=actualSampleCount2;
-		//lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Delta Samples = %d %d\n\r",deltaSamples0,deltaSamples1);
+		lastSampleCount2=actualSampleCount2;
+		lastSampleCount3=actualSampleCount3;
+		SEGGER_RTT_printf(0,"Delta Samples = %d %d %d %d\n\r",deltaSamples0,deltaSamples1,deltaSamples2,deltaSamples3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -515,20 +515,20 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
 	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
-	Sensor0.setSrd(0);
+	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 
 	//MPU9250
-	/*
+
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 	Sensor1.setBaseID(SensorID1);
 	Sensor1.begin();
 	Sensor1.setSrd(1);
 	Sensor1.enableDataReadyInterrupt();
-	*/
+
 
 	//MPU9250
-/*
+
 	uint32_t SensorID2=configMan.getSensorBaseID(2);
 	Sensor2.setBaseID(SensorID2);
 	Sensor2.begin();
@@ -542,13 +542,13 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor3.begin();
 	Sensor3.setSrd(1);
 	Sensor3.enableDataReadyInterrupt();
-	*/
-	//BMA280
 
+	//BMA280
+/*
 	 uint32_t SensorID1=configMan.getSensorBaseID(1);
 	 Sensor1.setBaseID(SensorID1);
 	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+*/
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
 	 Met4FoFADC.setBaseID(SensorID10);
@@ -742,7 +742,7 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-/*
+
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Sensor2.getDescription(&Descriptionmsg,
@@ -782,7 +782,7 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-			*/
+
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Met4FoFADC.getDescription(&Descriptionmsg,
@@ -947,22 +947,21 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
 	//	SEGGER_RTT_printf(0,
 	//			"TIM1: %"PRIu64"\n\r",timestamp11);
-		/*
+
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp11);
 		osStatus result = osMailPut(DataMail, mptr);
-		*/
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
-		/*
+
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor3.getData(mptr, timestamp12);
 		osStatus result = osMailPut(DataMail, mptr);
-		*/
+
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
