@@ -50,6 +50,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 //TODO clean up includes
+#include <configmanager.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -84,7 +85,6 @@
 #include "backupsram.h"
 
 #include "lwip/apps/sntp.h"
-#include "configmanager.hpp"
 #include "lwip_return_ckeck.h"
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
@@ -257,7 +257,7 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
-		/*
+/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
 	HAL_StatusTypeDef i2cresult;
@@ -307,13 +307,25 @@ void StartWebserverThread(void const * argument) {
 void StartBlinkThread(void const * argument) {
 	uint32_t lastSampleCount0=0;
 	uint32_t actualSampleCount0=0;
+	uint32_t deltaSamples0=0;
+	float nominalSamplingFreq0=-1;
+
 	uint32_t lastSampleCount1=0;
 	uint32_t actualSampleCount1=0;
+	uint32_t deltaSamples1=0;
+	float nominalSamplingFreq1=-1;
+
 	uint32_t lastSampleCount2=0;
 	uint32_t actualSampleCount2=0;
+	uint32_t deltaSamples2=0;
+	float nominalSamplingFreq2=-1;
+
 	uint32_t lastSampleCount3=0;
 	uint32_t actualSampleCount3=0;
-	bool justRestarted=false;
+	uint32_t deltaSamples3=0;
+	float nominalSamplingFreq3=-1;
+
+	bool justRestarted=true;
 	bool justRestartedDelay=false;
 	osDelay(12000);
 	while (1) {
@@ -321,17 +333,23 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(500);
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		actualSampleCount0=Sensor0.getSampleCount();
 		actualSampleCount1=Sensor1.getSampleCount();
 		actualSampleCount2=Sensor2.getSampleCount();
 		actualSampleCount3=Sensor3.getSampleCount();
-
+		nominalSamplingFreq0=Sensor0.getNominalSamplingFreq();
+		nominalSamplingFreq1=Sensor1.getNominalSamplingFreq();
+		nominalSamplingFreq2=Sensor2.getNominalSamplingFreq();
+		nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
 		//Hack to gether Watchdog
 
+		deltaSamples0=actualSampleCount0-lastSampleCount0;
+		deltaSamples1=actualSampleCount1-lastSampleCount1;
+		deltaSamples2=actualSampleCount2-lastSampleCount2;
+		deltaSamples3=actualSampleCount3-lastSampleCount3;
 
-		if(actualSampleCount0-lastSampleCount0<350||actualSampleCount0-lastSampleCount0>600){
+		if(deltaSamples0<nominalSamplingFreq0*0.75||deltaSamples0>nominalSamplingFreq0*1.25){
 			if(justRestarted==false){
 			Sensor0.begin();
 			Sensor0.setSrd(1);
@@ -341,17 +359,17 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount1-lastSampleCount1<350||actualSampleCount1-lastSampleCount1>600){
+		if(deltaSamples1<nominalSamplingFreq1*0.75||deltaSamples1>nominalSamplingFreq1*1.25){
 			if(justRestarted==false){
-			Sensor1.begin();
-			Sensor1.setSrd(1);
-			Sensor1.enableDataReadyInterrupt();
-			lastSampleCount1 = 0;
-			actualSampleCount1 = 0;
-			justRestarted=true;
+				Sensor1.begin();
+				Sensor1.setSrd(1);
+				Sensor1.enableDataReadyInterrupt();
+				lastSampleCount0 = 0;
+				actualSampleCount0 = 0;
+				justRestarted=true;
 			}
 		}
-		if(actualSampleCount2-lastSampleCount2<350||actualSampleCount2-lastSampleCount2>600){
+		if(deltaSamples2<nominalSamplingFreq2*0.75||deltaSamples2>nominalSamplingFreq2*1.25){
 			if(justRestarted==false){
 			Sensor2.begin();
 			Sensor2.setSrd(1);
@@ -361,7 +379,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
-		if(actualSampleCount3-lastSampleCount3<350||actualSampleCount3-lastSampleCount3>600){
+		if(deltaSamples3<nominalSamplingFreq3*0.75||deltaSamples3>nominalSamplingFreq3*1.25){
 			if(justRestarted==false){
 			Sensor3.begin();
 			Sensor3.setSrd(1);
@@ -371,6 +389,7 @@ void StartBlinkThread(void const * argument) {
 			justRestarted=true;
 			}
 		}
+
 		if(justRestartedDelay==true && justRestarted==true){
 			justRestartedDelay=false;
 			justRestarted=false;
@@ -382,11 +401,11 @@ void StartBlinkThread(void const * argument) {
 		lastSampleCount1=actualSampleCount1;
 		lastSampleCount2=actualSampleCount2;
 		lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Capture Counts = %d %d %d %d\n\r",lastSampleCount0,lastSampleCount1,lastSampleCount2,lastSampleCount3);
+		SEGGER_RTT_printf(0,"Delta Samples = %d %d %d %d\n\r",deltaSamples0,deltaSamples1,deltaSamples2,deltaSamples3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(500);
+		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
 }
@@ -500,11 +519,13 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.enableDataReadyInterrupt();
 
 	//MPU9250
+
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 	Sensor1.setBaseID(SensorID1);
 	Sensor1.begin();
 	Sensor1.setSrd(1);
 	Sensor1.enableDataReadyInterrupt();
+
 
 	//MPU9250
 
@@ -521,12 +542,13 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor3.begin();
 	Sensor3.setSrd(1);
 	Sensor3.enableDataReadyInterrupt();
+
 	//BMA280
-
-	 //uint32_t SensorID0=configMan.getSensorBaseID(0);
-	 //Sensor1.setBaseID(SensorID0);
-	 //Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+/*
+	 uint32_t SensorID1=configMan.getSensorBaseID(1);
+	 Sensor1.setBaseID(SensorID1);
+	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+*/
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
 	 Met4FoFADC.setBaseID(SensorID10);
@@ -677,6 +699,7 @@ void StartDataStreamerThread(void const * argument) {
 							DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
 							DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
 					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE};
+
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Sensor0.getDescription(&Descriptionmsg,
@@ -720,6 +743,66 @@ void StartDataStreamerThread(void const * argument) {
 
 			}
 
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Sensor2.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Sensor3.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
+
+			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
+				DescriptionMessage Descriptionmsg;
+				Met4FoFADC.getDescription(&Descriptionmsg,
+						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
+				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
+						&Descriptionmsg, PB_ENCODE_DELIMITED);
+				//sending the buffer
+				netbuf_ref(buf, &ProtoBufferDescription,
+						ProtoStreamDescription.bytes_written);
+				/* send the text */
+				err_t net_conn_result = netconn_send(conn, buf);
+				Check_LWIP_RETURN_VAL(net_conn_result);
+				// reallocating buffer this is maybe performance intensive profile this
+				//TODO profile this code
+				ProtoStreamDescription = pb_ostream_from_buffer(
+						ProtoBufferDescription, MTU_SIZE);
+				pb_write(&ProtoStreamDescription,
+						(const pb_byte_t*) &DescriptionString, 4);
+
+			}
 
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
@@ -741,26 +824,8 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Met4FoFADC.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
 
-			}
+
 /*
 			 for (int DescriptionType =
 			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
@@ -813,12 +878,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	uint64_t timestamp21 = 0;
 	uint64_t timestamp23 = 0;
 	uint64_t timestamp24 = 0;
+	static uint64_t timestamp13OLD = 0;
+	static uint64_t timestamp21OLD = 0;
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM2: %"PRIu64"\n\r",timestamp24);
-
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
@@ -850,8 +914,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		//SEGGER_RTT_printf(0,
+		//		"TIM2: %llx\n\r",timestamp21);
+		if(timestamp21<timestamp21OLD)
+		{
+			SEGGER_RTT_printf(0,
+					"TIM2: %llx is smaler than  %llx !!!!!!!\n\r",timestamp21,timestamp21OLD);
+		}
+		timestamp21OLD=timestamp21;
 		 DataMessage *mptr;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 DataMessage *mptrADC;
@@ -872,6 +945,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
+	//	SEGGER_RTT_printf(0,
+	//			"TIM1: %"PRIu64"\n\r",timestamp11);
+
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp11);
@@ -880,16 +956,24 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
+
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor3.getData(mptr, timestamp12);
 		osStatus result = osMailPut(DataMail, mptr);
+
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM1: %"PRIu64"\n\r",timestamp13);
+//SEGGER_RTT_printf(0,
+	//			"TIM1: %llx\n\r",timestamp13);
+		if(timestamp13<timestamp13OLD)
+		{
+			SEGGER_RTT_printf(0,
+					"TIM1: %llx is smaler than  %llx !!!!!!!\n\r",timestamp13,timestamp13OLD);
+		}
+		timestamp13OLD=timestamp13;
 
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);

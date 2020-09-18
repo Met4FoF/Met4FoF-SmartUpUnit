@@ -42,11 +42,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "pb.h"
 #include "message.pb.h"
+#include "Met4FoFSensor.h"
 
 //extern DescriptionMessage empty_DescriptionMessage;
 //extern DataMessage empty_DataMessage;
 
-class MPU9250{
+class MPU9250: public Met4FoFSensor {
   public:
     enum GyroRange
     {
@@ -142,6 +143,7 @@ class MPU9250{
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
     uint32_t getSampleCount();
+    float getNominalSamplingFreq();
   protected:
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U
@@ -153,6 +155,7 @@ class MPU9250{
     uint32_t _BaseID;
     uint8_t _SetingsID;
     uint32_t _SampleCount=0;
+    float _NominalSamplingFreq=-1;
     // the sensor can not handle fullspeed spi communication for setup registers we have to read the prescaler register and change it acordingly
     bool _useSPI=true;
     bool _useSPIHS=false;

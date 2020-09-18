@@ -122,13 +122,16 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 		// ...
 		// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
 		// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
+#define TIM32OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+#define TIM16OLDTIMERVALMIN 0xF000 // if an inputcaputure value is biger than this its prppably an old one
 		uint64_t tim2_upper_bits_mask_race_condition = 0;
-		#define TIM32OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
-		#define TIM16OLDTIMERVALMIN 0xF000 // if an inputcaputure value is biger than this its prppably an old one
 		bool tim2_race_condition_up_date = false;
+		uint64_t tim1_upper_bits_mask_race_condition = 0;
+		bool tim1_race_condition_up_date = false;
+
 		if (htim->Instance == TIM2) {
 			if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
-				if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
+//if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
 					__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
 					//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
 					//DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
@@ -136,11 +139,75 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
 					tim2_update_counts++;
 					tim2_upper_bits_mask = (uint64_t)(tim2_update_counts-1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-				}
+				//}
 			}
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+						if (tim2_race_condition_up_date == false) {
+							//this is the nromal case
+							timestamp = tim2_upper_bits_mask
+									+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+											TIM_CHANNEL_1);
+						} else {
+							uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+							TIM_CHANNEL_1);
+							if (timestamp_raw < TIM32OLDTIMERVALMIN)
+							//the timer has overflowen tak the updateted bitmask
+							{
+								timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+							} else {
+								//this is an old value using the old bitmask
+								timestamp = tim2_upper_bits_mask_race_condition
+										+ (uint64_t) timestamp_raw;
+							}
+						}
+					}
+					if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+						if (tim2_race_condition_up_date == false) {
+							//this is the nromal case
+							timestamp = tim2_upper_bits_mask
+									+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+											TIM_CHANNEL_3);
+						} else {
+							uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+							TIM_CHANNEL_3);
+							if (timestamp_raw < TIM32OLDTIMERVALMIN)
+							//the timer has overflowen tak the updateted bitmask
+							{
+								timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+							} else {
+								//this is an old value using the old bitmask
+								timestamp = tim2_upper_bits_mask_race_condition
+										+ (uint64_t) timestamp_raw;
+							}
+						}
+
+					}
+					if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+						if (tim2_race_condition_up_date == false) {
+							//this is the nromal case
+							timestamp = tim2_upper_bits_mask
+									+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
+											TIM_CHANNEL_4);
+						} else {
+							uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
+							TIM_CHANNEL_4);
+							if (timestamp_raw < TIM32OLDTIMERVALMIN)
+							//the timer has overflowen tak the updateted bitmask
+							{
+								timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
+							} else {
+								//this is an old value using the old bitmask
+								timestamp = tim2_upper_bits_mask_race_condition
+										+ (uint64_t) timestamp_raw;
+							}
+						}
+					}
+
+
+
+
 		}
-		uint64_t tim1_upper_bits_mask_race_condition = 0;
-		bool tim1_race_condition_up_date = false;
+
 
 		if (htim->Instance == TIM1) {
 			if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
@@ -154,95 +221,13 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 					tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 				}
 			}
-		}
-		if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-			if (tim2_race_condition_up_date == false) {
-				//this is the nromal case
-				timestamp = tim2_upper_bits_mask
-						+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
-								TIM_CHANNEL_1);
-			} else {
-				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
-				TIM_CHANNEL_1);
-				if (timestamp_raw < TIM32OLDTIMERVALMIN)
-				//the timer has overflowen tak the updateted bitmask
-				{
-					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
-				} else {
-					//this is an old value using the old bitmask
-					timestamp = tim2_upper_bits_mask_race_condition
-							+ (uint64_t) timestamp_raw;
-				}
-			}
-		}
-		if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-			if (tim2_race_condition_up_date == false) {
-				//this is the nromal case
-				timestamp = tim2_upper_bits_mask
-						+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
-								TIM_CHANNEL_3);
-			} else {
-				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
-				TIM_CHANNEL_3);
-				if (timestamp_raw < TIM32OLDTIMERVALMIN)
-				//the timer has overflowen tak the updateted bitmask
-				{
-					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
-				} else {
-					//this is an old value using the old bitmask
-					timestamp = tim2_upper_bits_mask_race_condition
-							+ (uint64_t) timestamp_raw;
-				}
-			}
 
-		}
-		if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-			if (tim2_race_condition_up_date == false) {
-				//this is the nromal case
-				timestamp = tim2_upper_bits_mask
-						+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim2,
-								TIM_CHANNEL_4);
-			} else {
-				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim2,
-				TIM_CHANNEL_4);
-				if (timestamp_raw < TIM32OLDTIMERVALMIN)
-				//the timer has overflowen tak the updateted bitmask
-				{
-					timestamp = tim2_upper_bits_mask + (uint64_t) timestamp_raw;
-				} else {
-					//this is an old value using the old bitmask
-					timestamp = tim2_upper_bits_mask_race_condition
-							+ (uint64_t) timestamp_raw;
-				}
-			}
-		}
-		if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-			if (tim1_race_condition_up_date == false) {
-				//this is the nromal case
-				timestamp = tim1_upper_bits_mask
-						+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-								TIM_CHANNEL_1)+1;
-			} else {
-				uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
-				TIM_CHANNEL_1);
-				if (timestamp_raw < TIM16OLDTIMERVALMIN)
-				//the timer has overflowen tak the updateted bitmask
-				{
-					timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
-				} else {
-					//this is an old value using the old bitmask
-					timestamp = tim1_upper_bits_mask_race_condition
-							+ (uint64_t) timestamp_raw+1;
-				}
-			}
-		}
-
-		if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 				if (tim1_race_condition_up_date == false) {
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask
 							+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-									TIM_CHANNEL_2)+1;
+									TIM_CHANNEL_1)+1;
 				} else {
 					uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
 					TIM_CHANNEL_1);
@@ -256,27 +241,51 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 								+ (uint64_t) timestamp_raw+1;
 					}
 				}
-		}
-		if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-				if (tim1_race_condition_up_date == false) {
-					//this is the nromal case
-					timestamp = tim1_upper_bits_mask
-							+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-									TIM_CHANNEL_3)+1;
-				} else {
-					uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
-					TIM_CHANNEL_1);
-					if (timestamp_raw < TIM16OLDTIMERVALMIN)
-					//the timer has overflowen tak the updateted bitmask
-					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
+			}
+
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+					if (tim1_race_condition_up_date == false) {
+						//this is the nromal case
+						timestamp = tim1_upper_bits_mask
+								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
+										TIM_CHANNEL_2)+1;
 					} else {
-						//this is an old value using the old bitmask
-						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw+1;
+						uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
+						TIM_CHANNEL_1);
+						if (timestamp_raw < TIM16OLDTIMERVALMIN)
+						//the timer has overflowen tak the updateted bitmask
+						{
+							timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
+						} else {
+							//this is an old value using the old bitmask
+							timestamp = tim1_upper_bits_mask_race_condition
+									+ (uint64_t) timestamp_raw+1;
+						}
 					}
-				}
+			}
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+					if (tim1_race_condition_up_date == false) {
+						//this is the nromal case
+						timestamp = tim1_upper_bits_mask
+								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
+										TIM_CHANNEL_3)+1;
+					} else {
+						uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
+						TIM_CHANNEL_1);
+						if (timestamp_raw < TIM16OLDTIMERVALMIN)
+						//the timer has overflowen tak the updateted bitmask
+						{
+							timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
+						} else {
+							//this is an old value using the old bitmask
+							timestamp = tim1_upper_bits_mask_race_condition
+									+ (uint64_t) timestamp_raw+1;
+						}
+					}
+			}
 		}
+
+
 		return timestamp;
 }
 

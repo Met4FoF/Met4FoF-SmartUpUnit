@@ -93,7 +93,7 @@ int MPU9250::begin(){
 	    return -7;
 	  }
 	  _accelScale = G * 16.0f/32767.5f; // setting the accel scale to 4G
-	  _accelRange = ACCEL_RANGE_4G;
+	  _accelRange = ACCEL_RANGE_16G;
 	  // setting the gyro range to 2000DPS as default
 	  if(writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) < 0){
 	    return -8;
@@ -109,16 +109,11 @@ int MPU9250::begin(){
 	  }
 	  _bandwidth = DLPF_BANDWIDTH_184HZ;
 	  // setting the sample rate divider to 0 as default
-	  if(writeRegister(SMPDIV,0x02) < 0){
+	  if(writeRegister(SMPDIV,0x00) < 0){
 	    return -11;
 	  }
-	  if(writeRegister(SMPDIV,0x02) < 0){
-	    return -11;
-	  }
-	  if(writeRegister(SMPDIV,0x02) < 0){
-	    return -11;
-	  }
-	  _srd = 2;
+	  _srd = 0;
+	  _NominalSamplingFreq=1000.0;
 	  // enable I2C master mode
 	  if(writeRegister(USER_CTRL,I2C_MST_EN) < 0){
 	  	return -12;
@@ -171,6 +166,7 @@ int MPU9250::begin(){
 	  //Dummy read to active High speed SPI
 	  readSensor();
 	  readSensor();
+	  _SampleCount=0;
 	  // successful init, return 1
 	  return 1;
 	}
@@ -378,6 +374,7 @@ int MPU9250::setSrd(uint8_t srd) {
 	    return -4;
 	  }
 	  _srd = srd;
+	  _NominalSamplingFreq=1000.0/(_srd+1);
 	  return 1;
 	}
 
@@ -1159,6 +1156,14 @@ int MPU9250::whoAmIAK8963(){
   return _buffer[0];
 }
 
+uint32_t MPU9250::getSampleCount(){
+	return _SampleCount;
+}
+
+float MPU9250::getNominalSamplingFreq(){
+	return _NominalSamplingFreq;
+}
+
 int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
@@ -1202,11 +1207,6 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_10=_t;
 	return result;
 }
-
-uint32_t MPU9250::getSampleCount(){
-	return _SampleCount;
-}
-
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
