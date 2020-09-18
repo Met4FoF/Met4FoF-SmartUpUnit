@@ -3,32 +3,35 @@
 [See this publication as well](https://doi.org/10.1051/metrology/201922003)
 ## Setup
 1. Download this repo
-2. install Python dependencies [add needed deps]
-```python
-  pip install protobuf
-  ```
-3. Flash the µC with the newest release [see this link] (doc/flash_stm32_fimware.md)
-4. Connect µC an PC directly via Lan (or over an switch with DHCP anabled to 192.168.2.x Subnet)
-5. Set ip Adress of pc to 192.168.0.200
-6. Power on µC Board
-7. Observe Display and LEDS see Picture
-8. Start Python Interpreter and run /tools/MET4FOFDataReceiver.py
-9. Start data Receiver node with:
-```python
-DR=DataReceiver("192.168.0.200",7654)
-```
+1. install Python dependencies [add needed deps]
+
+    ```shell
+    pip install protobuf
+    ```
+1. Flash the µC with the newest release [see this link] (doc/flash_stm32_fimware.md)
+1. Connect µC and PC directly via Lan (or over an switch with DHCP anabled to 192.168.2.x Subnet)
+1. In case you are working behind a firewall, set an exception for incoming UDP packets from the IP address of the Smartup Unit on port 7654.
+1. Set ip Adress of pc to 192.168.0.200
+1. Power on µC Board
+1. Observe Display and LEDS see Picture
+1. Start Python Interpreter and run /tools/MET4FOFDataReceiver.py
+1. Start data Receiver node with:
+
+    ```python
+    DR=DataReceiver("192.168.0.200",7654)
+    ```
 If every thing works correctly you will see that a new sensor is found
-```python
-DR=DataReceiver("192.168.0.200",7654)
+
+```
+Data receiver now running wating for packets 
 FOUND NEW SENSOR WITH ID=hex0x37300000==>dec:925892608
 ```
 Attach your callback function to Sensor
+    
 ```python
 DR.AllSensors[925892608].SetCallback(DumpDataMPU9250)
 ```
-
-
-
+    
 # Misc
 ### Build System.
 The software was and is created with [SW4STM32](http://www.openstm32.org/HomePage) (gcc).
@@ -73,8 +76,8 @@ protoc --python_out=python messages.proto
 https://www.segger.com/products/debug-probes/j-link/models/other-j-links/st-link-on-board/
 Download software extract and run STLinkReflash.exe
 1. Accept Segger license
-2. Accept ST license
-3. Choose Upgrade to J-Link [1] The device is flashed and reconnected
+1. Accept ST license
+1. Choose Upgrade to J-Link [1] The device is flashed and reconnected
    Output looks like
 ```
 Preparing for FW update (can take up to 10 seconds)...O.K.

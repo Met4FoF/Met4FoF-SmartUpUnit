@@ -1,6 +1,6 @@
 ### Flash STM32 Firmware on Met4FoF Smartup unit
-1. Download and Install [ST-Link Software](https://www.st.com/en/development-tools/st)
-2. Connect Baord to PC with u-USB cabel on Connector USB PWR(the connector on the smaler white Part of the Board).
+1. Download and Install [ST-Link Software](https://www.st.com/en/development-tools/stsw-link004.html)
+2. Connect Baord to PC with u-USB cabel on Connector USB PWR (the connector on the smaller white Part of the Board).
 3. Start St-Link software.
 4. Connect to the target.
 
