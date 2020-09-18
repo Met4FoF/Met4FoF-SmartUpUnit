@@ -85,6 +85,7 @@
 #include "spi.h"
 #include "gpio.h"
 #include "main.h"
+#include "freertos_cubemx.h"
 
 /* Global Variables ------------------------------------------------------------------*/
 volatile uint16_t LCD_HEIGHT = ILI9341_SCREEN_HEIGHT;
@@ -122,6 +123,23 @@ ILI9341_SPI_Send(Data);
 //HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_SET);
 }
 
+uint32_t ILI9341_Get_ID(void)
+{
+	uint8_t Dummy[4]={0};
+	uint32_t result=0;
+//HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_RESET);
+HAL_GPIO_WritePin(LCD_DC_PORT, LCD_DC_PIN, GPIO_PIN_RESET);
+ILI9341_SPI_Send(0xD3);
+HAL_GPIO_WritePin(LCD_DC_PORT, LCD_DC_PIN, GPIO_PIN_SET);
+HAL_Delay(1);
+HAL_StatusTypeDef SPIResult=HAL_SPI_Receive(HSPI_INSTANCE, Dummy, 4, 1);
+result=result+(Dummy[0]<<24);
+result=result+(Dummy[1]<<16);
+result=result+(Dummy[2]<<8);
+result=result+(Dummy[3]);
+
+return result;
+}
 /* Set Address - Location block - to draw into */
 void ILI9341_Set_Address(uint16_t X1, uint16_t Y1, uint16_t X2, uint16_t Y2)
 {
@@ -208,7 +226,8 @@ ILI9341_Reset();
 //SOFTWARE RESET
 ILI9341_Write_Command(0x01);
 HAL_Delay(100);
-	
+uint32_t ID=ILI9341_Get_ID();
+
 //POWER CONTROL A
 ILI9341_Write_Command(0xCB); // POWER CONTROL A
 ILI9341_Write_Data(0x39);    // 1. (default)
@@ -382,12 +401,15 @@ if(Sending_in_Block != 0)
 {
 	for(uint32_t j = 0; j < (Sending_in_Block); j++)
 		{
-		HAL_SPI_Transmit(HSPI_INSTANCE, (unsigned char *)burst_buffer, Buffer_Size, 10);	
+		//HAL_SPI_Transmit_DMA(HSPI_INSTANCE, (unsigned char *)burst_buffer, Buffer_Size);
+		//osThreadYield();
+		HAL_SPI_Transmit(HSPI_INSTANCE, (unsigned char *)burst_buffer, Buffer_Size,10);
 		}
 }
 
 //REMAINDER!
-HAL_SPI_Transmit(HSPI_INSTANCE, (unsigned char *)burst_buffer, Remainder_from_block, 10);	
+HAL_SPI_Transmit(HSPI_INSTANCE, (unsigned char *)burst_buffer, Remainder_from_block,10);
+//osThreadYield();
 	
 //HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_SET);
 }

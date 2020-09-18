@@ -108,6 +108,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+const uint8_t UDP_TARGET_DEFAULT_IP_ADDRESS[4] = { 192, 168, 0, 200 };
 osThreadId IOTID;
 osThreadId blinkTID;
 osThreadId WebServerTID;

@@ -47,28 +47,25 @@
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void DebugMon_Handler(void);
-void DMA1_Stream0_IRQHandler(void);
-void DMA1_Stream3_IRQHandler(void);
-void DMA1_Stream6_IRQHandler(void);
-void CAN1_TX_IRQHandler(void);
-void CAN1_RX0_IRQHandler(void);
-void CAN1_RX1_IRQHandler(void);
-void TIM1_UP_TIM10_IRQHandler(void);
-void TIM1_CC_IRQHandler(void);
-void TIM2_IRQHandler(void);
-void I2C1_EV_IRQHandler(void);
-void I2C1_ER_IRQHandler(void);
-void TIM8_TRG_COM_TIM14_IRQHandler(void);
-void DMA2_Stream0_IRQHandler(void);
-void ETH_IRQHandler(void);
-void OTG_FS_IRQHandler(void);
-void UART7_IRQHandler(void);
+ void NMI_Handler(void);
+ void HardFault_Handler(void);
+ void MemManage_Handler(void);
+ void BusFault_Handler(void);
+ void UsageFault_Handler(void);
+ void DebugMon_Handler(void);
+ void DMA1_Stream0_IRQHandler(void);
+ void DMA1_Stream1_IRQHandler(void);
+ void DMA1_Stream3_IRQHandler(void);
+ void DMA1_Stream5_IRQHandler(void);
+ void DMA1_Stream6_IRQHandler(void);
+ void TIM1_CC_IRQHandler(void);
+ void TIM2_IRQHandler(void);
+ void TIM8_TRG_COM_TIM14_IRQHandler(void);
+ void DMA2_Stream3_IRQHandler(void);
+ void DMA2_Stream4_IRQHandler(void);
+ void ETH_IRQHandler(void);
+ void OTG_FS_IRQHandler(void);
+ void UART7_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

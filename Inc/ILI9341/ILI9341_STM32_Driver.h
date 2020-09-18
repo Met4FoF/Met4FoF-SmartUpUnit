@@ -140,6 +140,7 @@ void ILI9341_SPI_Init(void);
 void ILI9341_SPI_Send(unsigned char SPI_Data);
 void ILI9341_Write_Command(uint8_t Command);
 void ILI9341_Write_Data(uint8_t Data);
+uint32_t ILI9341_Get_ID(void);
 void ILI9341_Set_Address(uint16_t X1, uint16_t Y1, uint16_t X2, uint16_t Y2);
 void ILI9341_Reset(void);
 void ILI9341_Soft_Reset(void);

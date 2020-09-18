@@ -81,7 +81,7 @@ extern "C" {
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 4
 #define VERSION_PATCH 1
-const uint8_t UDP_TARGET_DEFAULT_IP_ADDRESS[4] = { 192, 168, 0, 200 };
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
