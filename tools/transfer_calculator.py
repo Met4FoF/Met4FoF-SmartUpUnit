@@ -52,7 +52,7 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         return json.JSONEncoder.default(self, obj)
 
-def GetNearestTestFreq(freq,TestFreqs=[4.0,5.0,6.3,8.0,10.0,12.5,16.0,20.0,25.0,31.5,40.0,50.0,63.0,80.0,100.0,125.0,160.0,200.0,250.0]):
+def GetNearestTestFreq(freq,TestFreqs=[4.0,5.0,6.3,8.0,10.0,12.5,16.0,20.0,25.0,31.5,40.0,46.7,50.0,53.3,63.0,80.0,100.0,125.0,160.0,200.0,250.0]):
     frqIDX = abs(TestFreqs - freq).argmin()
     #print("got "+str(freq)+" will return "+str(TestFreqs[frqIDX]))
     return TestFreqs[frqIDX]
@@ -343,34 +343,39 @@ class CalTimeSeries:
                 self.pcov[i] = np.cov(
                     CoVarData, bias=True
                 )  # bias=True Nomation With N like np.std
-            if Methode == "ST3SEQ":
-                # print("Fiting at Freq " + str(self.FFTFreqPeak) + " at Axis" + str(i))
+            if Methode == "ST3SEQ" or Methode == "ST3SEQFitFreq":
+
                 try:
                     if int(self.FFTFreqPeak)==0:
                         N=10;
                     else:
-                        N=int(self.FFTFreqPeak)*3
+                        N=int(self.FFTFreqPeak)*5
                     testFfreq=GetNearestTestFreq(self.FFTFreqPeak)
-                    abcd=st.fourparsinefit(self.Data[:-EndCutOut, i],
-                        self.Data[:-EndCutOut, 4],
-                        testFfreq,
-                        tol=1.0e-8,
-                        nmax=10000,)
-                    testfreqFitted=abcd[3]
-                    #seq_threeparsinefit(y, t, f0):
+                    if Methode=="ST3SEQFitFreq":
+                        abcd=st.fourparsinefit(self.Data[:-EndCutOut, i],
+                            self.Data[:-EndCutOut, 4],
+                            testFfreq,
+                            tol=1.0e-8,
+                            nmax=10000,)
+                        testFfreq=abcd[3]
+                    print("Fiting at Freq " + str(testFfreq) + " at Axis" + str(i))
                     tmpparams = st.seq_threeparsinefit(
                         self.Data[:-EndCutOut, i],
                         self.Data[:-EndCutOut, 4],
-                        testfreqFitted,
+                        testFfreq,
                         periods=N,
                     )
                 except AssertionError as error:
                     print(error)
                     print("Skipping this fit")
                     tmpparams = np.zeros((4, 4))
+                except np.linalg.LinAlgError as error:
+                    print(error)
+                    print("Skipping this fit")
+                    tmpparams = np.zeros((4, 4))
                 Complex = tmpparams[:, 1] + 1j * tmpparams[:, 0]
                 DC = tmpparams[:, 2]
-                Freq = np.ones_like(DC)*testfreqFitted
+                Freq = np.ones_like(DC)*testFfreq
                 tmpAngles=np.angle(Complex)
                 DeltatmpAngles=(tmpAngles-np.mean(tmpAngles))/np.pi*180
                 self.popt[i] = [
@@ -381,11 +386,11 @@ class CalTimeSeries:
                 ]
                 # np.fill_diagonal(self.pcov[i],tmpParamsSTD)
                 # self.poptRaw[i]=CoVarData=np.stack((abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0)
-                CoVarData = np.stack(
+                self.MultiFitResults = np.stack(
                     (abs(Complex), DC, Freq, np.unwrap(np.angle(Complex))), axis=0
                 )
                 self.pcov[i] = np.cov(
-                    CoVarData, bias=True
+                    self.MultiFitResults, bias=True
                 )  # bias=True Nomation With N like np.std
                 #print(self.pcov[i])
         self.flags["SineFitCalculated"] = True
@@ -1223,13 +1228,13 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
 
 if __name__ == "__main__":
     start_time = time.time()
-    testAxis=0
-    refPhase=0
-    folder=r'D:\data\processed\200621_MPU_9250_X_Achse_5'
+    testAxis=2
+    refPhase=-np.pi
+    folder=r'D:\data\200907_mpu9250_BMA280_cal\2020-09-07 Messungen MPU9250_SN21_Zweikanalig\WDH1'
     os.chdir(folder)
-    refName=r'21_06_2020_134323200621_MPU_9250_X_Achse_5TDMS_TF.csv'
-    dumpName="200621_MPU_9250_X_Achse_5"
-    DB1 = Databuffer(params={"stdvalidaxis": testAxis})
+    refName=r'20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH1_Ref_TF.csv'
+    dumpName="20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH1"
+    DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":0.5,"IntegrationLength": 128,"minValidChunksInRow": 100})
     DB1.setRefADCTF(
         [
             r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
@@ -1238,10 +1243,10 @@ if __name__ == "__main__":
         ADCChannel="ADC1",
     )
     DB1.setRefTransferFunction(folder+r'\\'+refName)
-    DataReaderGYROdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=16000000)#
+    DataReaderACCdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=16000000)#
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(0, RefPhaseDC=refPhase)
-    DB1.GetTransferFunction(0, RefPhaseDC=refPhase)
+    DB1.getTransferCoevs(2, RefPhaseDC=refPhase)
+    DB1.GetTransferFunction(2, RefPhaseDC=refPhase)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
