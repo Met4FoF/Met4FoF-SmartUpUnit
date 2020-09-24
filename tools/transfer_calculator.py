@@ -23,6 +23,7 @@ from MET4FOF_ADC_AC_CAL import Met4FOFADCCall as ADCCal
 import time
 from scipy.stats import chi2
 import json
+from pathlib import Path
 from cycler import cycler # for colored markers
 
 from uncertainties import ufloat
@@ -852,7 +853,7 @@ class Databuffer:
             self.Transferfunction['Tau'][i]=(self.Transferfunction['Phase'][i]/(2*np.pi))*(1/self.Transferfunction['Frequencys'][i])
         return self.Transferfunction
 
-    def PlotTransferFunction(self, PlotType="lin",fileName=None):
+    def PlotTransferFunction(self, PlotType="lin",fileName=None,unwrapMean=True):
         fig, (ax1, ax2) = plt.subplots(2, 1)
         if PlotType == "logx":
             ax1.set_xscale("log")
@@ -902,20 +903,31 @@ class Databuffer:
             label='Mean',
             uplims=AmpMarker, lolims=AmpMarker
         )
-        ax2.errorbar(
-            self.Transferfunction['Frequencys'],
-            self.Transferfunction['Phase']/ np.pi * 180,
-            yerr=self.Transferfunction['PhaseUncer']/ np.pi * 180,
-            markersize=5,
-            fmt=".",
-            label='Mean',
-            uplims=PhaseMarker, lolims=PhaseMarker
-        )
+        if not unwrapMean:
+            ax2.errorbar(
+                self.Transferfunction['Frequencys'],
+                self.Transferfunction['Phase']/ np.pi * 180,
+                yerr=self.Transferfunction['PhaseUncer']/ np.pi * 180,
+                markersize=5,
+                fmt=".",
+                label='Mean',
+                uplims=PhaseMarker, lolims=PhaseMarker
+            )
+        else:
+            ax2.errorbar(
+                self.Transferfunction['Frequencys'],
+                np.unwrap(self.Transferfunction['Phase'])/ np.pi * 180,
+                yerr=self.Transferfunction['PhaseUncer']/ np.pi * 180,
+                markersize=5,
+                fmt=".",
+                label='Mean',
+                uplims=PhaseMarker, lolims=PhaseMarker
+            )
         ax2.set_xlabel(r"Frequency $f$ in Hz")
         ax2.set_ylabel(r"Phase $\Delta\varphi$ in deg")
         ax2.grid(True)
-        #ax1.legend(numpoints=1, fontsize=8, ncol=3)
-        #ax2.legend(numpoints=1, fontsize=8, ncol=3)
+        ax1.legend(numpoints=1, fontsize=8, ncol=3)
+        ax2.legend(numpoints=1, fontsize=8, ncol=3)
         plt.tight_layout()
         if fileName != None:
             fig.savefig(fileName+'.png')
@@ -1230,10 +1242,10 @@ if __name__ == "__main__":
     start_time = time.time()
     testAxis=2
     refPhase=-np.pi
-    folder=r'D:\data\200907_mpu9250_BMA280_cal\2020-09-07 Messungen MPU9250_SN21_Zweikanalig\WDH1'
+    folder=r'D:\\data\\200907_mpu9250_BMA280_cal\\2020-09-07_Messungen_MPU9250_SN21_Zweikanalig\\WDH3'
     os.chdir(folder)
-    refName=r'20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH1_Ref_TF.csv'
-    dumpName="20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH1"
+    refName=r'20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH3_Ref_TF.csv'
+    dumpName="20200907123407_MPU_9250_0x1fe40000_sensor_sensor_SN21_WDH3"
     DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":0.5,"IntegrationLength": 128,"minValidChunksInRow": 100})
     DB1.setRefADCTF(
         [
@@ -1251,8 +1263,14 @@ if __name__ == "__main__":
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     DB1.PlotSamplingFreq()
-   # DB1.exportTF(folder+r'\\'+dumpName)
-   # DB1.ExportTFasLatex(folder+r'\\'+dumpName)
+    resultfolder=os.path.join(folder, "results")
+    if not os.path.exists(resultfolder):
+        os.mkdir(resultfolder)
+        print("Directory ", resultfolder, " Created ")
+    else:
+        print("Directory ", resultfolder, " already exists")
+    DB1.exportTF(resultfolder+r'\\'+dumpName)
+    DB1.ExportTFasLatex(resultfolder+r'\\'+dumpName)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 
