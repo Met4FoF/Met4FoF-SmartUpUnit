@@ -1095,7 +1095,7 @@ def DataReaderACCdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
     REF = np.zeros(chunksize)
     t = np.zeros(chunksize)
 
-    if i == 0:
+    if linestoread == 0:
         linestoread = (
             Databuffer.params["IntegrationLength"] * Databuffer.params["MaxChunks"]
         )
@@ -1242,10 +1242,10 @@ if __name__ == "__main__":
     start_time = time.time()
     testAxis=2
     refPhase=-np.pi
-    folder=r'D:\\data\\200907_mpu9250_BMA280_cal\\2020-09-07_Messungen_MPU9250_SN21_Zweikanalig\\WDH3'
+    folder=r'D:\data\200907_mpu9250_BMA280_cal\2020-09-01 Messungen MPU9250_SN20_Zweikanalig\WDH4'
     os.chdir(folder)
-    refName=r'20200907115851_MPU_9250_0x1fe40000_sensor_platine_details_SN21_WDH3_Ref_TF.csv'
-    dumpName="20200907123407_MPU_9250_0x1fe40000_sensor_sensor_SN21_WDH3"
+    refName=r'20200901151956_MPU_9250_0x1fe40000_SN20_WDH4_Ref_TF.csv'
+    dumpName="20200901151956_MPU_9250_0x1fe40000_SN20_WDH4"
     DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":0.5,"IntegrationLength": 128,"minValidChunksInRow": 100})
     DB1.setRefADCTF(
         [
@@ -1255,7 +1255,7 @@ if __name__ == "__main__":
         ADCChannel="ADC1",
     )
     DB1.setRefTransferFunction(folder+r'\\'+refName)
-    DataReaderACCdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=16000000)#
+    DataReaderACCdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=3660000)#
     DB1.DoAllFFT()
     DB1.getTransferCoevs(2, RefPhaseDC=refPhase)
     DB1.GetTransferFunction(2, RefPhaseDC=refPhase)
