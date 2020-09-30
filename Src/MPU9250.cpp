@@ -1165,15 +1165,16 @@ float MPU9250::getNominalSamplingFreq(){
 }
 
 int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
-	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
-	int result=0;
 	_SampleCount++;
+	if (Message!=NULL){
+		int readresult=-1;
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
-	result=MPU9250::readSensor();
+	readresult=MPU9250::readSensor();
 	/*
 	  _ax = (((float)(tX[0]*_axcounts + tX[1]*_aycounts + tX[2]*_azcounts) * _accelScale) - _axb)*_axs;
 	  _ay = (((float)(tY[0]*_axcounts + tY[1]*_aycounts + tY[2]*_azcounts) * _accelScale) - _ayb)*_ays;
@@ -1205,7 +1206,12 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_09=_hz;
 	Message->has_Data_10=true;
 	Message->Data_10=_t;
-	return result;
+	return readresult;
+	}
+	else
+	{
+		return -2;
+	}
 }
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
