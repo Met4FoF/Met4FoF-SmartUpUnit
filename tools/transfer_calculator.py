@@ -30,7 +30,7 @@ from uncertainties import ufloat
 
 
 # from termcolor import colored
-scalefactor=4
+scalefactor=3
 SMALL_SIZE = 8*scalefactor
 MEDIUM_SIZE = 10*scalefactor
 BIGGER_SIZE = 12*scalefactor
@@ -1240,37 +1240,37 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
 
 if __name__ == "__main__":
     start_time = time.time()
-    testAxis=2
+    testAxis=3
     refPhase=-np.pi
-    folder=r'D:\data\200907_mpu9250_BMA280_cal\2020-09-01 Messungen MPU9250_SN20_Zweikanalig\WDH4'
+    folder=r'D:\ptb\200907_mpu9250_BMA280_cal\2020-09-07 Messungen MPU9250_SN31_Zweikanalig\WDH3'
     os.chdir(folder)
-    refName=r'20200901151956_MPU_9250_0x1fe40000_SN20_WDH4_Ref_TF.csv'
-    dumpName="20200901151956_MPU_9250_0x1fe40000_SN20_WDH4"
-    DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":0.5,"IntegrationLength": 128,"minValidChunksInRow": 100})
+    refName=r'20200907160043_MPU_9250_0x1fe40000_metallhalter_sensor_sensor_SN31_WDH3_Ref_TF.csv'
+    dumpName="20200907160043_MPU_9250_0x1fe40000_metallhalter_sensor_sensor_SN31_WDH3"
+    DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":4,"IntegrationLength": 128,"minValidChunksInRow": 100})
     DB1.setRefADCTF(
         [
-            r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
-            r"D:\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json",
+            r"C:\Users\benes\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
+            r"C:\Users\benes\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json",
         ],
         ADCChannel="ADC1",
     )
     DB1.setRefTransferFunction(folder+r'\\'+refName)
-    DataReaderACCdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=3660000)#
+    DataReaderGYROdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=0)#
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(2, RefPhaseDC=refPhase)
-    DB1.GetTransferFunction(2, RefPhaseDC=refPhase)
+    DB1.getTransferCoevs(0, RefPhaseDC=refPhase)
+    DB1.GetTransferFunction(0, RefPhaseDC=refPhase)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     DB1.PlotSamplingFreq()
-    resultfolder=os.path.join(folder, "results")
-    if not os.path.exists(resultfolder):
-        os.mkdir(resultfolder)
-        print("Directory ", resultfolder, " Created ")
-    else:
-        print("Directory ", resultfolder, " already exists")
-    DB1.exportTF(resultfolder+r'\\'+dumpName)
-    DB1.ExportTFasLatex(resultfolder+r'\\'+dumpName)
+    #resultfolder=os.path.join(folder, "results")
+    #if not os.path.exists(resultfolder):
+    #    os.mkdir(resultfolder)
+    #    print("Directory ", resultfolder, " Created ")
+    #else:
+     #   print("Directory ", resultfolder, " already exists")
+    #DB1.exportTF(resultfolder+r'\\'+dumpName)
+    #DB1.ExportTFasLatex(resultfolder+r'\\'+dumpName)
     print("--- %s seconds ---" % (time.time() - start_time))
 
 
