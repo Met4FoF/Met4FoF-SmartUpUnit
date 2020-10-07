@@ -353,31 +353,42 @@ if __name__ == "__main__":
     Fgen = FGEN.DG4xxx("192.168.0.62")
     Scope = MSO.MSO5xxx("192.168.0.72")
     time.sleep(5)
-    testfreqs = FGEN.generateDIN266Freqs(1,1e6, SigDigts=2)
-    loops=20
+    testfreqs = FGEN.generateDIN266Freqs(1,1e5, SigDigts=2)
+    loops=15
     nptestfreqs=np.array([])
+    calRunsDone=0
     for i in np.arange(loops):
         nptestfreqs = np.append(nptestfreqs,np.array(testfreqs))
-    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0xbccb0000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 19.5, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json')
+        calRunsDone=calRunsDone+1
+        print("is "+str(calRunsDone)+" out of "+str(nptestfreqs.size)+" "+str(calRunsDone/nptestfreqs.size*100)+" %")
+    ADCCall.SaveFitresults('cal_data/BCCB_AC_CAL/201006_BCCB_ADC123_3CLCES_19V5_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
     del ADCCall
-    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+
+    calRunsDone=0
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0xbccb0000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 1.95, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json')
+        calRunsDone=calRunsDone+1
+        print("is "+str(calRunsDone)+" out of "+str(nptestfreqs.size)+" "+str(calRunsDone/nptestfreqs.size*100)+" %")
+    ADCCall.SaveFitresults('cal_data/BCCB_AC_CAL/201006_BCCB_ADC123_3CYCLES_1V95_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')
     del ADCCall
-    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0x1FE40000)
+
+    calRunsDone=0
+    ADCCall = Met4FOFADCCall(Scope, Fgen, DR, 0xbccb0000)
     for freqs in nptestfreqs:
         ADCCall.CallFreq(freqs, 0.195, ['ADC1','ADC2','ADC3'])
-    ADCCall.SaveFitresults('cal_data/1FE4_AC_CAL/200323_1FE4_ADC123_3CYCLES_V195_1HZ_1MHZ.json')
+        calRunsDone=calRunsDone+1
+        print("is "+str(calRunsDone)+" out of "+str(nptestfreqs.size)+" "+str(calRunsDone/nptestfreqs.size*100)+" %")
+    ADCCall.SaveFitresults('cal_data/BCCB_AC_CAL/201006_BCCB_ADC123_3CYCLES_V195_1HZ_1MHZ.json')
     ADCCall.PlotTransferfunction('ADC1',PlotType='log')
     ADCCall.PlotTransferfunction('ADC2',PlotType='log')
     ADCCall.PlotTransferfunction('ADC3',PlotType='log')

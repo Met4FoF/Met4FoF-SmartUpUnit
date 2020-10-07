@@ -118,8 +118,8 @@ osThreadId TempSensorTID;
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
 //BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
-MPU9250 Sensor1(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -338,7 +338,7 @@ void StartLCDThread(void const * argument) {
 	osDelay(10);
 	ILI9341_Init();		//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(BLUE);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
 	uint16_t BaseID = configMan.getBaseID();
 	char Temp_Buffer_text[40];
 	ILI9341_Draw_Text("Met4FoF SmartUpUnit", 0, 0, WHITE, 2, BLUE);
@@ -411,19 +411,16 @@ void StartDataStreamerThread(void const * argument) {
 	}
 	ConfigManager& configMan = ConfigManager::instance();
 	//TODO Make this availablte through web interface
-	configMan.setADCCalCoevs(0, 0.00488040211169927, -10.029208660668372,
-			4.6824163159348675e-3);
-	configMan.setADCCalCoevs(1, 0.004864769104581888, -9.911472983085314,
-			13.68572038605262e-3);
-	configMan.setADCCalCoevs(2, 0.004884955868836948, -10.031544601902738,
-			4.721804326558252e-3);
+	configMan.setADCCalCoevs(0, 0.0048828125, -10, 0);
+	configMan.setADCCalCoevs(1, 0.0048828125, -10, 0);
+	configMan.setADCCalCoevs(2, 0.0048828125, -10, 0);
 
 	//MPU9250
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 
-	Sensor1.setBaseID(SensorID1);
-	Sensor1.begin();
-	Sensor1.enableDataReadyInterrupt();
+//	Sensor1.setBaseID(SensorID1);
+//	Sensor1.begin();
+//	Sensor1.enableDataReadyInterrupt();
 
 	//MPU9250
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
@@ -606,7 +603,7 @@ void StartDataStreamerThread(void const * argument) {
 
 			}
 
-
+/*
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Sensor1.getDescription(&Descriptionmsg,
@@ -616,7 +613,6 @@ void StartDataStreamerThread(void const * argument) {
 				//sending the buffer
 				netbuf_ref(buf, &ProtoBufferDescription,
 						ProtoStreamDescription.bytes_written);
-				/* send the text */
 				err_t net_conn_result = netconn_send(conn, buf);
 				Check_LWIP_RETURN_VAL(net_conn_result);
 				// reallocating buffer this is maybe performance intensive profile this
@@ -627,7 +623,7 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-
+*/
 
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
@@ -703,10 +699,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
 
-		 DataMessage *mptr;
-		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
-		 osStatus result = osMailPut(DataMail, mptr);
+		 //DataMessage *mptr;
+		 //mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		 //Sensor1.getData(mptr, timestamp21, Channel1Tim2CaptureCount);
+		 //osStatus result = osMailPut(DataMail, mptr);
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
