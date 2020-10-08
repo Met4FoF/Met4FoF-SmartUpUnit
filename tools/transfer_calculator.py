@@ -977,6 +977,21 @@ class Databuffer:
         with open(filename+'TF_RAW.json', 'w') as f:
             json.dump(TFRaw, f,cls=NumpyEncoder)
 
+    def exportFitResults(self,filename):
+        Fitresults=np.zeros([len(self.CalData),16])
+        for i in range(len(self.CalData)):
+            Fitresults[i] = self.CalData[i].popt.flatten()
+
+        #self.popt[i] = [
+        #    np.mean(abs(Complex)),
+        #    np.mean(DC),
+        #    np.mean(Freq),
+        #    np.mean(np.unwrap(np.angle(Complex))),
+        #]
+        exportfilename=filename+'_FITPARAMS_RAW.csv'
+        np.savetxt(exportfilename,Fitresults , delimiter=';', header='XAmp;XDC;XFreq;XPhaserad;YAmp;YDC;YFreq;YPhaserad;ZAmp;ZDC;ZFreq;ZPhaserad;REFAmp;REFDC;REFFreq;REFPhaserad')
+        print("Fit raw data saved at "+exportfilename)
+        return Fitresults
 
     def PlotSTDandValid(self, startIDX=0, stopIDX=0,fileName=None):
         fig, (ax1) = plt.subplots(1, 1)
@@ -1022,7 +1037,7 @@ class Databuffer:
         #    + str(self.params["IntegrationLength"])
         #    + " samples) of signal amplitude."
         #)
-        ax1.set_ylabel("STD  $\sigma$ in deg/s")
+        ax1.set_ylabel("STD  $\sigma$ in m/s^2")
         ax1.legend(loc='lower center')
 
         ax1.grid(True)
@@ -1240,37 +1255,38 @@ def DataReaderGYROdumpLARGE(Databuffer, ProtoCSVFilename, linestoread=0):
 
 if __name__ == "__main__":
     start_time = time.time()
-    testAxis=3
+    testAxis=2
     refPhase=-np.pi
-    folder=r'D:\ptb\200907_mpu9250_BMA280_cal\2020-09-07 Messungen MPU9250_SN31_Zweikanalig\WDH3'
-    os.chdir(folder)
-    refName=r'20200907160043_MPU_9250_0x1fe40000_metallhalter_sensor_sensor_SN31_WDH3_Ref_TF.csv'
-    dumpName="20200907160043_MPU_9250_0x1fe40000_metallhalter_sensor_sensor_SN31_WDH3"
-    DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":4,"IntegrationLength": 128,"minValidChunksInRow": 100})
+    DB1 = Databuffer(params={"stdvalidaxis": testAxis,"minSTDforVailid":1,"IntegrationLength": 128,"minValidChunksInRow": 100})
     DB1.setRefADCTF(
         [
-            r"C:\Users\benes\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
-            r"C:\Users\benes\Met4FoF-SmartUpUnit\tools\cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json",
+            r"cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CLCES_19V5_1HZ_1MHZ.json",
+            r"cal_data\1FE4_AC_CAL\200615_1FE4_ADC123_3CYCLES_1V95_1HZ_1MHZ.json",
         ],
         ADCChannel="ADC1",
     )
-    DB1.setRefTransferFunction(folder+r'\\'+refName)
-    DataReaderGYROdumpLARGE(DB1,folder+r'\\'+dumpName+'.dump',linestoread=0)#
+    folder=r'D:\data\200907_mpu9250_BMA280_cal\2020-09-01 Messungen MPU9250_SN20_Zweikanalig\WDH5'
+    os.chdir(folder)
+    refName=r'20200901171918_MPU_9250_0x1fe40000_SN20_WDH5_Ref_TF.csv'
+    dumpName="20200901171918_MPU_9250_0x1fe40000_SN20_WDH5"
+    DB1.setRefTransferFunction(folder+'\\'+refName)
+    DataReaderACCdumpLARGE(DB1,folder+'\\'+dumpName+'.dump',linestoread=7700000 )#
     DB1.DoAllFFT()
-    DB1.getTransferCoevs(0, RefPhaseDC=refPhase)
-    DB1.GetTransferFunction(0, RefPhaseDC=refPhase)
+    DB1.getTransferCoevs(2, RefPhaseDC=refPhase)
+    DB1.GetTransferFunction(2, RefPhaseDC=refPhase)
     DB1.PlotTransferFunction()
     DB1.PlotTransferFunction(PlotType="logx")
     DB1.PlotSTDandValid()
     DB1.PlotSamplingFreq()
-    #resultfolder=os.path.join(folder, "results")
-    #if not os.path.exists(resultfolder):
-    #    os.mkdir(resultfolder)
-    #    print("Directory ", resultfolder, " Created ")
-    #else:
-     #   print("Directory ", resultfolder, " already exists")
+    resultfolder=os.path.join(folder, "results")
+    if not os.path.exists(resultfolder):
+        os.mkdir(resultfolder)
+        print("Directory ", resultfolder, " Created ")
+    else:
+        print("Directory ", resultfolder, " already exists")
     #DB1.exportTF(resultfolder+r'\\'+dumpName)
-    #DB1.ExportTFasLatex(resultfolder+r'\\'+dumpName)
+    #DB1.ExportTFasLatex(resultfolder+r'+dumpName)
+    DB1.exportFitResults(os.path.join(resultfolder,dumpName))
     print("--- %s seconds ---" % (time.time() - start_time))
 
 
