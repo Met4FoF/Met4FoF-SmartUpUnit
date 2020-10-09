@@ -114,6 +114,15 @@ int Met4FoF_adc::getDescription(DescriptionMessage * Message,DescriptionMessage_
 		Message->f_Data_02=_Offsets[1]+_Slopes[1]*4096;
 		Message->f_Data_03=_Offsets[2]+_Slopes[2]*4096;
 	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		Message->has_str_Data_03=true;
+		strncpy(Message->str_Data_01,"Voltage/0\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Voltage/1\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"Voltage/2\0",sizeof(Message->str_Data_03));
+	}
 	return retVal;
 }
 

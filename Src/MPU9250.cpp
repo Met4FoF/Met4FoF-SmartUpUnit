@@ -1216,12 +1216,11 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
-	strncpy(Message->Sensor_name,"MPU 9250\0",sizeof(Message->Sensor_name));
+	strncpy(Message->Sensor_name,"MPU_9250\0",sizeof(Message->Sensor_name));
 	Message->id=_ID;
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		Message->has_str_Data_03=true;
@@ -1245,7 +1244,6 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UNIT;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		Message->has_str_Data_03=true;
@@ -1269,7 +1267,6 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -1298,7 +1295,6 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		float gyrMIN=((float)(-32768) * _gyroScale) - _gxb;
 		float magMIN=(((float)(-32760) * _magScaleX) - _hxb)*_hxs;
 		float tempMIN= ((((float) -32768) - _tempOffset)/_tempScale) + _tempOffset;;
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -1326,7 +1322,6 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		float gyrMAX=((float)(32767) * _gyroScale) - _gxb;
 		float magMAX=(((float)(32760) * _magScaleX) - _hxb)*_hxs;
 		float tempMAX= ((((float) 32767) - _tempOffset)/_tempScale) + _tempOffset;;
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -1347,6 +1342,29 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->f_Data_08=magMAX;
 		Message->f_Data_09=magMAX;
 		Message->f_Data_10=tempMAX;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		Message->has_str_Data_03=true;
+		Message->has_str_Data_04=true;
+		Message->has_str_Data_05=true;
+		Message->has_str_Data_06=true;
+		Message->has_str_Data_07=true;
+		Message->has_str_Data_08=true;
+		Message->has_str_Data_09=true;
+		Message->has_str_Data_10=true;
+		strncpy(Message->str_Data_01,"Acceleration/0\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Acceleration/1\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"Acceleration/2\0",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_04,"Angular_velocity/0\0",sizeof(Message->str_Data_04));
+		strncpy(Message->str_Data_05,"Angular_velocity/1\0",sizeof(Message->str_Data_05));
+		strncpy(Message->str_Data_06,"Angular_velocity/2\0",sizeof(Message->str_Data_06));
+		strncpy(Message->str_Data_07,"Magnetic_flux_density/0\0",sizeof(Message->str_Data_07));
+		strncpy(Message->str_Data_08,"Magnetic_flux_density/1\0",sizeof(Message->str_Data_08));
+		strncpy(Message->str_Data_09,"Magnetic_flux_density/2\0",sizeof(Message->str_Data_09));
+		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
 	}
 	return retVal;
 }

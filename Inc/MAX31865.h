@@ -47,6 +47,8 @@
 
 
 #include <spi.h>
+#include <string.h>
+#include <math.h>
 
 typedef enum max31865_numwires {
   MAX31865_2WIRE = 0,
