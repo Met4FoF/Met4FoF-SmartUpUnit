@@ -16,17 +16,17 @@ extern "C" {
 
 /* Enum definitions */
 typedef enum _DescriptionMessage_DESCRIPTION_TYPE {
-    DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
-    DescriptionMessage_DESCRIPTION_TYPE_UNIT,
-    DescriptionMessage_DESCRIPTION_TYPE_UNCERTAINTY_TYPE,
-    DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
-    DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
-    DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
-	DescriptionMessage_LAST
+    DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY = 0,
+    DescriptionMessage_DESCRIPTION_TYPE_UNIT = 1,
+    DescriptionMessage_DESCRIPTION_TYPE_UNCERTAINTY_TYPE = 2,
+    DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION = 3,
+    DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE = 4,
+    DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE = 5,
+    DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY = 6
 } DescriptionMessage_DESCRIPTION_TYPE;
 #define _DescriptionMessage_DESCRIPTION_TYPE_MIN DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY
-#define _DescriptionMessage_DESCRIPTION_TYPE_MAX DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE
-#define _DescriptionMessage_DESCRIPTION_TYPE_ARRAYSIZE ((DescriptionMessage_DESCRIPTION_TYPE)(DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE+1))
+#define _DescriptionMessage_DESCRIPTION_TYPE_MAX DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY
+#define _DescriptionMessage_DESCRIPTION_TYPE_ARRAYSIZE ((DescriptionMessage_DESCRIPTION_TYPE)(DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY+1))
 
 /* Struct definitions */
 typedef struct _DataMessage {
@@ -143,14 +143,11 @@ typedef struct _DescriptionMessage {
 
 
 /* Initializer values for message structs */
-
 #define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 
-static const DescriptionMessage empty_DescriptionMessage=DescriptionMessage_init_default ;
-static const DataMessage empty_DataMessage=DataMessage_init_default ;
 /* Field tags (for use in manual encoding/decoding) */
 #define DataMessage_id_tag                       1
 #define DataMessage_sample_number_tag            2
