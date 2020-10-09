@@ -27,7 +27,7 @@ if __name__ == "__main__":
                           dtype='float32')
     Gyro=group.create_dataset("Angular velocity", ([3,np.max(df.shape)]), maxshape=(3, None), compression="gzip",
                          shuffle=True,dtype='float32')
-    Mag=group.create_dataset("X Magnetic flux density", ([3,np.max(df.shape)]), maxshape=(3, None), compression="gzip",
+    Mag=group.create_dataset("Magnetic flux density", ([3,np.max(df.shape)]), maxshape=(3, None), compression="gzip",
                          shuffle=True,dtype='float32')
     Temp=group.create_dataset("Temperature", ([1, np.max(df.shape)]), maxshape=(3, None), compression="gzip",
                          shuffle=True,dtype='float32')
@@ -68,4 +68,9 @@ if __name__ == "__main__":
             unitnamelist = list(itertools.chain(*unitnamelist))
             c = Counter(unitnamelist)
             quantname=Counter(el for el in c.elements() if c[el] >= len(units[unit])-1)
-            print([quantname.most_common()])
+            most_common_words = [word for word, word_count in quantname.most_common()]
+            basephysicalquant = " ".join(most_common_words)
+            print(basephysicalquant)
+        else:
+            basephysicalquant = dscp[channel]['PHYSICAL_QUANTITY']
+            print(basephysicalquant)
