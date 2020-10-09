@@ -213,7 +213,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_01));
@@ -221,7 +220,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_UNIT;
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		strncpy(Message->str_Data_01,"\\degreecelsius\0",sizeof(Message->str_Data_01));
@@ -230,7 +228,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	if(_model==MS5837::MS5837::MS5837_02BA){
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=12500;
@@ -239,7 +236,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=-40;
@@ -247,17 +243,22 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=85;
 		Message->f_Data_02=120000;
 	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Pressure\0",sizeof(Message->str_Data_10));
+	}
 	}
 	if(_model==MS5837::MS5837_30BA){
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=12500;
@@ -266,7 +267,6 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=-40;
@@ -274,11 +274,24 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
-		Message->Description_Type=DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE;
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->f_Data_01=85;
 		Message->f_Data_02=3e6;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Pressure\0",sizeof(Message->str_Data_02));
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Pressure\0",sizeof(Message->str_Data_10));
 	}
 	}
 	return retVal;

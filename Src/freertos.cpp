@@ -692,14 +692,18 @@ void StartDataStreamerThread(void const * argument) {
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
 
 			//TODO improve this code with adding list of active sensors to configMan
-#define NUMDESCRIPTIONSTOSEND 5
+#define NUMDESCRIPTIONSTOSEND 6
 			DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
 					{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
 							DescriptionMessage_DESCRIPTION_TYPE_UNIT,
 							DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
 							DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
-					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE};
+					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
+					DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
 
+
+			// TODO Ad sanor manger to avid code doubling
+			// and automatic loop over all aktive sensors
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
 				Sensor0.getDescription(&Descriptionmsg,

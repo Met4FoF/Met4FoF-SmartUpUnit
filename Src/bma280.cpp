@@ -352,6 +352,17 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->f_Data_03=8191*_conversionfactor*g_to_ms2;
 		Message->f_Data_10=86.5;
 	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_str_Data_01=true;
+		Message->has_str_Data_02=true;
+		Message->has_str_Data_03=true;
+		Message->has_str_Data_10=true;
+		strncpy(Message->str_Data_01,"Acceleration/0\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Acceleration/1\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_03,"Acceleration/2\0",sizeof(Message->str_Data_03));
+		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
+	}
 	return retVal;
 }
 
