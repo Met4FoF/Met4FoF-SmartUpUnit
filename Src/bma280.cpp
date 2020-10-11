@@ -361,7 +361,7 @@ int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		strncpy(Message->str_Data_01,"Acceleration/0\0",sizeof(Message->str_Data_01));
 		strncpy(Message->str_Data_02,"Acceleration/1\0",sizeof(Message->str_Data_02));
 		strncpy(Message->str_Data_03,"Acceleration/2\0",sizeof(Message->str_Data_03));
-		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_10,"Temperature/0\0",sizeof(Message->str_Data_10));
 	}
 	return retVal;
 }

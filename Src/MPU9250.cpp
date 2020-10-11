@@ -1364,7 +1364,7 @@ int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		strncpy(Message->str_Data_07,"Magnetic_flux_density/0\0",sizeof(Message->str_Data_07));
 		strncpy(Message->str_Data_08,"Magnetic_flux_density/1\0",sizeof(Message->str_Data_08));
 		strncpy(Message->str_Data_09,"Magnetic_flux_density/2\0",sizeof(Message->str_Data_09));
-		strncpy(Message->str_Data_10,"Temperature\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_10,"Temperature/0\0",sizeof(Message->str_Data_10));
 	}
 	return retVal;
 }
