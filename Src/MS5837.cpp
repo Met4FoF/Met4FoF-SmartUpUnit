@@ -253,7 +253,7 @@ int MS5837::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCR
 		Message->has_str_Data_01=true;
 		Message->has_str_Data_02=true;
 		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
-		strncpy(Message->str_Data_02,"Pressure\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_02,"Pressure/0\0",sizeof(Message->str_Data_10));
 	}
 	}
 	if(_model==MS5837::MS5837_30BA){
