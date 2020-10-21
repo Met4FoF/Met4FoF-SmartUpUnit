@@ -353,6 +353,8 @@ void StartBlinkThread(void const * argument) {
 			if(justRestarted==false){
 			Sensor0.begin();
 			Sensor0.setSrd(1);
+			Sensor0.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+			Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 			Sensor0.enableDataReadyInterrupt();
 			lastSampleCount0 = 0;
 			actualSampleCount0 = 0;
@@ -363,6 +365,8 @@ void StartBlinkThread(void const * argument) {
 			if(justRestarted==false){
 				Sensor1.begin();
 				Sensor1.setSrd(1);
+				Sensor1.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+				Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 				Sensor1.enableDataReadyInterrupt();
 				lastSampleCount0 = 0;
 				actualSampleCount0 = 0;
@@ -373,6 +377,8 @@ void StartBlinkThread(void const * argument) {
 			if(justRestarted==false){
 			Sensor2.begin();
 			Sensor2.setSrd(1);
+			Sensor2.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+			Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 			Sensor2.enableDataReadyInterrupt();
 			lastSampleCount2 = 0;
 			actualSampleCount2 = 0;
@@ -383,6 +389,8 @@ void StartBlinkThread(void const * argument) {
 			if(justRestarted==false){
 			Sensor3.begin();
 			Sensor3.setSrd(1);
+			Sensor3.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+			Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 			Sensor3.enableDataReadyInterrupt();
 			lastSampleCount3 = 0;
 			actualSampleCount3 = 0;
@@ -515,6 +523,8 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
 	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
+	Sensor0.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 
@@ -523,6 +533,8 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 	Sensor1.setBaseID(SensorID1);
 	Sensor1.begin();
+	Sensor1.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+	Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor1.setSrd(1);
 	Sensor1.enableDataReadyInterrupt();
 
@@ -532,6 +544,8 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID2=configMan.getSensorBaseID(2);
 	Sensor2.setBaseID(SensorID2);
 	Sensor2.begin();
+	Sensor2.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+	Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor2.setSrd(1);
 	Sensor2.enableDataReadyInterrupt();
 
@@ -540,6 +554,8 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID3=configMan.getSensorBaseID(3);
 	Sensor3.setBaseID(SensorID3);
 	Sensor3.begin();
+	Sensor3.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+	Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor3.setSrd(1);
 	Sensor3.enableDataReadyInterrupt();
 
@@ -602,6 +618,13 @@ void StartDataStreamerThread(void const * argument) {
 	pb_write(&ProtoStreamDescription, (const pb_byte_t*) &DescriptionString, 4);
 
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
+
+	/* Enable ADCs external trigger */
+	//TODO check if this belonges into the adc functionality
+	HAL_ADC_Start_IT(&hadc1);
+	HAL_ADC_Start_IT(&hadc2);
+	HAL_ADC_Start_IT(&hadc3);
+
 	//Start timer and arm inputcapture
 	//Slave (TIM1) before Master (TIM2)
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
@@ -615,12 +638,6 @@ void StartDataStreamerThread(void const * argument) {
 	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 
-
-	/* Enable ADCs external trigger */
-	//TODO check if this belonges into the adc functionality
-	HAL_ADC_Start_IT(&hadc1);
-	HAL_ADC_Start_IT(&hadc2);
-	HAL_ADC_Start_IT(&hadc3);
 
 	while (1) {
 		DataMessage *Datarptr;
@@ -898,9 +915,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			if (mptr != NULL) {
 				mptr->RawTimerCount = timestamp24;
 				mptr->CaptureCount = GPScaptureCount;
-				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),
-				NMEBUFFERLEN);
+				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
+				SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage);
 				osStatus result = osMailPut(NMEAMail, mptr);
+
 			}
 			//SEGGER_RTT_printf(0,"DMA BUFFER:=%s\n",DMA_NMEABUFFER);
 			memset(DMA_NMEABUFFER, 0, sizeof(DMA_NMEABUFFER));
