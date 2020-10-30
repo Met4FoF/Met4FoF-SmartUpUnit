@@ -26,7 +26,7 @@ import json
 from pathlib import Path
 from cycler import cycler # for colored markers
 
-from uncertainties import ufloat
+#from uncertainties import ufloat
 
 
 # from termcolor import colored
@@ -728,7 +728,20 @@ class Databuffer:
             0  # number of loops processed so far loop is an series of rising frequencys
         )
         for item in self.CalData:
+            # detect run count based on frequency drop to do right unwraping
+            self.TransferRunCount[i] = Runcount
             Freq = self.TransferFreqs[i] = self.CalData[i].popt[axisDUT, 2]
+            # print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
+            if i > 0:
+                if (
+                        self.TransferFreqs[i] * 1.01 < self.TransferFreqs[i - 1]
+                ):  # multiply with 1.01 in case of same freqs
+                    # ok the freq now is smaller the the last freq we have enterd a new loop
+                    Runcount = Runcount + 1
+                    self.TransferRunCount[i] = Runcount
+
+
+
             RefData = self.getNearestReFTPoint(Freq, loop=int(self.TransferRunCount[i]))
             AmplTF = RefData[0]
             self.ExAmpl[i]=AmplTF
@@ -758,17 +771,8 @@ class Databuffer:
                                              +(PhaseTFErr*PhaseTFErr) #A-B+C+D dB--> -1
                                              +(ADCPhaseErr*ADCPhaseErr))  #A-B+C+D dC--> 1
                                             # RefPhaseDC is an constant and has an uncertainty of 0
-            # detect run count based on frequency drop to do right unwraping
-            self.TransferRunCount[i] = Runcount
-            # print("Freq:"+str(Freq)+"Ampl Fit: "+str(self.CalData[i].popt[axisDUT, 0])+"Ampl Ref: "+str(AmplTF))
-            if i > 0:
-                if (
-                    self.TransferFreqs[i] * 1.01 < self.TransferFreqs[i - 1]
-                ):  # multiply with 1.01 in case of same freqs
-                    # ok the freq now is smaller the the last freq we have enterd a new loop
-                    Runcount = Runcount + 1
-                    self.TransferRunCount[i] = Runcount
             i = i + 1
+
         for run in range(Runcount + 1):
             runIDX = self.TransferRunCount == run
             arctanResult=np.unwrap(np.arctan2(np.sin(DB1.TransferPhase[runIDX]),np.cos(DB1.TransferPhase[runIDX])))
