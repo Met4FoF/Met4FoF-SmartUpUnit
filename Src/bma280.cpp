@@ -92,6 +92,7 @@ float BMA280::getConversionfactor() {
 void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_dur) {
 	_aRes=aRes;
 	_conversionfactor=getConversionfactor();
+	_SampleCount=0;
 	writeByte(BMA280_PMU_RANGE, aRes);         // set full-scale range
 	uint8_t aresSet=readByte(BMA280_PMU_RANGE);
 	uint16_t count=0;
@@ -145,6 +146,9 @@ int BMA280::setBaseID(uint32_t BaseID)
 	return 0;
 }
 
+uint32_t BMA280::getSampleCount(){
+	return _SampleCount;
+}
 void BMA280::reset() {
 	writeByte(BMA280_BGW_SOFTRESET, 0xB6); // software reset the BMA280
 }
@@ -266,6 +270,7 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp,uint32_t Capture
 	Message->has_Data_10=true;
 	Message->Data_10=23.0+0.5*int8_t(rawData[6]);
 	result=1;
+	_SampleCount=_SampleCount+1;
 	}
 	return result;
 }

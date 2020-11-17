@@ -117,9 +117,9 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //DummySensor Sensor0(0);
 //DummySensor Sensor1(1);
-//BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+BMA280 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
+//MPU9250 Sensor0(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 0);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 BMP280 AirPressSensor(hi2c1);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -316,8 +316,10 @@ void StartBlinkThread(void const * argument) {
 		//Hack to gether Watchdog
 		actualSampleCount=Sensor0.getSampleCount();
 		if(actualSampleCount==lastSampleCount){
-			Sensor0.begin();
-			Sensor0.enableDataReadyInterrupt();
+			 //uint32_t SensorID0=configMan.getSensorBaseID(0);
+			 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
+			 //Sensor0.setBaseID(SensorID0);
+			 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 			lastSampleCount=0;
 		}
 		lastSampleCount=actualSampleCount;
@@ -423,20 +425,20 @@ void StartDataStreamerThread(void const * argument) {
 //	Sensor1.enableDataReadyInterrupt();
 
 	//MPU9250
-	uint32_t SensorID0=configMan.getSensorBaseID(0);
+	//uint32_t SensorID0=configMan.getSensorBaseID(0);
 
-	Sensor0.setBaseID(SensorID0);
-	Sensor0.begin();
-	Sensor0.enableDataReadyInterrupt();
+	//Sensor0.setBaseID(SensorID0);
+	//Sensor0.begin();
+	//Sensor0.enableDataReadyInterrupt();
 
 	//BMA280
 	 // SET PS pin low
-	/*
+
 	 uint32_t SensorID0=configMan.getSensorBaseID(0);
 	 HAL_GPIO_WritePin(GPIO1_2_GPIO_Port, GPIO1_2_Pin, GPIO_PIN_RESET);
 	 Sensor0.setBaseID(SensorID0);
 	 Sensor0.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-*/
+
 	//Dummy Sensor
 	/*
 	 Sensor0.setBaseID(0);
@@ -775,6 +777,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
+
+
 
 
 /* Private application code --------------------------------------------------*/
