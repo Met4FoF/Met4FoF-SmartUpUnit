@@ -148,6 +148,7 @@ class BMA280
   void fastCompensation();
   void selfTest();
   void activateDataRDYINT();
+  uint32_t getSampleCount();
   private:
   float getConversionfactor();
   void writeByte(uint8_t subAddress, uint8_t data);
@@ -161,6 +162,7 @@ class BMA280
   uint32_t _BaseID;
   uint16_t _SetingsID;
   uint8_t _aRes;
+  uint32_t _SampleCount;
 };
 
 #endif /*__ BMA280_H */
