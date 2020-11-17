@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -32,16 +32,14 @@
 
 extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart3;
-extern UART_HandleTypeDef huart6;
-extern DMA_HandleTypeDef hdma_uart7_rx;
 
+extern DMA_HandleTypeDef hdma_uart7_rx;
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_UART7_Init(void);
 void MX_USART3_UART_Init(void);
-void MX_USART6_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
