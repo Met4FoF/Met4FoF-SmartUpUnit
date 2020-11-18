@@ -331,6 +331,7 @@ void StartBlinkThread(void const * argument) {
 		osDelay(1);
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		actualSampleCount0=Sensor0.getSampleCount();
 		actualSampleCount1=Sensor1.getSampleCount();
 		actualSampleCount2=Sensor2.getSampleCount();
@@ -410,6 +411,7 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		 * */
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
