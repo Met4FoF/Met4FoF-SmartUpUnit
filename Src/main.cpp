@@ -57,7 +57,6 @@
 #include "lwip.h"
 #include "rng.h"
 #include "rtc.h"
-#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -155,7 +154,6 @@ int main(void)
 	  MX_ADC1_Init();
 	  MX_ADC2_Init();
 	  MX_UART7_Init();
-	  MX_SDMMC2_SD_Init();
 	  MX_RTC_Init();
 	  MX_RNG_Init();
 	  MX_SPI2_Init();
@@ -239,8 +237,7 @@ void SystemClock_Config(void)
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART3
                               |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_I2C4|RCC_PERIPHCLK_SDMMC2
-                              |RCC_PERIPHCLK_CLK48;
+                              |RCC_PERIPHCLK_I2C4|RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
   PeriphClkInitStruct.PLLSAI.PLLSAIQ = 2;
@@ -253,12 +250,16 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c4ClockSelection = RCC_I2C4CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
-  PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
 }
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */

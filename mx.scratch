@@ -14,7 +14,17 @@
       <ProjectName>met4FOF_SSU_V2</ProjectName>
       <ProjectNature>CPP</ProjectNature>
       <Secure/>
-      <filestoremove/>
+      <filestoremove>
+        <file>
+          <name>Src\sdmmc.c</name>
+        </file>
+        <file>
+          <name>Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_sdmmc.c</name>
+        </file>
+        <file>
+          <name>Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_sd.c</name>
+        </file>
+      </filestoremove>
       <sourceEntriesToRemove>
         <sourceEntry/>
       </sourceEntriesToRemove>

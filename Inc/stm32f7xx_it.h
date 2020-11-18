@@ -60,7 +60,7 @@ void DMA1_Stream6_IRQHandler(void);
 void TIM1_CC_IRQHandler(void);
 void TIM2_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
-void TIM7_IRQHandler(void);
+void TIM8_TRG_COM_TIM14_IRQHandler(void);
 void DMA2_Stream1_IRQHandler(void);
 void DMA2_Stream3_IRQHandler(void);
 void DMA2_Stream4_IRQHandler(void);

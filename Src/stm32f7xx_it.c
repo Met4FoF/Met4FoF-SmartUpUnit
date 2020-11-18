@@ -68,7 +68,7 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
 extern DMA_HandleTypeDef hdma_uart7_rx;
 extern UART_HandleTypeDef huart7;
-extern TIM_HandleTypeDef htim7;
+extern TIM_HandleTypeDef htim14;
 
 /* USER CODE BEGIN EV */
 
@@ -84,6 +84,7 @@ void NMI_Handler(void)
 {
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
 
@@ -97,6 +98,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -112,6 +114,7 @@ void MemManage_Handler(void)
 {
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END MemoryManagement_IRQn 0 */
   while (1)
   {
@@ -127,6 +130,7 @@ void BusFault_Handler(void)
 {
   /* USER CODE BEGIN BusFault_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END BusFault_IRQn 0 */
   while (1)
   {
@@ -142,6 +146,7 @@ void UsageFault_Handler(void)
 {
   /* USER CODE BEGIN UsageFault_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END UsageFault_IRQn 0 */
   while (1)
   {
@@ -157,6 +162,7 @@ void DebugMon_Handler(void)
 {
   /* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END DebugMonitor_IRQn 0 */
   /* USER CODE BEGIN DebugMonitor_IRQn 1 */
 
@@ -232,11 +238,11 @@ void DMA1_Stream6_IRQHandler(void)
 void TIM1_CC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_CC_IRQn 0 */
-
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END TIM1_CC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_CC_IRQn 1 */
-
+	SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END TIM1_CC_IRQn 1 */
 }
 
@@ -246,11 +252,11 @@ void TIM1_CC_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM2_IRQn 0 */
-
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
+	SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END TIM2_IRQn 1 */
 }
 
@@ -270,17 +276,17 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM7 global interrupt.
+  * @brief This function handles TIM8 trigger and commutation interrupts and TIM14 global interrupt.
   */
-void TIM7_IRQHandler(void)
+void TIM8_TRG_COM_TIM14_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM7_IRQn 0 */
+  /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 0 */
 
-  /* USER CODE END TIM7_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim7);
-  /* USER CODE BEGIN TIM7_IRQn 1 */
+  /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim14);
+  /* USER CODE BEGIN TIM8_TRG_COM_TIM14_IRQn 1 */
 
-  /* USER CODE END TIM7_IRQn 1 */
+  /* USER CODE END TIM8_TRG_COM_TIM14_IRQn 1 */
 }
 
 /**
@@ -359,11 +365,11 @@ void OTG_FS_IRQHandler(void)
 void UART7_IRQHandler(void)
 {
   /* USER CODE BEGIN UART7_IRQn 0 */
-
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE END UART7_IRQn 0 */
   HAL_UART_IRQHandler(&huart7);
   /* USER CODE BEGIN UART7_IRQn 1 */
-
+	SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END UART7_IRQn 1 */
 }
 

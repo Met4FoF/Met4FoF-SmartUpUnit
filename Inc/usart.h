@@ -32,7 +32,6 @@
 
 extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart3;
-
 extern DMA_HandleTypeDef hdma_uart7_rx;
 /* USER CODE BEGIN Private defines */
 

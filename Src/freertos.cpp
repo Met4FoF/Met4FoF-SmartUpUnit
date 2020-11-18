@@ -126,7 +126,7 @@ MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
-bool Lwip_anf_FAT_init_finished=false;
+bool Lwip_init_finished=false;
 extern struct netif gnetif;
 /**
  * @brief  FreeRTOS initialization
@@ -194,15 +194,13 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
-
-
 	/* init code for LWIP */
 	MX_LWIP_Init();
 
 	/* init code for FATFS */
 	//MX_FATFS_Init();
 
-	Lwip_anf_FAT_init_finished=true;
+	Lwip_init_finished=true;
 	/* USER CODE BEGIN StartDefaultTask */
 
 	//TODO implent NPTP ip array
@@ -218,7 +216,7 @@ void StartDefaultTask(void const * argument) {
 }
 
 void StartTempSensorThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(!Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -289,7 +287,7 @@ void StartTempSensorThread(void const * argument) {
 }
 
 void StartWebserverThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(! Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -418,7 +416,7 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartLCDThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(! Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -513,7 +511,7 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamerThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(! Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -1001,6 +999,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 }
 
 
+
+
+
+/* USER CODE END GET_IDLE_TASK_MEMORY */
+
+/**
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 

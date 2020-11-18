@@ -39,6 +39,7 @@ task.h is included from an application file. */
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+#include "main.h"
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
 because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -5189,20 +5190,19 @@ const TickType_t xConstTickCount = xTickCount;
 	#endif /* INCLUDE_vTaskSuspend */
 }
 
-/* Code below here allows additional code to be inserted into this source file,
-especially where access to file scope functions and data is needed (for example
-when performing module tests). */
+/* GetIdleTaskMemory prototype (linked to static allocation support) */
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
-void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, char *pcTaskName)
 {
-TaskHandle_t bad_task_handle = xTask;     // this seems to give me the crashed task handle
-volatile char * bad_task_name = pcTaskName;     // this seems to give me a pointer to the name of the crashed task
-SEGGER_RTT_printf(0,"!!!EROR STACKOVERFLOW in task %s !!!\n\r",bad_task_name);
-
-for( ;; );
+   /* Run time stack overflow checking is performed if
+   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+   called if a stack overflow is detected. */
 }
+/* USER CODE END 4 */
 
-
+/* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
 static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
 
@@ -5211,7 +5211,11 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
   *ppxIdleTaskStackBuffer = &xIdleStack[0];
   *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+  /* place for user code */
 }
+/* Code below here allows additional code to be inserted into this source file,
+especially where access to file scope functions and data is needed (for example
+when performing module tests). */
 
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"

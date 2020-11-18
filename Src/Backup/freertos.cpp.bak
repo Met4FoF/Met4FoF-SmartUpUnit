@@ -127,7 +127,7 @@ Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
-
+extern struct netif gnetif;
 /**
  * @brief  FreeRTOS initialization
  * @param  None
@@ -213,7 +213,6 @@ void StartDefaultTask(void const * argument) {
 	/* Infinite loop */
 	for (;;) {
 		osDelay(10000);
-		sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
 }
