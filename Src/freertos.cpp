@@ -441,8 +441,18 @@ void StartLCDThread(void const * argument) {
 	ip4addr_ntoa_r(&(UDPTargetIP), iPadressBuffer, sizeof(iPadressBuffer));
 	sprintf(Temp_Buffer_text, "UPD Targ:%s", iPadressBuffer);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
-	ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
-	sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
+	bool dhcpReady=dhcp_supplied_address(&gnetif);
+	if(dhcpReady){
+
+		ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
+		sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
+	}
+	else
+	{
+		sprintf(Temp_Buffer_text,"DCHP FAILD !!\0");
+		dhcp_start(&gnetif);
+
+	}
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
 	static int lcdupdatecnt = 0;
 	while (1) {
