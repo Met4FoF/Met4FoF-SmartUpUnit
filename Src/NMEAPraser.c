@@ -89,8 +89,12 @@ static char gps_ola = 0; /* orientation (N-S) of latitude */
 static short gps_dlo = 0; /* degrees of longitude */
 static double gps_mlo = 0.0; /* minutes of longitude */
 static char gps_olo = 0; /* orientation (E-W) of longitude */
-static short gps_alt = 0; /* altitude */
+static float gps_alt = 0; /* altitude */
 static bool gps_pos_ok = false;
+
+static float gps_hdop = 0.0; /* horizontal delution of precision */
+static float gps_cmg = 0.0; /* Course Made Good */
+static float gps_sog = 0.0; /* Speed over ground in m/s */
 
 static char gps_mod = 'N'; /* GPS mode (N no fix, A autonomous, D differential) */
 static short gps_sat = 0; /* number of satellites used for fix */
@@ -411,6 +415,8 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         /* parse complete time */
         i = sscanf(parser_buf + str_index[1], "%2hd%2hd%2hd%4f", &gps_hou, &gps_min, &gps_sec, &gps_fra);
         j = sscanf(parser_buf + str_index[9], "%2hd%2hd%2hd", &gps_day, &gps_mon, &gps_yea);
+        sscanf(parser_buf + str_index[7], "%f", &gps_sog);
+        sscanf(parser_buf + str_index[8], "%f", &gps_cmg);
         if ((i == 4) && (j == 3)) {
             if ((gps_mod == 'A') || (gps_mod == 'D')) {
                 gps_time_ok = true;
@@ -439,15 +445,17 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         }
         /* parse number of satellites used for fix */
         sscanf(parser_buf + str_index[7], "%hd", &gps_sat);
+        /* parse number of satellites used for fix */
+        sscanf(parser_buf + str_index[8], "%f", &gps_hdop);
         /* parse 3D coordinates */
         i = sscanf(parser_buf + str_index[2], "%2hd%10lf", &gps_dla, &gps_mla);
         gps_ola = *(parser_buf + str_index[3]);
         j = sscanf(parser_buf + str_index[4], "%3hd%10lf", &gps_dlo, &gps_mlo);
         gps_olo = *(parser_buf + str_index[5]);
-        k = sscanf(parser_buf + str_index[9], "%hd", &gps_alt);
+        k = sscanf(parser_buf + str_index[9], "%f", &gps_alt);
         if ((i == 2) && (j == 2) && (k == 1) && ((gps_ola=='N')||(gps_ola=='S')) && ((gps_olo=='E')||(gps_olo=='W'))) {
             gps_pos_ok = true;
-            DEBUG_MSG("Note: Valid GGA sentence, %d sat, lat %02ddeg %06.3fmin %c, lon %03ddeg%06.3fmin %c, alt %d\n\r", gps_sat, gps_dla, gps_mla, gps_ola, gps_dlo, gps_mlo, gps_olo, gps_alt);
+            DEBUG_MSG("Note: Valid GGA sentence, %d sat, lat %02ddeg %06.3fmin %c, lon %03ddeg%06.3fmin %c, alt %f\n\r", gps_sat, gps_dla, gps_mla, gps_ola, gps_dlo, gps_mlo, gps_olo, gps_alt);
         } else {
             /* could not get a valid latitude, longitude AND altitude */
             gps_pos_ok = false;

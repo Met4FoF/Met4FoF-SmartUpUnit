@@ -2,11 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a7a0d19d-d9b6-4ec5-8eed-213b22ee2263" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../.settings/language.settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.settings/language.settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../met4FOF_SSU_V2 Debug (1).cfg" beforeDir="false" afterPath="$PROJECT_DIR$/../met4FOF_SSU_V2 Debug (1).cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TF_CSV_comparer.py" beforeDir="false" afterPath="$PROJECT_DIR$/TF_CSV_comparer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transfer_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/transfer_calculator.py" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,11 +22,7 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="JupyterTrust" id="b3e17b50-47c7-40ee-9b69-3b83f26a2fd2">
-    <option name="files">
-      <option value="ADC_cal_example.ipynb" />
-    </option>
-  </component>
+  <component name="JupyterTrust" id="5e4fb24b-f73a-46bb-8dc7-f43e1ed4b6db" />
   <component name="ProjectConfigurationFiles">
     <option name="files">
       <list>
@@ -50,7 +45,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/TF_CSV_comparer.py" />
     <property name="settings.editor.selected.configurable" value="PyScientificConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -58,19 +53,7 @@
       <recent name="D:\Met4FoF-SmartUpUnit\tools" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
-  <component name="RunManager" selected="Python.transfer_calculator">
+  <component name="RunManager" selected="Python.TF_CSV_comparer">
     <configuration name="MET4FOFDataReceiver" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="tools" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -85,6 +68,25 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$USER_HOME$/datareceiver/MET4FOFDataReceiver.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TF_CSV_comparer" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="tools" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="C:\Users\seeger01\Anaconda3\envs\datareceiver\python.exe" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/TF_CSV_comparer.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -114,9 +116,11 @@
     </configuration>
     <list>
       <item itemvalue="Python.transfer_calculator" />
+      <item itemvalue="Python.TF_CSV_comparer" />
       <item itemvalue="Python.MET4FOFDataReceiver" />
     </list>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -133,120 +137,34 @@
       <workItem from="1593772487378" duration="572000" />
       <workItem from="1593773060808" duration="61000" />
       <workItem from="1594639768584" duration="3814000" />
+      <workItem from="1603700754211" duration="4550000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1593618633648">
-      <screen x="0" y="0" width="2560" height="1400" />
+    <state x="414" y="175" width="1092" height="738" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1603707526581">
+      <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592313351664" />
-    <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592229796592" />
-    <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593179869879" />
-    <state x="736" y="356" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593618633648" />
-    <state width="2001" height="466" key="DebuggerActiveHint" timestamp="1593002668329">
-      <screen x="0" y="0" width="2560" height="1400" />
+    <state x="414" y="175" width="1092" height="738" key="#com.intellij.execution.impl.EditConfigurationsDialog/1920.24.1680.1010/0.0.1920.1040/-1280.48.1280.984@0.0.1920.1040" timestamp="1603707526581" />
+    <state x="740" y="299" key="FileChooserDialogImpl" timestamp="1603707516398">
+      <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="2001" height="466" key="DebuggerActiveHint/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592314998659" />
-    <state width="1100" height="466" key="DebuggerActiveHint/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592241240177" />
-    <state width="2001" height="466" key="DebuggerActiveHint/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1592842562694" />
-    <state width="2001" height="466" key="DebuggerActiveHint/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002668329" />
-    <state x="1061" y="456" key="FileChooserDialogImpl" timestamp="1593618630364">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state x="1061" y="456" key="FileChooserDialogImpl/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592229790928" />
-    <state x="1061" y="456" key="FileChooserDialogImpl/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593179866644" />
-    <state x="1061" y="456" key="FileChooserDialogImpl/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593618630364" />
-    <state width="2517" height="301" key="GridCell.Tab.0.bottom" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.0.bottom/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.0.bottom/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311593" />
-    <state width="2517" height="301" key="GridCell.Tab.0.bottom/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.0.bottom/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742980" />
-    <state width="2517" height="301" key="GridCell.Tab.0.center" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.0.center/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.0.center/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311593" />
-    <state width="2517" height="301" key="GridCell.Tab.0.center/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.0.center/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742980" />
-    <state width="2517" height="301" key="GridCell.Tab.0.left" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.0.left/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.0.left/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311593" />
-    <state width="2517" height="301" key="GridCell.Tab.0.left/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.0.left/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742980" />
-    <state width="2517" height="301" key="GridCell.Tab.0.right" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.0.right/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.0.right/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311593" />
-    <state width="2517" height="301" key="GridCell.Tab.0.right/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.0.right/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742980" />
-    <state width="2517" height="301" key="GridCell.Tab.1.bottom" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.1.bottom/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.1.bottom/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311594" />
-    <state width="2517" height="301" key="GridCell.Tab.1.bottom/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.1.bottom/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742981" />
-    <state width="2517" height="301" key="GridCell.Tab.1.center" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.1.center/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.1.center/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311594" />
-    <state width="2517" height="301" key="GridCell.Tab.1.center/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.1.center/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742981" />
-    <state width="2517" height="301" key="GridCell.Tab.1.left" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.1.left/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.1.left/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311594" />
-    <state width="2517" height="301" key="GridCell.Tab.1.left/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.1.left/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742980" />
-    <state width="2517" height="301" key="GridCell.Tab.1.right" timestamp="1593088528715">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="2517" height="445" key="GridCell.Tab.1.right/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592316575338" />
-    <state width="2517" height="445" key="GridCell.Tab.1.right/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592245311594" />
-    <state width="2517" height="301" key="GridCell.Tab.1.right/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1593088528715" />
-    <state width="2517" height="301" key="GridCell.Tab.1.right/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1593002742981" />
-    <state x="782" y="346" key="SettingsEditor" timestamp="1592493292267">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state x="782" y="346" key="SettingsEditor/-1920.1072.1920.1020/0.0.2560.1400/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592315298893" />
-    <state x="782" y="346" key="SettingsEditor/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592229824337" />
-    <state x="782" y="346" key="SettingsEditor/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1592326581000" />
-    <state x="782" y="346" key="SettingsEditor/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592493292267" />
-    <state width="1287" height="707" key="XDebugger.FullValuePopup" timestamp="1592419547039">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state width="1287" height="707" key="XDebugger.FullValuePopup/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1592239509177" />
-    <state width="1287" height="707" key="XDebugger.FullValuePopup/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1592419547039" />
-    <state x="1090" y="615" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1592748039273">
-      <screen x="0" y="0" width="2560" height="1400" />
-    </state>
-    <state x="1090" y="615" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/-1920.1072.1920.1020/0.0.2560.1400@0.0.2560.1400" timestamp="1591638698797" />
-    <state x="1090" y="615" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/-1920.1072.1920.1020/3840.1065.1920.1040/0.0.2560.1400@0.0.2560.1400" timestamp="1592653769203" />
-    <state x="1090" y="615" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/0.0.2560.1400/-1920.1072.1920.1040/3840.1065.1920.1040@0.0.2560.1400" timestamp="1592748039273" />
+    <state x="740" y="299" key="FileChooserDialogImpl/1920.24.1680.1010/0.0.1920.1040/-1280.48.1280.984@0.0.1920.1040" timestamp="1603707516398" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
