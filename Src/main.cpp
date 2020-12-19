@@ -52,15 +52,11 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
-#include "can.h"
-#include "dac.h"
 #include "dma.h"
-#include "fatfs.h"
 #include "i2c.h"
 #include "lwip.h"
 #include "rng.h"
 #include "rtc.h"
-#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -70,6 +66,7 @@
 
 // Segger RTT
 #include "SEGGER_RTT.h"
+#include "SEGGER_SYSVIEW.h"
 
 //Protbuff
 #include "pb.h"
@@ -163,7 +160,6 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_UART7_Init();
-  MX_SDMMC2_SD_Init();
   MX_RTC_Init();
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */

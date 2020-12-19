@@ -31,7 +31,6 @@
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 #include "usbd_def.h"
-#include "main.h"
 
 /* USER CODE BEGIN INCLUDE */
 
