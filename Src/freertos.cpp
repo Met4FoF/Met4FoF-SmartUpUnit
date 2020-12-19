@@ -213,7 +213,7 @@ void StartDefaultTask(void const * argument) {
 	/* Infinite loop */
 	for (;;) {
 		osDelay(10000);
-		sntp_request(NULL);
+		//sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
 }

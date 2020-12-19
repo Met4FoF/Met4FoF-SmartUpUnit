@@ -176,11 +176,12 @@ void DebugMon_Handler(void)
   */
 void DMA1_Stream0_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
 
   /* USER CODE END DMA1_Stream0_IRQn 0 */
   /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream0_IRQn 1 */
 }
 
@@ -189,11 +190,12 @@ void DMA1_Stream0_IRQHandler(void)
   */
 void DMA1_Stream1_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
 
   /* USER CODE END DMA1_Stream1_IRQn 0 */
   /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream1_IRQn 1 */
 }
 
@@ -202,11 +204,12 @@ void DMA1_Stream1_IRQHandler(void)
   */
 void DMA1_Stream3_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
 
   /* USER CODE END DMA1_Stream3_IRQn 0 */
   /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream3_IRQn 1 */
 }
 
@@ -215,11 +218,12 @@ void DMA1_Stream3_IRQHandler(void)
   */
 void DMA1_Stream6_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA1_Stream6_IRQn 0 */
 
   /* USER CODE END DMA1_Stream6_IRQn 0 */
   /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream6_IRQn 1 */
 }
 
@@ -228,12 +232,13 @@ void DMA1_Stream6_IRQHandler(void)
   */
 void TIM1_CC_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN TIM1_CC_IRQn 0 */
 
   /* USER CODE END TIM1_CC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_CC_IRQn 1 */
-
+  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END TIM1_CC_IRQn 1 */
 }
 
@@ -242,12 +247,13 @@ void TIM1_CC_IRQHandler(void)
   */
 void TIM2_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN TIM2_IRQn 0 */
 
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
+  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END TIM2_IRQn 1 */
 }
 
@@ -256,13 +262,14 @@ void TIM2_IRQHandler(void)
   */
 void EXTI15_10_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
   /* USER CODE END EXTI15_10_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
-
+  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END EXTI15_10_IRQn 1 */
 }
 
@@ -274,6 +281,7 @@ void TIM7_IRQHandler(void)
   /* USER CODE BEGIN TIM7_IRQn 0 */
 
   /* USER CODE END TIM7_IRQn 0 */
+	HAL_TIM_IRQHandler(&htim7);
   /* USER CODE BEGIN TIM7_IRQn 1 */
 
   /* USER CODE END TIM7_IRQn 1 */
@@ -284,6 +292,7 @@ void TIM7_IRQHandler(void)
   */
 void DMA2_Stream1_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
 
   /* USER CODE END DMA2_Stream1_IRQn 0 */
@@ -295,26 +304,28 @@ void DMA2_Stream1_IRQHandler(void)
 /**
   * @brief This function handles DMA2 stream3 global interrupt.
   */
-void TIM8_TRG_COM_TIM14_IRQHandler(void)
+void DMA2_Stream3_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA2_Stream3_IRQn 0 */
 
   /* USER CODE END DMA2_Stream3_IRQn 0 */
   /* USER CODE BEGIN DMA2_Stream3_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA2_Stream3_IRQn 1 */
 }
 
 /**
   * @brief This function handles DMA2 stream4 global interrupt.
   */
-void DMA2_Stream0_IRQHandler(void)
+void DMA2_Stream4_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN DMA2_Stream4_IRQn 0 */
 
   /* USER CODE END DMA2_Stream4_IRQn 0 */
   /* USER CODE BEGIN DMA2_Stream4_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA2_Stream4_IRQn 1 */
 }
 
@@ -332,18 +343,19 @@ void ETH_IRQHandler(void)
 
   /* USER CODE END ETH_IRQn 1 */
   SEGGER_SYSVIEW_RecordExitISR();
+}
 
 /**
   * @brief This function handles USB On The Go FS global interrupt.
   */
 void OTG_FS_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN OTG_FS_IRQn 0 */
 
   /* USER CODE END OTG_FS_IRQn 0 */
-  HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   /* USER CODE BEGIN OTG_FS_IRQn 1 */
-
+	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END OTG_FS_IRQn 1 */
 }
 
@@ -352,12 +364,13 @@ void OTG_FS_IRQHandler(void)
   */
 void UART7_IRQHandler(void)
 {
+	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN UART7_IRQn 0 */
 
   /* USER CODE END UART7_IRQn 0 */
   HAL_UART_IRQHandler(&huart7);
   /* USER CODE BEGIN UART7_IRQn 1 */
-
+  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END UART7_IRQn 1 */
 }
 
