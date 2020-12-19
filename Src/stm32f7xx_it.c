@@ -171,19 +171,6 @@ void DebugMon_Handler(void)
 /* please refer to the startup file (startup_stm32f7xx.s).                    */
 /******************************************************************************/
 
-/**
-  * @brief This function handles DMA1 stream0 global interrupt.
-  */
-void DMA1_Stream0_IRQHandler(void)
-{
-	SEGGER_SYSVIEW_RecordEnterISR();
-  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream0_IRQn 0 */
-  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
-	  SEGGER_SYSVIEW_RecordExitISR();
-  /* USER CODE END DMA1_Stream0_IRQn 1 */
-}
 
 /**
   * @brief This function handles DMA1 stream1 global interrupt.
@@ -194,6 +181,7 @@ void DMA1_Stream1_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
 
   /* USER CODE END DMA1_Stream1_IRQn 0 */
+	HAL_SPI_IRQHandler(&hdma_spi2_rx);
   /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream1_IRQn 1 */
@@ -208,6 +196,7 @@ void DMA1_Stream3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
 
   /* USER CODE END DMA1_Stream3_IRQn 0 */
+	  HAL_DMA_IRQHandler(&hdma_uart7_rx);
   /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream3_IRQn 1 */
@@ -222,6 +211,7 @@ void DMA1_Stream6_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream6_IRQn 0 */
 
   /* USER CODE END DMA1_Stream6_IRQn 0 */
+	  HAL_DMA_IRQHandler(&hdma_i2c1_tx);
   /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA1_Stream6_IRQn 1 */
@@ -296,6 +286,7 @@ void DMA2_Stream1_IRQHandler(void)
   /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
 
   /* USER CODE END DMA2_Stream1_IRQn 0 */
+	HAL_SPI_IRQHandler(&hdma_spi2_rx);
   /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
 
   /* USER CODE END DMA2_Stream1_IRQn 1 */
@@ -310,6 +301,7 @@ void DMA2_Stream3_IRQHandler(void)
   /* USER CODE BEGIN DMA2_Stream3_IRQn 0 */
 
   /* USER CODE END DMA2_Stream3_IRQn 0 */
+	HAL_SPI_IRQHandler(&hdma_spi5_rx);
   /* USER CODE BEGIN DMA2_Stream3_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA2_Stream3_IRQn 1 */
@@ -324,6 +316,7 @@ void DMA2_Stream4_IRQHandler(void)
   /* USER CODE BEGIN DMA2_Stream4_IRQn 0 */
 
   /* USER CODE END DMA2_Stream4_IRQn 0 */
+	HAL_SPI_IRQHandler(&hdma_spi5_tx);
   /* USER CODE BEGIN DMA2_Stream4_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END DMA2_Stream4_IRQn 1 */
@@ -354,6 +347,7 @@ void OTG_FS_IRQHandler(void)
   /* USER CODE BEGIN OTG_FS_IRQn 0 */
 
   /* USER CODE END OTG_FS_IRQn 0 */
+	HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   /* USER CODE BEGIN OTG_FS_IRQn 1 */
 	  SEGGER_SYSVIEW_RecordExitISR();
   /* USER CODE END OTG_FS_IRQn 1 */
