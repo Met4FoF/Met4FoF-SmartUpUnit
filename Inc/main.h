@@ -123,6 +123,8 @@ void SystemClock_Config(void);
 #define USB_OverCurrent_GPIO_Port GPIOG
 #define SENSOR_CS3_Pin GPIO_PIN_6
 #define SENSOR_CS3_GPIO_Port GPIOC
+#define EXT_CNV_Pin GPIO_PIN_7
+#define EXT_CNV_GPIO_Port GPIOC
 #define SENSOR_CS4_Pin GPIO_PIN_8
 #define SENSOR_CS4_GPIO_Port GPIOC
 #define SENSOR_CS2_Pin GPIO_PIN_9
