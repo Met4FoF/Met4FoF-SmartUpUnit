@@ -27,9 +27,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "MPU9250.h"
 
 /* MPU9250 object, input the SPI bus and chip select pin */
-MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID){
-    _SPICSTypeDef=SPICSTypeDef;
-    _SPICSPin=SPICSPin;
+MPU9250::MPU9250(GPIO_TypeDef* CSPort, uint16_t CSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID){
+    _CSPort=CSPort;
+    _CSPin=CSPin;
     _MPU9250spi=MPU9250spi;
 	_BaseID=BaseID;
 	_SetingsID=0;
@@ -1052,9 +1052,9 @@ int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
     }
     }
   	uint8_t buffer[2] = {subAddress, data };
-  	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
+  	HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_RESET);
   	HAL_SPI_Transmit(_MPU9250spi, buffer, 2, SPI_TIMEOUT);
-  	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
+  	HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_SET);
   /* read back the register */
   readRegisters(subAddress,1,_buffer);
   /* check the read back register against the written register */
@@ -1089,12 +1089,12 @@ int MPU9250::readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest){
   	uint8_t tx[count+1]={0};
   	uint8_t rx[count+1]={0};
   	tx[0] = {SPI_READ |subAddress};
-  	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
+  	HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_RESET);
   	if(HAL_SPI_TransmitReceive(_MPU9250spi,tx, rx, count+1, SPI_TIMEOUT)==HAL_OK)
   	{
   		retVal=1;
   	}
-  	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
+  	HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_SET);
   	memcpy(dest, &rx[1], count);
   return retVal;
 }

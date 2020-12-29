@@ -148,8 +148,8 @@ class MPU9250: public Met4FoFSensor {
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U
     // spi
-    GPIO_TypeDef* _SPICSTypeDef;
-    uint16_t _SPICSPin;
+    GPIO_TypeDef* _CSPort;
+    uint16_t _CSPin;
     SPI_HandleTypeDef* _MPU9250spi;
     uint32_t _ID;
     uint32_t _BaseID;
