@@ -52,7 +52,7 @@ u8_t sntp_getoperatingmode(void);
 
 void sntp_init(void);
 void sntp_stop(void);
-void sntp_request(void *arg);
+static void sntp_request(void *arg);
 u8_t sntp_enabled(void);
 
 
