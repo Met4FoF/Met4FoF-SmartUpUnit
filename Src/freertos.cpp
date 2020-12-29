@@ -456,7 +456,7 @@ void StartLCDThread(void const * argument) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 
 		//TODO fix nanospecs printf bug to reactivate --specs=nano.specs -u _printf_float -u _scanf_float to save 50 kb Code size
-		sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ", GPS_ref.xtal_err);
+		//sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ", GPS_ref.xtal_err);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 120, WHITE, 1, BLUE);
 		sprintf(Temp_Buffer_text, "F std.: %lf Hz      ",
 				GPS_ref.xtal_err_deviation);
