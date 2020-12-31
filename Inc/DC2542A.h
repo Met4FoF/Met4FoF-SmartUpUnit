@@ -98,6 +98,17 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
 		TIM1_CH2,
     	TIM3_CH2
 	};
+    enum SOFTSPAN
+	{
+    	DISABLED=0x00,
+		ZEROTO5V12=0x01,
+		PM5=0x02,
+		PM5V12=0x03,
+    	ZEROTO10=0x04,
+		ZEROTO10V24=0x05,
+		PM10=0x06,
+		PM10V24=0x07
+	};
     DC2542A(GPIO_TypeDef* CSPort, uint16_t CSPin,GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge);
     int begin();
     int setBaseID(uint32_t BaseID);
@@ -105,7 +116,8 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
     uint32_t getSampleCount();
     float getNominalSamplingFreq();
-
+    void  tiggerCNVSOftware();
+    void setSoftSPanConf(uint8_t channel,enum SOFTSPAN softSPanCode);
   protected:
     uint32_t _ID;
     uint32_t _BaseID;
@@ -132,17 +144,25 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     bool _CNV_EDGE=true;//true=rising false =falling
     //conv mux pins
     GPIO_TypeDef* _S0Port=S0_GPIO_Port;
-    uint16_t _S0Pin=S0_GPIO_Pin;
+    uint16_t _S0Pin=S0_Pin;
 
     GPIO_TypeDef* _S1Port=S1_GPIO_Port;
-    uint16_t _S1Pin=S1_GPIO_Pin;
+    uint16_t _S1Pin=S1_Pin;
 
     GPIO_TypeDef* _S2Port=S1_GPIO_Port;
-    uint16_t _S2Pin=S1_GPIO_Pin;
+    uint16_t _S2Pin=S1_Pin;
 
     GPIO_TypeDef* _INVPort=INV_GPIO_Port;
     uint16_t _INVPin=INV_Pin;
+    enum SOFTSPAN _SoftSpanConf[8]={PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24};
+    uint32_t cfgWORD;
+    void generateCFGWord();
     int configLTM2893();
+    int32_t sign_extend_17(uint32_t data);
+    float getMaxVal(uint8_t channel);
+    float getMinVal(uint8_t channel);
+    float calculateVoltage(uint32_t data, enum SOFTSPAN channel_configuration);
 };
+
 
 #endif
