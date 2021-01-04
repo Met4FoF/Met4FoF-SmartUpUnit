@@ -86,6 +86,7 @@
 
 #include "lwip/apps/sntp.h"
 #include "lwip_return_ckeck.h"
+#include "DC2542A.h"
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -122,6 +123,7 @@ MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
+DC2542A extADC(ISOCS_GPIO_Port,ISOCS_Pin,&hspi5,50,DC2542A::TIM3_CH2,true);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -327,11 +329,13 @@ void StartBlinkThread(void const * argument) {
 
 	bool justRestarted=true;
 	bool justRestartedDelay=false;
-	osDelay(12000);
+	osDelay(5000);
+	extADC.begin();
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
+		/*
 		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		actualSampleCount0=Sensor0.getSampleCount();
@@ -413,6 +417,9 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+		 */
+		extADC.tiggerCNVSOftware();
+		extADC.getData(NULL,0);
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);

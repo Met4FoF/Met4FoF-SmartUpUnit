@@ -90,7 +90,7 @@ class MPU9250: public Met4FoFSensor {
     };
     MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID);
     int begin();
-    int setBaseID(uint32_t BaseID);
+    int setBaseID(uint32_t BaseID) override;
     int setAccelRange(AccelRange range);
     int setGyroRange(GyroRange range);
     int setDlpfBandwidth(DlpfBandwidth bandwidth);
@@ -138,12 +138,12 @@ class MPU9250: public Met4FoFSensor {
     void setMagCalZ(float bias,float scaleFactor);
     void setAccSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
     void setGyroSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-    int getData(DataMessage * Message,uint64_t RawTimeStamp);
-    int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
+    int getData(DataMessage * Message,uint64_t RawTimeStamp) override;
+    int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE) override;
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
-    uint32_t getSampleCount();
-    float getNominalSamplingFreq();
+    uint32_t getSampleCount() override;
+    float getNominalSamplingFreq() override;
   protected:
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U

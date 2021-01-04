@@ -1,23 +1,20 @@
 #include "DC2542A.h"
 
-/* MPU9250 object, input the SPI bus and chip select pin */
-DC2542A::DC2542A(GPIO_TypeDef* CSPort, uint16_t CSPin,GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge){
-    // spi
-   _CSPort=CSPort;
-   _CSPin=CSPin;
+DC2542A::DC2542A(GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge){
    _ConfCSPort=ConfCSPort;
    _ConfCSPin=ConfCSPin;
    _MasterSPI=MasterSpi;
    _BaseID=BaseID;
    _SetingsID=0;
    _ID=_BaseID+(uint32_t)_SetingsID;
-  _CNV_TRIG=cnv_trig;
+   _CNV_TRIG=cnv_trig;
    _CNV_EDGE=edge;//true=rising false =falling
 }
 
 
 /* starts and configutes LTC2358-18 and LTM2893 */
 int DC2542A::begin(){
+	generateCFGWord();
 	configLTM2893();
 	return 0;
 	}
@@ -44,9 +41,20 @@ int DC2542A::configLTM2893(){
     _CFGREG1+=_UC1_WORDL;
     _CFGREG1+=_OSCDIV;
     uint8_t buffer[2] = {_CFGREG0, _CFGREG1 };
+
+
+    _MasterSPI->Init.NSS = SPI_NSS_SOFT;// Disable HRD NSS
+
+    HAL_SPI_Init(_MasterSPI);
   	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_RESET);
-  	HAL_SPI_Transmit(_MasterSPI, buffer, 2, SPI_TIMEOUT);
+  	HAL_SPI_Transmit(_MasterSPI, buffer, 1, SPI_TIMEOUT);
   	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
+  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_RESET);
+  	HAL_SPI_Transmit(_MasterSPI, buffer+1, 1, SPI_TIMEOUT);
+  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
+
+    _MasterSPI->Init.NSS = SPI_NSS_HARD_OUTPUT;
+    HAL_SPI_Init(_MasterSPI);
   	if(_CNV_TRIG==TIM2_CH1){
   		HAL_GPIO_WritePin(_S0Port, _S0Pin, GPIO_PIN_RESET);
   		HAL_GPIO_WritePin(_S1Port, _S1Pin, GPIO_PIN_RESET);
@@ -85,9 +93,17 @@ uint32_t DC2542A::getSampleCount(){
 	return _SampleCount;
 }
 
+int DC2542A::setBaseID(uint32_t BaseID)
+{
+	_BaseID=BaseID;
+	_SetingsID=0;
+	_ID=_BaseID+(uint32_t)_SetingsID;
+	return 0;
+}
 
 void DC2542A::tiggerCNVSOftware(){
 	HAL_GPIO_WritePin(EXT_CNV_GPIO_Port, EXT_CNV_Pin, GPIO_PIN_SET);
+	osDelay(1);
 	HAL_GPIO_WritePin(EXT_CNV_GPIO_Port, EXT_CNV_Pin, GPIO_PIN_RESET);
 	return;
 }
@@ -98,21 +114,14 @@ float DC2542A::getNominalSamplingFreq(){
 
 int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	_SampleCount++;
-
-	  int i;
-	  uint8_t tx_array[24];
-	  uint8_t rx_array[24];
+	  uint8_t tx_array[24]={0};
+	  uint8_t rx_array[24]={0};
 	  tx_array[23] = (uint8_t)(cfgWORD >> 16);
 	  tx_array[22] = (uint8_t)(cfgWORD >> 8);
 	  tx_array[21] = (uint8_t)(cfgWORD);
-	  for (i = 20; i >= 0; --i)
-	  {
-	    tx_array[i] = 0;
-	  }
-	  HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 	  HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
-	  HAL_GPIO_WritePin(_CSPort, _CSPin, GPIO_PIN_RESET);
-
+	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 	if (Message!=NULL){
 		int readresult=-1;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
@@ -121,9 +130,6 @@ int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
-
-
-
 	return readresult;
 	}
 	else
@@ -162,7 +168,7 @@ int32_t DC2542A::sign_extend_17(uint32_t data)
 // Calculates the voltage from ADC output data depending on the channel configuration
 float DC2542A::calculateVoltage(uint32_t data, enum SOFTSPAN channel_configuration)
 {
-  float voltage;
+  float voltage=NAN;
   int32_t data_signed;
   switch (channel_configuration)
   {

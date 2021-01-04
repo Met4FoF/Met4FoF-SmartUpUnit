@@ -11,12 +11,11 @@
 
 class Met4FoFSensor {
 public:
-  virtual int getData(DataMessage * Message,uint64_t RawTimeStamp); //data getter function handels sensor communication
-  virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);// get the protobuff description
-  virtual uint32_t getSampleCount();// get sample count
-  virtual float getNominalSamplingFreq();// get nominal sampling freq
-  virtual int setBaseID(uint32_t BaseID);// set base id
-  //virtual ~Met4FoFSensor()=0; // Pure virtual destructor
+  virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)=0; //data getter function handels sensor communication
+  virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)=0;// get the protobuff description
+  virtual uint32_t getSampleCount()=0;// get sample count
+  virtual float getNominalSamplingFreq()=0;// get nominal sampling freq
+  virtual int setBaseID(uint32_t BaseID)=0;// set base id
 };
 
 

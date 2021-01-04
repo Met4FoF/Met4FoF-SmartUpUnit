@@ -25,8 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 
 
-#ifndef MPU9250_h
-#define MPU9250_h
+#ifndef DC2542A_h
+#define DC2542A_h
 
 #include "spi.h"
 #include "gpio.h"
@@ -109,13 +109,13 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
 		PM10=0x06,
 		PM10V24=0x07
 	};
-    DC2542A(GPIO_TypeDef* CSPort, uint16_t CSPin,GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge);
+    DC2542A(GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge);
     int begin();
-    int setBaseID(uint32_t BaseID);
-    int getData(DataMessage * Message,uint64_t RawTimeStamp);
-    int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
-    uint32_t getSampleCount();
-    float getNominalSamplingFreq();
+    int setBaseID(uint32_t BaseID) override;
+    int getData(DataMessage * Message,uint64_t RawTimeStamp) override;
+    int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE) override;
+    uint32_t getSampleCount() override;
+    float getNominalSamplingFreq() override;
     void  tiggerCNVSOftware();
     void setSoftSPanConf(uint8_t channel,enum SOFTSPAN softSPanCode);
   protected:
@@ -126,8 +126,6 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     double _vref=4.096;
     float _NominalSamplingFreq=-1;
     // spi
-    GPIO_TypeDef* _CSPort;
-    uint16_t _CSPin;
     GPIO_TypeDef* _ConfCSPort;
     uint16_t _ConfCSPin;
     SPI_HandleTypeDef* _MasterSPI;
