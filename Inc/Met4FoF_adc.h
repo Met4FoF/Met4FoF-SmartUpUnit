@@ -11,9 +11,9 @@
 
 #include "pb.h"
 #include "message.pb.h"
+#include "Met4FoFSensor.h"
 
-
-class Met4FoF_adc
+class Met4FoF_adc: public Met4FoFSensor
 {
   public:
   Met4FoF_adc(ADC_HandleTypeDef * hadc1,ADC_HandleTypeDef * hadc2,ADC_HandleTypeDef* hadc3,uint32_t BaseID);
@@ -23,6 +23,7 @@ class Met4FoF_adc
   void setOffsets(float Offset1, float Offset2,float Offset3){_Offsets[0]=Offset1;_Offsets[1]=Offset2;_Offsets[2]=Offset3;}
   uint32_t getSampleCount();
   int setBaseID(uint32_t BaseID);
+  float getNominalSamplingFreq(){return 0.0;};
   private:
 
   ADC_HandleTypeDef * _hadc1;

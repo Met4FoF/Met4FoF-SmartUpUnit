@@ -68,7 +68,6 @@ bool MS5837::init(uint32_t BaseID) {
 	return false; // CRC fail
 }
 
-
 void MS5837::setFluidDensity(float density) {
 	fluidDensity = density;
 }
@@ -183,14 +182,14 @@ float MS5837::altitude() {
 	return (1-pow((pressure()/1013.25),.190284))*145366.45*.3048;
 }
 
-int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty){
+int MS5837::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
 	_SampleCount++;
 	Message->id=_ID;
-	Message->unix_time=unix_time;
-	Message->time_uncertainty=time_uncertainty;
-	Message->unix_time_nsecs=unix_time_nsecs;
+	Message->unix_time=0xFFFFFFFF;
+	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
+	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=_SampleCount;
 	MS5837::read();
 	MS5837::calculate();
