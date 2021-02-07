@@ -74,6 +74,7 @@
 #include "bmp280.h"
 
 #include <math.h>
+#include <vector>
 
 #include "adc.h"
 #include "tim.h"
@@ -124,6 +125,10 @@ MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
+
+//std::vector<Met4FoFSensor *> Sensors;
+const int numSensors=6;
+Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&Sensor2,&Sensor3,&TempSensor0,&Met4FoFADC};
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
@@ -232,28 +237,9 @@ void StartTempSensorThread(void const * argument) {
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 20);
 		uint64_t timestamp = TIM_Get_64Bit_TimeStamp_Base(&htim2);
-		struct timespec SampelPointUtc;
-		if (xSemaphoreGPS_REF != NULL) {
-			// See if we can obtain the semaphore.  If the semaphore is not
-			// available wait 10 ticks to see if it becomes free.
-			if ( xSemaphoreTake(xSemaphoreGPS_REF,
-					(TickType_t ) 10) == pdTRUE) {
-				uint32_t tmp_time_uncertainty = 0;
-				lgw_cnt2utc(GPS_ref, timestamp, &SampelPointUtc,
-						&tmp_time_uncertainty);
-				mptr->time_uncertainty = tmp_time_uncertainty;
-				xSemaphoreGive(xSemaphoreGPS_REF);
-			} else {
-				//We could not obtain the semaphore and can therefore not access
-				// the shared resource safely.
-				SEGGER_RTT_printf(0,
-						"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
-				taskYIELD()
-				;
-			}
-		}
 		//int MS5837::getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty,uint32_t CaptureCount)
-		TempSensor0.getData(mptr,(uint32_t)SampelPointUtc.tv_sec,(uint32_t)SampelPointUtc.tv_nsec,40e6);
+		TempSensor0.getData(mptr,timestamp);
+		mptr->time_uncertainty=40e6;
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
@@ -537,7 +523,6 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
-
 	//MPU9250
 
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
@@ -558,7 +543,6 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor2.setSrd(1);
 	Sensor2.enableDataReadyInterrupt();
-
 
 	//MPU9250
 	uint32_t SensorID3=configMan.getSensorBaseID(3);
@@ -728,12 +712,13 @@ void StartDataStreamerThread(void const * argument) {
 					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
 					DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
 
-
+			for (int sensorcount = 0; i < numSensors; i++){
 			// TODO Ad sanor manger to avid code doubling
 			// and automatic loop over all aktive sensors
+			Met4FoFSensor * Sensor=Sensors[sensorcount];
 			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 				DescriptionMessage Descriptionmsg;
-				Sensor0.getDescription(&Descriptionmsg,
+				Sensor->getDescription(&Descriptionmsg,
 						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
 				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
 						&Descriptionmsg, PB_ENCODE_DELIMITED);
@@ -751,140 +736,7 @@ void StartDataStreamerThread(void const * argument) {
 						(const pb_byte_t*) &DescriptionString, 4);
 
 			}
-
-
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Sensor1.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
-
 			}
-
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Sensor2.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
-
-			}
-
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Sensor3.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
-
-			}
-
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				Met4FoFADC.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
-
-			}
-
-			for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
-				DescriptionMessage Descriptionmsg;
-				TempSensor0.getDescription(&Descriptionmsg,
-						(DescriptionMessage_DESCRIPTION_TYPE) Tosend[i]);
-				pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-						&Descriptionmsg, PB_ENCODE_DELIMITED);
-				//sending the buffer
-				netbuf_ref(buf, &ProtoBufferDescription,
-						ProtoStreamDescription.bytes_written);
-				/* send the text */
-				err_t net_conn_result = netconn_send(conn, buf);
-				Check_LWIP_RETURN_VAL(net_conn_result);
-				// reallocating buffer this is maybe performance intensive profile this
-				//TODO profile this code
-				ProtoStreamDescription = pb_ostream_from_buffer(
-						ProtoBufferDescription, MTU_SIZE);
-				pb_write(&ProtoStreamDescription,
-						(const pb_byte_t*) &DescriptionString, 4);
-
-			}
-
-
-/*
-			 for (int DescriptionType =
-			 DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY;
-			 DescriptionType != DescriptionMessage_LAST;
-			 DescriptionType++) {
-
-			 if (ProtoStreamDescription.bytes_written
-			 > (MTU_SIZE - (DescriptionMessage_size))) {
-			 //sending the buffer
-			 netbuf_ref(buf, &ProtoBufferDescription,
-			 ProtoStreamDescription.bytes_written);
-			 // send the text
-			 err_t net_conn_result = netconn_send(conn, buf);
-			 Check_LWIP_RETURN_VAL(net_conn_result);
-			 // reallocating buffer this is maybe performance intensive profile this
-			 //TODO profile this code
-			 ProtoStreamDescription = pb_ostream_from_buffer(
-			 ProtoBufferDescription, MTU_SIZE);
-			 pb_write(&ProtoStreamDescription,
-			 (const pb_byte_t*) &DescriptionString, 4);
-			 }
-			 DescriptionMessage Descriptionmsg;
-			 Met4FoFADC.getDescription(&Descriptionmsg,(DescriptionMessage_DESCRIPTION_TYPE) DescriptionType);
-			 pb_encode_ex(&ProtoStreamDescription, DescriptionMessage_fields,
-			 &Descriptionmsg, PB_ENCODE_DELIMITED);
-
-			 }
-			 			 */
 
 		}
 

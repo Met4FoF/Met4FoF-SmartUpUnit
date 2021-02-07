@@ -42,7 +42,9 @@ THE SOFTWARE.
 #include "pb.h"
 #include "message.pb.h"
 #include <math.h>
-class MS5837 {
+#include "Met4FoFSensor.h"
+
+class MS5837: public Met4FoFSensor {
 public:
 	static const float Pa;
 	static const float bar;
@@ -80,11 +82,15 @@ public:
 	 */
 	float altitude();
 
-	int getData(DataMessage * Message,uint32_t unix_time,uint32_t unix_time_nsecs,uint32_t time_uncertainty);
+	int getData(DataMessage * Message,uint64_t RawTimeStamp);
 
 	int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
 
 	uint32_t getSampleCount(){return _SampleCount;};
+
+	int setBaseID(uint32_t BaseID){_ID=BaseID;return 1;};
+
+	float getNominalSamplingFreq(){return 0.0;};
 
 private:
 	I2C_HandleTypeDef * _I2C;
