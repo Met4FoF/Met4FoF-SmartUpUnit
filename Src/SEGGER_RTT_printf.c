@@ -501,4 +501,14 @@ int SEGGER_RTT_printf(unsigned BufferIndex, const char * sFormat, ...) {
   va_end(ParamList);
   return r;
 }
+
+int SEGGER_RTT_printfTerminal(const char * sFormat, ...) {
+  int r;
+  va_list ParamList;
+
+  va_start(ParamList, sFormat);
+  r = SEGGER_RTT_vprintf(0, sFormat, &ParamList);
+  va_end(ParamList);
+  return r;
+}
 /*************************** End of file ****************************/

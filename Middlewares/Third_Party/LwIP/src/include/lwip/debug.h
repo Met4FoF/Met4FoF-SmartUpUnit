@@ -40,6 +40,7 @@
 #include "lwip/arch.h"
 #include "lwip/opt.h"
 
+#define LWIP_DEBUG
 /**
  * @defgroup debugging_levels LWIP_DBG_MIN_LEVEL and LWIP_DBG_TYPES_ON values
  * @ingroup lwip_opts_debugmsg
@@ -49,6 +50,8 @@
 /** @name Debug level (LWIP_DBG_MIN_LEVEL)
  * @{
  */
+
+
 /** Debug level: ALL messages*/
 #define LWIP_DBG_LEVEL_ALL     0x00
 /** Debug level: Warnings. bad checksums, dropped packets, ... */

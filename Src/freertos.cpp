@@ -119,16 +119,16 @@ osThreadId TempSensorTID;
 //TODO insert sensor manager array in config manager
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
-MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
+//MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors=6;
-Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&Sensor2,&Sensor3,&TempSensor0,&Met4FoFADC};
+Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC};//&Sensor2,&Sensor3
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_init_finished=false;
@@ -427,7 +427,7 @@ void StartLCDThread(void const * argument) {
 	sprintf(Temp_Buffer_text, "UPD Targ:%s", iPadressBuffer);
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 	bool dhcpReady=dhcp_supplied_address(&gnetif);
-	if(dhcpReady){
+	if(dhcpReady==true){
 
 		ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
 		sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
@@ -436,6 +436,9 @@ void StartLCDThread(void const * argument) {
 	{
 		sprintf(Temp_Buffer_text,"DCHP FAILD !!\0");
 		dhcp_start(&gnetif);
+		osDelay(2000);
+		ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer, sizeof(iPadressBuffer));
+		sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
 
 	}
 	ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
@@ -472,7 +475,7 @@ void StartLCDThread(void const * argument) {
 		uint32_t startcount=configMan.getStartcount();
 		sprintf(Temp_Buffer_text, "Start count: %i",startcount);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
-		if (lcdupdatecnt %100==0) {
+		if (lcdupdatecnt %20==0) {
 			ILI9341_Init();		//initial driver setup to drive ili9341
 			ILI9341_Fill_Screen(BLUE);
 			ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
@@ -522,6 +525,16 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
+
+	//BMA280
+
+	 uint32_t SensorID1=configMan.getSensorBaseID(1);
+	 Sensor1.setBaseID(SensorID1);
+	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
+
+
+	//MPU9250
+/*
 	//MPU9250
 
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
@@ -531,9 +544,6 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor1.setSrd(1);
 	Sensor1.enableDataReadyInterrupt();
-
-
-	//MPU9250
 
 	uint32_t SensorID2=configMan.getSensorBaseID(2);
 	Sensor2.setBaseID(SensorID2);
@@ -551,13 +561,8 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
 	Sensor3.setSrd(1);
 	Sensor3.enableDataReadyInterrupt();
-
-	//BMA280
-/*
-	 uint32_t SensorID1=configMan.getSensorBaseID(1);
-	 Sensor1.setBaseID(SensorID1);
-	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 */
+
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
 	 Met4FoFADC.setBaseID(SensorID10);
@@ -830,20 +835,22 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
 	//	SEGGER_RTT_printf(0,
 	//			"TIM1: %"PRIu64"\n\r",timestamp11);
-
+/*
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor2.getData(mptr, timestamp11);
 		osStatus result = osMailPut(DataMail, mptr);
+		*/
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
-
+		/*
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor3.getData(mptr, timestamp12);
 		osStatus result = osMailPut(DataMail, mptr);
+		*/
 
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {

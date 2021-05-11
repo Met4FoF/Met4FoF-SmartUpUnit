@@ -134,7 +134,7 @@
  * BMA280 triple axis, digital interface, accelerometer.
  */
 
-class BMA280:Met4FoFSensor
+class BMA280 : public Met4FoFSensor
 {
   public:
   BMA280(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID);
