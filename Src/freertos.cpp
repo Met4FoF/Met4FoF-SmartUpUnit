@@ -457,7 +457,9 @@ void StartLCDThread(void const * argument) {
 	static int lcdupdatecnt = 0;
 	while (1) {
 		osDelay(1000);
+
 		lcdupdatecnt++;
+		/*
 		timespec utc;
 		timespec gps_time;
 		lgw_gps_get(&utc, &gps_time, NULL, NULL);
@@ -506,6 +508,7 @@ void StartLCDThread(void const * argument) {
 			sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
 		}
+
 		if (lcdupdatecnt %10==0) {
 			iPadressBuffer[17]= {};
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
@@ -519,6 +522,7 @@ void StartLCDThread(void const * argument) {
 			sprintf(Temp_Buffer_text, "UPD Targ:%s", iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		}
+		*/
 	}
 	osThreadTerminate(NULL);
 }

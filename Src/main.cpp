@@ -163,7 +163,7 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_UART7_Init();
-  MX_SDMMC2_SD_Init();
+  //MX_SDMMC2_SD_Init();
   MX_RTC_Init();
   MX_RNG_Init();
   /* USER CODE BEGIN 2 */
