@@ -50,9 +50,7 @@ void StartNemaParserThread(void const * argument) {
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int DollarCount = 0;
 			int NewLineCount = 0;
-#if DEBUG_GPS == 1
-                        SEGGER_RTT_printf(0,"Parsing: NMEA Message\n\r %s\n\r",(rptr->NMEAMessage));
-#endif
+			//SEGGER_RTT_printf(0,"Parsing: NMEA Message\n\r %s\n\r",(rptr->NMEAMessage));
 			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
 				if (rptr->NMEAMessage[i]
 						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
@@ -91,9 +89,7 @@ void StartNemaParserThread(void const * argument) {
 		        {
 		            /* We could not obtain the semaphore and can therefore not access
 		            the shared resource safely. */
-#if DEBUG_GPS == 1
 		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
-#endif
 		        }
 		    }
 			osMailFree(NMEAMail, rptr);

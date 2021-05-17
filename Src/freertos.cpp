@@ -128,11 +128,21 @@ MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 
 //std::vector<Met4FoFSensor *> Sensors;
-const int numSensors=6;
+const int numSensors=4;
 Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC};//,&Sensor2,&Sensor3
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
+
+
+#define NUMDESCRIPTIONSTOSEND 6
+DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
+		{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
+		  DescriptionMessage_DESCRIPTION_TYPE_UNIT,
+		  DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
+		  DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
+		  DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
+		  DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
 
 /**
  * @brief  FreeRTOS initialization
@@ -244,6 +254,7 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
+		/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
 	HAL_StatusTypeDef i2cresult;
@@ -268,6 +279,7 @@ void StartTempSensorThread(void const * argument) {
  	  }
  	}
  	SEGGER_RTT_printf(0,"\r\n");
+ 	*/
 		osDelay(1000);
 
 
@@ -699,22 +711,15 @@ void StartDataStreamerThread(void const * argument) {
 		}
 		//TODO improve this code
 		const uint32_t InfoUpdateTimems = 4000;
-		static TickType_t lastInfoticks = 4000;//wait until all sensors are inited and have the right baseid
-		if (xTaskGetTickCount() - lastInfoticks > InfoUpdateTimems) {
+		static TickType_t lastInfoticks = 4000;
+		TickType_t actualticks=xTaskGetTickCount();
+		//wait until all sensors are inited and have the right baseid
+		if (actualticks - lastInfoticks > InfoUpdateTimems) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
 
 			//TODO improve this code with adding list of active sensors to configMan
-#define NUMDESCRIPTIONSTOSEND 6
-			DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
-					{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
-							DescriptionMessage_DESCRIPTION_TYPE_UNIT,
-							DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION,
-							DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
-					DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
-					DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
-
-			for (int sensorcount = 0; i < numSensors; i++){
+			for (int sensorcount = 0; sensorcount < numSensors; sensorcount++){
 			// TODO Ad sanor manger to avid code doubling
 			// and automatic loop over all aktive sensors
 			Met4FoFSensor * Sensor=Sensors[sensorcount];
@@ -772,9 +777,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		static NMEASTamped *mptr = NULL;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 		if (GPScaptureCount > 0) {
-			//HAL_UART_RxCpltCallback(&huart7);
+			HAL_UART_RxCpltCallback(&huart7);
 			HAL_UART_DMAStop(&huart7);
-			HAL_DMA_Abort(&hdma_uart7_rx);
+			//HAL_DMA_Abort(&hdma_uart7_rx);
 			mptr = (NMEASTamped *) osMailAlloc(NMEAMail, 0);//The parameter millisec must be 0 for using this function in an ISR.
 			if (mptr != NULL) {
 				mptr->RawTimerCount = timestamp24;

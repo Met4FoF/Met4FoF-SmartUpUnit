@@ -169,6 +169,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SENSOR_CS3_GPIO_Port, SENSOR_CS2_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SENSOR_CS4_GPIO_Port, SENSOR_CS2_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

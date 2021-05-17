@@ -35,13 +35,12 @@ Maintainer: Michael Coracin
 
 #include "SEGGER_RTT.h"
 
-
 #define GPS_TIME_OFFSET_FROM_BUFFER_SEC 1
 /* -------------------------------------------------------------------------- */
 /* --- PRIVATE MACROS ------------------------------------------------------- */
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-#if DEBUG_GPS == 1
+#if DEBUG_GPS == 0
     #define DEBUG_MSG(args...)  SEGGER_RTT_printf(0, args)
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) SEGGER_RTT_printf(0,"%x.",c[a]);SEGGER_RTT_printf(0,"end\n")
     #define CHECK_NULL(a)       if(a==NULL){SEGGER_RTT_printf(0,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
@@ -58,7 +57,7 @@ Maintainer: Michael Coracin
 //TODO Replace with calculated Sysclock freq
 #define TS_CPS              108E6 /* count-per-second of the timestamp counter */ //replaced with sysfreq
 
-#define PLUS_1PERCENT          1.00*(double)(TS_CPS)
+#define PLUS_1PERCENT          1.01*(double)(TS_CPS)
 #define MINUS_1PERCENT         0.99*(double)(TS_CPS)
 
 #define UBX_MSG_NAVTIMEGPS_LEN  16
@@ -586,13 +585,9 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     mean_tmp/=ref->array_valid_data_count;
     for(int i=0;i<ref->array_valid_data_count;i++)
     	std_tmp += (ref->xtal_err_array[i] - mean_tmp)*(ref->xtal_err_array[i] - mean_tmp);
-#if DEBUG_GPS == 1
-    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
-#endif
+    DEBUG_MSG("GPS Slope std val is:%d\n\r",std_tmp);
     std_tmp=sqrt(std_tmp/(ref->array_valid_data_count-1));
-#if DEBUG_GPS == 1
-    SEGGER_RTT_printf(0,"GPS Slope std val is:%d\n\r",std_tmp);
-#endif
+    DEBUG_MSG("GPS Slope std val is:%d\n\r",std_tmp);
     /* watch if the 3 latest sync point were aberrant or not */
     if (aber_n0 == false) {
         /* value no aberrant -> sync with smoothed slope */
@@ -655,7 +650,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
 #if DEBUG_GPS == 1
     if(cntdiff64<0)
     {
-    	SEGGER_RTT_printf(0,"DELTA TICKS<0\n\r");
+    	DEBUG_MSG("DELTA TICKS<0\n\r");
     }
 #endif
     delta_sec = (double)(cntdiff64) / (ref.xtal_err);//TS_CPS *
@@ -665,9 +660,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
     time_uncertainty_tmp=2*sqrt(time_uncertainty_tmp)*NANOSECONDSTOTICKSSCALEFACKTOR;
     time_uncertainty_tmp=round(time_uncertainty_tmp);
     uint32_t time_uncertainty_int32=(uint32_t)time_uncertainty_tmp;
-#if DEBUG_GPS == 1
-    SEGGER_RTT_printf(0,"unsicherheit= %f , %lu\r\n",time_uncertainty_tmp,time_uncertainty_int32);
-#endif
+    //DEBUG_MSG("unsicherheit= %f , %lu\r\n",time_uncertainty_tmp,time_uncertainty_int32);
     memcpy(time_uncertainty,&time_uncertainty_int32,sizeof(time_uncertainty_int32));
     /* now add that delta to reference UTC time */
     fractpart = modf (delta_sec , &intpart);
