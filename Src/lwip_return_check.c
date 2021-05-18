@@ -1,4 +1,5 @@
 #include "lwip.h"
+#include  "SEGGER_RTT.h"
 
 void Check_LWIP_RETURN_VAL(err_t retVal) {
 	static uint32_t LWIP_RRT_PRINT_ErrorCount = 0;
