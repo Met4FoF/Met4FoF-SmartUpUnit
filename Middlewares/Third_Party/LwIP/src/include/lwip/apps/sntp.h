@@ -36,13 +36,12 @@
  */
 #ifndef LWIP_HDR_APPS_SNTP_H
 #define LWIP_HDR_APPS_SNTP_H
-#include "GPSTimesyn.hpp"
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "lwip/apps/sntp_opts.h"
 #include "lwip/ip_addr.h"
-
+#include  "freertos_cubemx.h"
 /* SNTP operating modes: default is to poll using unicast.
    The mode has to be set before calling sntp_init(). */
 #define SNTP_OPMODE_POLL            0

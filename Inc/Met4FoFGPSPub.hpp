@@ -7,7 +7,7 @@
 #include <math.h>
 
 #include "message.pb.h"
-#include "Met4FoFSensor.hpp"
+#include "Met4FoFSensor.h"
 
 #include "NMEAPraser.h"
 

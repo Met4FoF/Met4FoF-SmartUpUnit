@@ -38,7 +38,6 @@
 #define LWIP_HDR_APPS_SNTP_OPTS_H
 
 #include "lwip/opt.h"
-#include "GPSTimesyn.hpp"
 /**
  * @defgroup sntp_opts Options
  * @ingroup sntp

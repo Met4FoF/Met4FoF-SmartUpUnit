@@ -63,7 +63,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "GPSTimesyn.hpp"
 #if LWIP_UDP
 
 

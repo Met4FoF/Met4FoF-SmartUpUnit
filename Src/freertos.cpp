@@ -87,6 +87,8 @@
 
 #include "lwip/apps/sntp.h"
 #include "lwip_return_ckeck.h"
+
+#include "NMEAPraser.h"
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -115,6 +117,7 @@ osThreadId WebServerTID;
 osThreadId LCDTID;
 osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
+osThreadId NmeaParserTID;
 
 //TODO insert sensor manager array in config manager
 
@@ -143,6 +146,19 @@ DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
 		  DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE,
 		  DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
 		  DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
+
+struct tref GPS_ref={0};
+struct tref NTP_ref={0};
+
+//MemPool For the data
+osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
+osMailQId NMEAMail;
+
+
+SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
+SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
+
+
 
 /**
  * @brief  FreeRTOS initialization
@@ -191,7 +207,11 @@ void MX_FREERTOS_Init(void) {
 
 	TempSensorTID = osThreadCreate(osThread(TempSensorThread), NULL);
 
-	initGPSTimesny();
+
+	osThreadDef(NmeaParserThread, StartNmeaParserThread,osPriorityRealtime , 0,1024);
+
+	NmeaParserTID = osThreadCreate(osThread(NmeaParserThread), NULL);
+
 	/* USER CODE BEGIN RTOS_THREADS */
 	/* add threads, ... */
 	/* USER CODE END RTOS_THREADS */
@@ -233,6 +253,81 @@ void StartDefaultTask(void const * argument) {
 	}
 	/* USER CODE END StartDefaultTask */
 }
+
+void StartNmeaParserThread(void const * argument) {
+	NMEAMail = osMailCreate(osMailQ(NMEAMail), NULL);
+	if (NMEAMail != NULL) {
+		SEGGER_RTT_printf(0,"Fatal Error Could Not Create NMEA Mail Que!!!");
+	}
+	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
+	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
+	uint32_t porcessedCount = 0;
+	osEvent evt;
+	enum gps_msg latest_msg;
+	struct timespec utc, gps_time;
+	while (1) {
+		evt = osMailGet(NMEAMail, osWaitForever);
+		if (evt.status == osEventMail) {
+			NMEASTamped *rptr;
+			rptr = (NMEASTamped*) evt.value.p;
+
+			//find all $ start tokens and '\n' end tokens
+			int DollarIndexs[MAXNEMASENTENCECOUNT] = { 0 };
+			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
+			int DollarCount = 0;
+			int NewLineCount = 0;
+			//SEGGER_RTT_printf(0,"Parsing: NMEA Message\n\r %s\n\r",(rptr->NMEAMessage));
+			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
+				if (rptr->NMEAMessage[i]
+						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
+					DollarIndexs[DollarCount] = i;
+					DollarCount++;
+				}
+				if (rptr->NMEAMessage[i]
+						== '\n'&&NewLineCount<MAXNEMASENTENCECOUNT) {
+					NewLineIndexs[NewLineCount] = i;
+					NewLineCount++;
+				}
+			}
+			// for minimal len
+			for (int i = 0; i < MAXNEMASENTENCECOUNT; i++) {
+				if ((NewLineIndexs[i] - DollarIndexs[i]) < NMEAMINLEN) {
+					NewLineIndexs[i] = 0;
+					DollarIndexs[i] = 0;
+				}
+			}
+			for (int i = 0; i <= DollarCount; i++) {
+					//lgw_parse_nmea(const char *serial_buff, int buff_size)
+					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
+			}
+		    if( xSemaphoreGPS_REF != NULL )
+		    {
+		        /* See if we can obtain the semaphore.  If the semaphore is not
+		        available wait 10 ticks to see if it becomes free. */
+		        if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
+		        {
+		    //TODO COMPARE WITH NTP may be a second diference !!
+			lgw_gps_get(&utc, &gps_time, NULL, NULL);
+			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
+
+            xSemaphoreGive(xSemaphoreGPS_REF);
+		        }
+		        else
+		        {
+		            /* We could not obtain the semaphore and can therefore not access
+		            the shared resource safely. */
+		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+		        }
+		    }
+			osMailFree(NMEAMail, rptr);
+			porcessedCount++;
+		}
+
+	}
+
+osThreadTerminate(NULL);
+}
+
 
 void StartTempSensorThread(void const * argument) {
 	while(! Lwip_anf_FAT_init_finished){
@@ -876,6 +971,47 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
 
+
+void NTP_time_CNT_update(time_t t,uint32_t us){
+	uint64_t timestamp=TIM_Get_64Bit_TimeStamp_Base(&htim2);
+	//TODO 64 bit timestamping not working !! with no channel
+
+	timespec dummy={0};
+	timespec TmpUtc;
+	TmpUtc.tv_sec=t;
+	TmpUtc.tv_nsec=1000*us;
+    if( xSemaphoreNTP_REF != NULL )
+    {
+        if( xSemaphoreTake(xSemaphoreNTP_REF, ( TickType_t ) 10 ) == pdTRUE )
+        {
+        	lgw_gps_sync(&NTP_ref, timestamp, TmpUtc,dummy);
+        	xSemaphoreGive(xSemaphoreNTP_REF);
+        }
+    }
+
+	timespec GPSUtc;
+	timespec NTPUtc;
+	uint32_t GPS_time_uncertainty=0;
+	uint32_t NTP_time_uncertainty=0;
+    /* See if we can obtain the semaphore.  If the semaphore is not
+    available wait 10 ticks to see if it becomes free. */
+    if( xSemaphoreTake(xSemaphoreGPS_REF, ( TickType_t ) 10 ) == pdTRUE )
+    {
+
+	lgw_cnt2utc(GPS_ref,timestamp,&GPSUtc,&GPS_time_uncertainty);
+    xSemaphoreGive(xSemaphoreGPS_REF);
+    }
+
+    if( xSemaphoreTake(xSemaphoreNTP_REF, ( TickType_t ) 10 ) == pdTRUE )
+    {
+	uint32_t GPS_time_uncertainty=0;
+	lgw_cnt2utc(NTP_ref,timestamp,&NTPUtc,&NTP_time_uncertainty);
+    xSemaphoreGive(xSemaphoreNTP_REF);
+    }
+    uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9;
+    		deltaTime+=NTPUtc.tv_nsec-GPSUtc.tv_nsec;
+    SEGGER_RTT_printf(0,"NTP-GPS time diff=%d ns\n\r",deltaTime);
+}
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
