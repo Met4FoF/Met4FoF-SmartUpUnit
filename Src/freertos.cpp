@@ -265,6 +265,7 @@ void StartNmeaParserThread(void const * argument) {
 	}
 	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
 	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
+	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	uint32_t porcessedCount = 0;
 	osEvent evt;
 	enum gps_msg latest_msg;
@@ -757,7 +758,6 @@ void StartDataStreamerThread(void const * argument) {
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
-	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 
 
 	while (1) {
@@ -796,6 +796,8 @@ void StartDataStreamerThread(void const * argument) {
 			Datarptr->unix_time = (uint32_t) (SampelPointUtc.tv_sec);
 			Datarptr->unix_time_nsecs = (uint32_t) (SampelPointUtc.tv_nsec);
 			}
+			if(Datarptr->unix_time!=0)
+			{
 			//if (lastMessageId < Datarptr->sample_number) {
 				//this check is just for extra security in normal operation this should never happen
 				if (ProtoStreamData.bytes_written
@@ -821,6 +823,7 @@ void StartDataStreamerThread(void const * argument) {
 			//}
 			osMailFree(DataMail, Datarptr);
 			HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+		}
 		}
 		//TODO improve this code
 		const uint32_t InfoUpdateTimems = 4000;
@@ -899,7 +902,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				mptr->CaptureCount = GPScaptureCount;
 				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
 				SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage);
-				osStatus result = osMailPut(NMEAMail, mptr);
+				osMailPut(NMEAMail, mptr);
 
 			}
 			//SEGGER_RTT_printf(0,"DMA BUFFER:=%s\n",DMA_NMEABUFFER);
@@ -929,22 +932,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					"TIM2: %llx is smaler than  %llx !!!!!!!\n\r",timestamp21,timestamp21OLD);
 		}
 		timestamp21OLD=timestamp21;
-		 DataMessage *mptr;
+		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 DataMessage *mptrADC;
+		 DataMessage *mptrADC=NULL;
 		 mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
+		 if (mptr != NULL) {
 		 Sensor0.getData(mptr, timestamp21);
-		 Met4FoFADC.getData(mptrADC, timestamp21);
 		 osMailPut(DataMail, mptr);
-		 osStatus result = osMailPut(DataMail, mptrADC);
+		 }
+		 if(mptrADC != NULL){
+		 Met4FoFADC.getData(mptrADC, timestamp21);
+		 osMailPut(DataMail, mptrADC);
+		 }
+
 	}
 	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		DataMessage *mptr;
+		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		if (mptr != NULL) {
 		Sensor1.getData(mptr, timestamp23);
-		osStatus result = osMailPut(DataMail, mptr);
+		osMailPut(DataMail, mptr);
+		}
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
@@ -952,20 +962,26 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	//	SEGGER_RTT_printf(0,
 	//			"TIM1: %"PRIu64"\n\r",timestamp11);
 
-		DataMessage *mptr;
+		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+		if (mptr != NULL)
+		{
 		EdgePub.getData(mptr, timestamp11);
-		osStatus result = osMailPut(DataMail, mptr);
+		osMailPut(DataMail, mptr);
+		}
 
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
 /*
-		DataMessage *mptr;
+		DataMessage *mptr=NULL;
+		if (mptr != NULL)
+		{
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		Sensor3.getData(mptr, timestamp12);
-		osStatus result = osMailPut(DataMail, mptr);
+		osMailPut(DataMail, mptr);
+		}
 		*/
 
 	}
@@ -980,6 +996,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					"TIM1: %llx is smaler than  %llx !!!!!!!\n\r",timestamp13,timestamp13OLD);
 		}
 		timestamp13OLD=timestamp13;
+		/*
+				DataMessage *mptr=NULL;
+				if (mptr != NULL)
+				{
+				mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+				Sensor3.getData(mptr, timestamp12);
+				osMailPut(DataMail, mptr);
+				}
+				*/
 
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);

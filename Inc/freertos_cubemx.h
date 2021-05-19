@@ -107,7 +107,7 @@ typedef struct {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DATAMAILBUFFERSIZE 64
+#define DATAMAILBUFFERSIZE 128
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
