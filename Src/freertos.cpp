@@ -641,7 +641,7 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor0.begin();
 	Sensor0.setGyroRange(MPU9250::GYRO_RANGE_2000DPS);
 	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_16G);
-	Sensor0.setSrd(1);
+	//Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 	//MPU9250
 /*
