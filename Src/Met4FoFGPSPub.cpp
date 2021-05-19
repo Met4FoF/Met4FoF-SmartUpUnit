@@ -7,12 +7,13 @@
  */
 
 
-#include <Met4FoFGPSPub.hpp>
+#include <Met4FoFGPSPub.h>
 
 
 Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID){
+	    _BaseID=BaseID;
+	    _SetingsID=0;
 		_ID=_BaseID+(uint32_t)_SetingsID;
-		_SetingsID=0;
 		_GPSTimeRef=GPS_ref;
 }
 
@@ -39,11 +40,23 @@ int Met4FoFGPSPub::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
-	Message->Data_01=_utc_time.tv_sec;
+	Message->Data_01=_utc_time.tv_sec-1609459200u;
+	Message->has_Data_02=true;
 	Message->Data_02=_utc_time.tv_nsec;
+	Message->has_Data_03=true;
 	Message->Data_03= _coords.lat;
+	Message->has_Data_04=true;
 	Message->Data_04= _coords.lon;
+	Message->has_Data_05=true;
 	Message->Data_05= _coords.alt;
+	Message->has_Data_06=true;
+	Message->Data_06= _coords.hdop;
+	Message->has_Data_07=true;
+	Message->Data_07= _coords.cmg;
+	Message->has_Data_08=true;
+	Message->Data_08= _coords.sog;
+	Message->has_Data_09=true;
+	Message->Data_09= _coords.sat;
 	return result;
 }
 
@@ -51,26 +64,34 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	Message->id=_ID;
-	strncpy(Message->Sensor_name,"STM32 GPIO Input Edge\0",sizeof(Message->Sensor_name));
+	strncpy(Message->Sensor_name,"uBlox NEO-7 GPS\0",sizeof(Message->Sensor_name));
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
 		Message->has_str_Data_01=true;
-		strncpy(Message->str_Data_01,"Time seconds\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_01,"Sec since (1609459200) 2020.01.01 00:00\0",sizeof(Message->str_Data_01));
 		Message->has_str_Data_02=true;
-		strncpy(Message->str_Data_02,"Time Secs\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_02,"Time nano Secs\0",sizeof(Message->str_Data_02));
 		Message->has_str_Data_03=true;
-		strncpy(Message->str_Data_03,"Latitude\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_03,"Latitude\0",sizeof(Message->str_Data_03));
 		Message->has_str_Data_04=true;
-		strncpy(Message->str_Data_04,"Longitude\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_04,"Longitude\0",sizeof(Message->str_Data_04));
 		Message->has_str_Data_05=true;
-		strncpy(Message->str_Data_05,"Altitude\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_05,"Altitude\0",sizeof(Message->str_Data_05));
+		Message->has_str_Data_06=true;
+		strncpy(Message->str_Data_06,"Horizontal delution of precision\0",sizeof(Message->str_Data_06));
+		Message->has_str_Data_07=true;
+		strncpy(Message->str_Data_07,"Course Made Good\0",sizeof(Message->str_Data_07));
+		Message->has_str_Data_08=true;
+		strncpy(Message->str_Data_08,"Speed over ground\0",sizeof(Message->str_Data_08));
+		Message->has_str_Data_09=true;
+		strncpy(Message->str_Data_09,"Number of satellites\0",sizeof(Message->str_Data_09));
 
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
 		Message->has_str_Data_01=true;
-		strncpy(Message->str_Data_01,"\\sceconds\0",sizeof(Message->str_Data_01));
+		strncpy(Message->str_Data_01,"\\seconds\0",sizeof(Message->str_Data_01));
 		Message->has_str_Data_02=true;
 		strncpy(Message->str_Data_02,"\\nanoseconds\0",sizeof(Message->str_Data_02));
 		Message->has_str_Data_03=true;
@@ -79,6 +100,14 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		strncpy(Message->str_Data_04,"\\degree\0",sizeof(Message->str_Data_04));
 		Message->has_str_Data_05=true;
 		strncpy(Message->str_Data_05,"\\metre\0",sizeof(Message->str_Data_05));
+		Message->has_str_Data_06=true;
+		strncpy(Message->str_Data_06,"\\A.U.\0",sizeof(Message->str_Data_06));
+		Message->has_str_Data_07=true;
+		strncpy(Message->str_Data_07,"\\degree\0",sizeof(Message->str_Data_07));
+		Message->has_str_Data_08=true;
+		strncpy(Message->str_Data_08,"\\metre\\second\\tothe{-1}\0",sizeof(Message->str_Data_08));
+		Message->has_str_Data_09=true;
+		strncpy(Message->str_Data_09,"\\one\0",sizeof(Message->str_Data_09));
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
@@ -92,6 +121,18 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->f_Data_04=NAN;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
+		Message->has_f_Data_04=true;
+		Message->f_Data_04=NAN;
+		Message->has_f_Data_05=true;
+		Message->f_Data_05=NAN;
+		Message->has_f_Data_06=true;
+		Message->f_Data_06=NAN;
+		Message->has_f_Data_07=true;
+		Message->f_Data_07=NAN;
+		Message->has_f_Data_08=true;
+		Message->f_Data_08=NAN;
+		Message->has_f_Data_09=true;
+		Message->f_Data_09=NAN;
 
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
@@ -106,19 +147,35 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->f_Data_04=NAN;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
+		Message->has_f_Data_06=true;
+		Message->f_Data_06=NAN;
+		Message->has_f_Data_07=true;
+		Message->f_Data_07=-180.0f;
+		Message->has_f_Data_08=true;
+		Message->f_Data_08=0.0f;
+		Message->has_f_Data_09=true;
+		Message->f_Data_09=0;
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
 		Message->has_f_Data_01=true;
-		Message->f_Data_01=4294967296;
+		Message->f_Data_01=4294967296.0f;
 		Message->has_f_Data_02=true;
-		Message->f_Data_02=1e9;
+		Message->f_Data_02=1e9f;
 		Message->has_f_Data_03=true;
 		Message->f_Data_03=NAN;
 		Message->has_f_Data_04=true;
 		Message->f_Data_04=NAN;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
+		Message->has_f_Data_06=true;
+		Message->f_Data_06=NAN;
+		Message->has_f_Data_07=true;
+		Message->f_Data_07=180.0f;
+		Message->has_f_Data_08=true;
+		Message->f_Data_08=6840.0f;
+		Message->has_f_Data_09=true;
+		Message->f_Data_09=30.0f;
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
 	{
@@ -132,6 +189,15 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		strncpy(Message->str_Data_04,"Coordinates/1\0",sizeof(Message->str_Data_04));
 		Message->has_str_Data_05=true;
 		strncpy(Message->str_Data_05,"Coordinates/2\0",sizeof(Message->str_Data_05));
+		Message->has_str_Data_06=true;
+		strncpy(Message->str_Data_06,"Precision/0\0",sizeof(Message->str_Data_06));
+		Message->has_str_Data_07=true;
+		strncpy(Message->str_Data_07,"Course/0\0",sizeof(Message->str_Data_07));
+		Message->has_str_Data_08=true;
+		strncpy(Message->str_Data_08,"Course/1\0",sizeof(Message->str_Data_08));
+		Message->has_str_Data_09=true;
+		strncpy(Message->str_Data_09,"Precision/1\0",sizeof(Message->str_Data_09));
+
 	}
 	return retVal;
 }

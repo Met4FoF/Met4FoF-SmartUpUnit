@@ -54,6 +54,10 @@ struct coord_s {
     double  lat;    /*!> latitude [-90,90] (North +, South -) */
     double  lon;    /*!> longitude [-180,180] (East +, West -)*/
     short   alt;    /*!> altitude in meters (WGS 84 geoid ref.) */
+    float hdop; /* horizontal delution of precision */
+    float cmg; /* Course Made Good */
+    float sog; /* Speed over ground in m/s */
+    short sat; /* number of satellites used for fix */
 };
 
 /**

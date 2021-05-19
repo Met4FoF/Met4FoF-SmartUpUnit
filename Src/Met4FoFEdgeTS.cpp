@@ -15,6 +15,7 @@
 #include "main.h"
 
 Met4FoFEdgeTS::Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID){
+		_BaseID=BaseID;
 		_ID=_BaseID+(uint32_t)_SetingsID;
 		_SetingsID=0;
 		_EdgeDirection=EdgeDirection;
@@ -59,7 +60,7 @@ int Met4FoFEdgeTS::getDescription(DescriptionMessage * Message,DescriptionMessag
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
 	Message->id=_ID;
-	strncpy(Message->Sensor_name,"STM32 GPIO Input Edge\0",sizeof(Message->Sensor_name));
+	strncpy(Message->Sensor_name,"STM32 GPIO Input\0",sizeof(Message->Sensor_name));
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{

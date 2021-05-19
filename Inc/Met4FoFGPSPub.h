@@ -1,6 +1,6 @@
 
-#ifndef MET4FOFGPSPUB_HPP_
-#define MET4FOFGPSPUB_HPP_
+#ifndef MET4FOFGPSPUB_H_
+#define MET4FOFGPSPUB_H_
 
 #include <stdint.h>
 #include <string.h>

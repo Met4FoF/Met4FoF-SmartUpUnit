@@ -521,6 +521,11 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
         loc->lat = ((double)gps_dla + (gps_mla/60.0)) * ((gps_ola == 'N')?1.0:-1.0);
         loc->lon = ((double)gps_dlo + (gps_mlo/60.0)) * ((gps_olo == 'E')?1.0:-1.0);
         loc->alt = gps_alt;
+        loc->hdop =gps_hdop;
+        loc->cmg=gps_cmg;
+        loc->sog=gps_sog;
+        loc->sat=gps_sat;
+
     }
     if (err != NULL) {
         DEBUG_MSG("Warning: localization error processing not implemented yet\n\r");

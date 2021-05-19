@@ -72,6 +72,8 @@
 #include "Met4FoF_adc.h"
 #include "dummy_sensor.h"
 #include "bmp280.h"
+#include "Met4FoFEdgeTS.h"
+#include "Met4FoFGPSpub.h"
 
 #include <math.h>
 #include <vector>
@@ -119,7 +121,17 @@ osThreadId DataStreamerTID;
 osThreadId TempSensorTID;
 osThreadId NmeaParserTID;
 
-//TODO insert sensor manager array in config manager
+
+struct tref GPS_ref={0};
+struct tref NTP_ref={0};
+
+//MemPool For the data
+osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
+osMailQId NMEAMail;
+
+
+SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
+SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 //MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
@@ -129,10 +141,11 @@ BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
-
+Met4FoFGPSPub GPSPub(&GPS_ref,20);
+Met4FoFEdgeTS EdgePub(1.0,30);
 //std::vector<Met4FoFSensor *> Sensors;
-const int numSensors=4;
-Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC};//,&Sensor2,&Sensor3
+const int numSensors=6;
+Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC,&GPSPub,&EdgePub};//,&Sensor2,&Sensor3
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
@@ -147,16 +160,7 @@ DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
 		  DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE,
 		  DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY};
 
-struct tref GPS_ref={0};
-struct tref NTP_ref={0};
 
-//MemPool For the data
-osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
-osMailQId NMEAMail;
-
-
-SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
-SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
 
 
@@ -309,7 +313,10 @@ void StartNmeaParserThread(void const * argument) {
 		    //TODO COMPARE WITH NTP may be a second diference !!
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
 			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
-
+			DataMessage *mptr;
+			mptr = (DataMessage *) osMailAlloc(DataMail, 0);
+			GPSPub.getData(mptr, rptr->RawTimerCount);
+			osStatus result = osMailPut(DataMail, mptr);
             xSemaphoreGive(xSemaphoreGPS_REF);
 		        }
 		        else
@@ -632,8 +639,8 @@ void StartDataStreamerThread(void const * argument) {
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
 	Sensor0.setBaseID(SensorID0);
 	Sensor0.begin();
-	Sensor0.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
+	Sensor0.setGyroRange(MPU9250::GYRO_RANGE_2000DPS);
+	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_16G);
 	Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 	//MPU9250
@@ -672,9 +679,16 @@ void StartDataStreamerThread(void const * argument) {
 	 Sensor1.setBaseID(SensorID1);
 	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
+	 //TODO put id configuration in al loop
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
 	 Met4FoFADC.setBaseID(SensorID10);
+
+	 uint32_t SensorID20=configMan.getSensorBaseID(20);
+	 GPSPub.setBaseID(SensorID20);
+
+	 uint32_t SensorID30=configMan.getSensorBaseID(30);
+	 EdgePub.setBaseID(SensorID30);
 
 
 	SEGGER_RTT_printf(0,
@@ -937,12 +951,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
 	//	SEGGER_RTT_printf(0,
 	//			"TIM1: %"PRIu64"\n\r",timestamp11);
-/*
+
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		Sensor2.getData(mptr, timestamp11);
+		EdgePub.getData(mptr, timestamp11);
 		osStatus result = osMailPut(DataMail, mptr);
-		*/
+
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
