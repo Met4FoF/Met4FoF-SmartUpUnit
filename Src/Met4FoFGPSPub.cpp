@@ -57,6 +57,10 @@ int Met4FoFGPSPub::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_08= _coords.sog;
 	Message->has_Data_09=true;
 	Message->Data_09= _coords.sat;
+	Message->has_Data_10=true;
+	Message->Data_10= _GPSTimeRef->xtal_err;
+	Message->has_Data_11=true;
+	Message->Data_11= _GPSTimeRef->xtal_err_deviation;
 	return result;
 }
 
@@ -86,6 +90,10 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		strncpy(Message->str_Data_08,"Speed over ground\0",sizeof(Message->str_Data_08));
 		Message->has_str_Data_09=true;
 		strncpy(Message->str_Data_09,"Number of satellites\0",sizeof(Message->str_Data_09));
+		Message->has_str_Data_10=true;
+		strncpy(Message->str_Data_10,"System clock frequency\0",sizeof(Message->str_Data_10));
+		Message->has_str_Data_11=true;
+		strncpy(Message->str_Data_11,"System clock frequency std\0",sizeof(Message->str_Data_11));
 
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
@@ -108,6 +116,10 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		strncpy(Message->str_Data_08,"\\metre\\second\\tothe{-1}\0",sizeof(Message->str_Data_08));
 		Message->has_str_Data_09=true;
 		strncpy(Message->str_Data_09,"\\one\0",sizeof(Message->str_Data_09));
+		Message->has_str_Data_10=true;
+		strncpy(Message->str_Data_10,"\\hertz\0",sizeof(Message->str_Data_11));
+		Message->has_str_Data_11=true;
+		strncpy(Message->str_Data_11,"\\hertz\0",sizeof(Message->str_Data_11));
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
@@ -116,9 +128,9 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->has_f_Data_02=true;
 		Message->f_Data_02=1e9;
 		Message->has_f_Data_03=true;
-		Message->f_Data_03=NAN;
+		Message->f_Data_03=1800000000;
 		Message->has_f_Data_04=true;
-		Message->f_Data_04=NAN;
+		Message->f_Data_04=3600000000;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
 		Message->has_f_Data_04=true;
@@ -133,6 +145,10 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->f_Data_08=NAN;
 		Message->has_f_Data_09=true;
 		Message->f_Data_09=NAN;
+		Message->has_f_Data_10=true;
+		Message->f_Data_10=NAN;
+		Message->has_f_Data_11=true;
+		Message->f_Data_11=NAN;
 
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
@@ -142,9 +158,9 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->has_f_Data_02=true;
 		Message->f_Data_02=0;
 		Message->has_f_Data_03=true;
-		Message->f_Data_03=NAN;
+		Message->f_Data_03=-90.0;
 		Message->has_f_Data_04=true;
-		Message->f_Data_04=NAN;
+		Message->f_Data_04=-180.0;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
 		Message->has_f_Data_06=true;
@@ -154,7 +170,11 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->has_f_Data_08=true;
 		Message->f_Data_08=0.0f;
 		Message->has_f_Data_09=true;
-		Message->f_Data_09=0;
+		Message->f_Data_09=0.0f;
+		Message->has_f_Data_10=true;
+		Message->f_Data_10=0.0f;
+		Message->has_f_Data_11=true;
+		Message->f_Data_11=0.0f;
 	}
 	else if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
@@ -163,9 +183,9 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->has_f_Data_02=true;
 		Message->f_Data_02=1e9f;
 		Message->has_f_Data_03=true;
-		Message->f_Data_03=NAN;
+		Message->f_Data_03=90.0;
 		Message->has_f_Data_04=true;
-		Message->f_Data_04=NAN;
+		Message->f_Data_04=180.0;
 		Message->has_f_Data_05=true;
 		Message->f_Data_05=NAN;
 		Message->has_f_Data_06=true;
@@ -176,6 +196,10 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->f_Data_08=6840.0f;
 		Message->has_f_Data_09=true;
 		Message->f_Data_09=30.0f;
+		Message->has_f_Data_10=true;
+		Message->f_Data_10=NAN;
+		Message->has_f_Data_11=true;
+		Message->f_Data_11=NAN;
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
 	{
@@ -197,6 +221,10 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		strncpy(Message->str_Data_08,"Course/1\0",sizeof(Message->str_Data_08));
 		Message->has_str_Data_09=true;
 		strncpy(Message->str_Data_09,"Precision/1\0",sizeof(Message->str_Data_09));
+		Message->has_str_Data_10=true;
+		strncpy(Message->str_Data_10,"System_frequency/0\0",sizeof(Message->str_Data_10));
+		Message->has_str_Data_11=true;
+		strncpy(Message->str_Data_11,"System_frequency/1\0",sizeof(Message->str_Data_11));
 
 	}
 	return retVal;
