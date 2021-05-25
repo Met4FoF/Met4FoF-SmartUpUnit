@@ -23,6 +23,7 @@ class WS2812B
   void setLed(uint16_t led,uint8_t r,uint8_t g,uint8_t b);
   uint8_t * ledData=NULL;
   private:
+  uint16_t _numLeds;
   uint8_t * outputData=NULL;
   SPI_HandleTypeDef* _spi;
   bool bufferAlloced=false;

@@ -142,10 +142,11 @@ MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 Met4FoFGPSPub GPSPub(&GPS_ref,20);
-Met4FoFEdgeTS EdgePub(1.0,30);
+Met4FoFEdgeTS EdgePub0(1.0,30);
+Met4FoFEdgeTS EdgePub1(1.0,31);
 //std::vector<Met4FoFSensor *> Sensors;
-const int numSensors=6;
-Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC,&GPSPub,&EdgePub};//,&Sensor2,&Sensor3
+const int numSensors=7;
+Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC,&GPSPub,&EdgePub0,&EdgePub1};//,&Sensor2,&Sensor3
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 bool Lwip_anf_FAT_init_finished=false;
@@ -689,7 +690,9 @@ void StartDataStreamerThread(void const * argument) {
 	 GPSPub.setBaseID(SensorID20);
 
 	 uint32_t SensorID30=configMan.getSensorBaseID(30);
-	 EdgePub.setBaseID(SensorID30);
+	 EdgePub0.setBaseID(SensorID30);
+	 uint32_t SensorID31=configMan.getSensorBaseID(31);
+	 EdgePub1.setBaseID(SensorID31);
 
 
 	SEGGER_RTT_printf(0,
@@ -966,7 +969,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		EdgePub.getData(mptr, timestamp11);
+		EdgePub0.getData(mptr, timestamp11);
 		osMailPut(DataMail, mptr);
 		}
 
@@ -974,15 +977,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
-/*
 		DataMessage *mptr=NULL;
 		if (mptr != NULL)
 		{
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		Sensor3.getData(mptr, timestamp12);
+		EdgePub1.getData(mptr, timestamp12);
 		osMailPut(DataMail, mptr);
 		}
-		*/
+
 
 	}
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
@@ -1001,10 +1003,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				if (mptr != NULL)
 				{
 				mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-				Sensor3.getData(mptr, timestamp12);
+				Sensor.getData(mptr, timestamp12);
 				osMailPut(DataMail, mptr);
 				}
-				*/
+			*/
 
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);

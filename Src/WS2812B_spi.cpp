@@ -27,10 +27,10 @@ void WS2812B::setLed(uint16_t led,uint8_t r,uint8_t g,uint8_t b)
 	ledData[led*3+1]=g;
 	ledData[led*3+2]=b;
 }
-void calculateData()
+void WS2812B::calculateData()
 {
-	outputdata[0]=0xFF;
-	outputdata[size(outputdata)-1]=0xFF;
+	outputData[0]=0xFF;
+	outputData[sizeof(outputData)-1]=0xFF;
 for(uint32_t i=0;i<_numLeds;i++)
 {
 	uint32_t tmp=mask;
