@@ -266,6 +266,9 @@ void StartNmeaParserThread(void const * argument) {
 	}
 	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
 	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
+	//Slave (TIM1) before Master (TIM2)
+	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
+	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	uint32_t porcessedCount = 0;
 	osEvent evt;
@@ -750,19 +753,13 @@ void StartDataStreamerThread(void const * argument) {
 	HAL_ADC_Start_IT(&hadc2);
 	HAL_ADC_Start_IT(&hadc3);
 
-	//Start timer and arm inputcapture
-	//Slave (TIM1) before Master (TIM2)
+	//arm inputcapture
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
-	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
-	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
-
+	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
-	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
-
-
 	while (1) {
 		DataMessage *Datarptr;
 		//static uint32_t lastMessageId = 0;
@@ -889,7 +886,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	uint64_t timestamp24 = 0;
 	static uint64_t timestamp13OLD = 0;
 	static uint64_t timestamp21OLD = 0;
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+	if (htim->Instance == TIM2){
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
@@ -923,18 +921,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			GPScaptureCount++;
 		}
 	}
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		//SEGGER_RTT_printf(0,
-		//		"TIM2: %llx\n\r",timestamp21);
+		SEGGER_RTT_printf(0,
+				"TIM2CH1: %"PRIu64"\n\r",timestamp21);
 		if(timestamp21<timestamp21OLD)
 		{
 			SEGGER_RTT_printf(0,
 					"TIM2: %llx is smaler than  %llx !!!!!!!\n\r",timestamp21,timestamp21OLD);
 		}
 		timestamp21OLD=timestamp21;
+
 		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 DataMessage *mptrADC=NULL;
@@ -949,21 +948,26 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		 }
 
 	}
-	if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+	if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
+		SEGGER_RTT_printf(0,
+				"TIM2CH3: %"PRIu64"\n\r",timestamp23);
+
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL) {
 		Sensor1.getData(mptr, timestamp23);
 		osMailPut(DataMail, mptr);
 		}
 	}
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+	}
+	if (htim->Instance == TIM1){
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
-	//	SEGGER_RTT_printf(0,
-	//			"TIM1: %"PRIu64"\n\r",timestamp11);
+		SEGGER_RTT_printf(0,
+				"TIM1CH1: %"PRIu64"\n\r",timestamp11);
 
 		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
@@ -974,10 +978,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		}
 
 	}
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
+			SEGGER_RTT_printf(0,
+					"TIM1CH2: %"PRIu64"\n\r",timestamp12);
+
 		if (mptr != NULL)
 		{
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
@@ -987,7 +994,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 
 	}
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
 //SEGGER_RTT_printf(0,
@@ -1008,6 +1015,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				}
 			*/
 
+	}
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 }
