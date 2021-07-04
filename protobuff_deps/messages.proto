@@ -23,6 +23,7 @@ message DataMessage {
   optional float Data_14 =19;           //Data of 14th channel as float number
   optional float Data_15 =20;           //Data of 15th channel as float number
   optional float Data_16 =21;           //Data of 16th channel as float number
+  optional uint64 time_ticks=22;		 //Raw timestamp of the input capture counter
 }
 
 message DescriptionMessage {
