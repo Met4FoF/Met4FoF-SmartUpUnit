@@ -73,7 +73,7 @@
 #include "dummy_sensor.h"
 #include "bmp280.h"
 #include "Met4FoFEdgeTS.h"
-#include "Met4FoFGPSpub.h"
+#include "Met4FoFGPSPub.h"
 
 #include <math.h>
 #include <vector>

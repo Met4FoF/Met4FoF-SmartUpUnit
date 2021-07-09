@@ -150,6 +150,8 @@ typedef struct _DescriptionMessage {
 #define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 #define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
 
+static const DescriptionMessage empty_DescriptionMessage=DescriptionMessage_init_default ;
+static const DataMessage empty_DataMessage=DataMessage_init_default ;
 /* Field tags (for use in manual encoding/decoding) */
 #define DataMessage_id_tag                       1
 #define DataMessage_sample_number_tag            2
