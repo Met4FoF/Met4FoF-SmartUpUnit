@@ -15,6 +15,7 @@ Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID){
 	    _SetingsID=0;
 		_ID=_BaseID+(uint32_t)_SetingsID;
 		_GPSTimeRef=GPS_ref;
+		_publish_time_ticks=true;
 }
 
 
@@ -61,6 +62,10 @@ int Met4FoFGPSPub::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_10= _GPSTimeRef->xtal_err;
 	Message->has_Data_11=true;
 	Message->Data_11= _GPSTimeRef->xtal_err_deviation;
+	if(_publish_time_ticks==true){
+	Message->has_time_ticks=true;
+	Message->time_ticks=RawTimeStamp;
+	}
 	return result;
 }
 
@@ -226,6 +231,9 @@ int Met4FoFGPSPub::getDescription(DescriptionMessage * Message,DescriptionMessag
 		Message->has_str_Data_11=true;
 		strncpy(Message->str_Data_11,"System_frequency/1\0",sizeof(Message->str_Data_11));
 
+	}
+	if(_publish_time_ticks==true){
+	Message->has_time_ticks=true;
 	}
 	return retVal;
 }

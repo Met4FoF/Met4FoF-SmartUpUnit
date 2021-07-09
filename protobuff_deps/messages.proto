@@ -71,4 +71,5 @@ message DescriptionMessage {
   optional float f_Data_14 =33;
   optional float f_Data_15 =34;
   optional float f_Data_16 =35;
+  required bool has_time_ticks =36;		// has 64bit raw timestamp or not
 }

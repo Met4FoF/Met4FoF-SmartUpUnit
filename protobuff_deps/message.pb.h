@@ -140,18 +140,20 @@ typedef struct _DescriptionMessage {
     float f_Data_15;
     bool has_f_Data_16;
     float f_Data_16;
+    bool has_time_ticks;
 /* @@protoc_insertion_point(struct:DescriptionMessage) */
 } DescriptionMessage;
 
 
 /* Initializer values for message structs */
 #define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, 0}
 #define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
-#define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, 0}
 
 static const DescriptionMessage empty_DescriptionMessage=DescriptionMessage_init_default ;
 static const DataMessage empty_DataMessage=DataMessage_init_default ;
+
 /* Field tags (for use in manual encoding/decoding) */
 #define DataMessage_id_tag                       1
 #define DataMessage_sample_number_tag            2
@@ -210,6 +212,7 @@ static const DataMessage empty_DataMessage=DataMessage_init_default ;
 #define DescriptionMessage_f_Data_14_tag         33
 #define DescriptionMessage_f_Data_15_tag         34
 #define DescriptionMessage_f_Data_16_tag         35
+#define DescriptionMessage_has_time_ticks_tag    36
 
 /* Struct field encoding specification for nanopb */
 #define DataMessage_FIELDLIST(X, a) \
@@ -273,7 +276,8 @@ X(a, STATIC, OPTIONAL, FLOAT, f_Data_12, 31) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_13, 32) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_14, 33) \
 X(a, STATIC, OPTIONAL, FLOAT, f_Data_15, 34) \
-X(a, STATIC, OPTIONAL, FLOAT, f_Data_16, 35)
+X(a, STATIC, OPTIONAL, FLOAT, f_Data_16, 35) \
+X(a, STATIC, REQUIRED, BOOL, has_time_ticks, 36)
 #define DescriptionMessage_CALLBACK NULL
 #define DescriptionMessage_DEFAULT NULL
 
@@ -286,7 +290,7 @@ extern const pb_msgdesc_t DescriptionMessage_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define DataMessage_size                         128
-#define DescriptionMessage_size                  805
+#define DescriptionMessage_size                  808
 
 #ifdef __cplusplus
 } /* extern "C" */

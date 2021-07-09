@@ -19,6 +19,7 @@ Met4FoFEdgeTS::Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID){
 		_ID=_BaseID+(uint32_t)_SetingsID;
 		_SetingsID=0;
 		_EdgeDirection=EdgeDirection;
+		_publish_time_ticks=true;
 }
 
 
@@ -52,7 +53,10 @@ int Met4FoFEdgeTS::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
 	Message->Data_01=_EdgeDirection;
-
+	if(_publish_time_ticks==true){
+	Message->has_time_ticks=true;
+	Message->time_ticks=RawTimeStamp;
+	}
 	return result;
 }
 
@@ -91,6 +95,9 @@ int Met4FoFEdgeTS::getDescription(DescriptionMessage * Message,DescriptionMessag
 	{
 		Message->has_str_Data_01=true;
 		strncpy(Message->str_Data_01,"Edge/0\0",sizeof(Message->str_Data_01));
+	}
+	if(_publish_time_ticks==true){
+	Message->has_time_ticks=true;
 	}
 	return retVal;
 }

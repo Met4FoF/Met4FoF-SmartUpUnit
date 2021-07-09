@@ -17,6 +17,8 @@ public:
   virtual float getNominalSamplingFreq();// get nominal sampling freq
   virtual int setBaseID(uint32_t BaseID);// set base id
   //virtual ~Met4FoFSensor()=0; // Pure virtual destructor
+protected:
+	bool _publish_time_ticks=false;
 };
 
 
