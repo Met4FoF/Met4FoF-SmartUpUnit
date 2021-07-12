@@ -127,7 +127,7 @@ static int nmea_checksum(const char *nmea_string, int buff_size, char *checksum)
 
     /* check input parameters */
     if ((nmea_string == NULL) ||  (checksum == NULL) || (buff_size <= 1)) {
-        DEBUG_MSG("Invalid parameters for nmea_checksum\n\r");
+        DEBUG_MSG("Invalid parameters for nmea_checksum\n");
         return -1;
     }
 
@@ -141,7 +141,7 @@ static int nmea_checksum(const char *nmea_string, int buff_size, char *checksum)
         check_num ^= nmea_string[i];
         i += 1;
         if (i >= buff_size) {
-            DEBUG_MSG("Maximum length reached for nmea_checksum\n\r");
+            DEBUG_MSG("Maximum length reached for nmea_checksum\n");
             return -1;
         }
     }
@@ -180,13 +180,13 @@ static bool validate_nmea_checksum(const char *serial_buff, int buff_size) {
 
     /* could we calculate a verification checksum ? */
     if (checksum_index < 0) {
-        DEBUG_MSG("ERROR: IMPOSSIBLE TO PARSE NMEA SENTENCE\n\r");
+        DEBUG_MSG("ERROR: IMPOSSIBLE TO PARSE NMEA SENTENCE\n");
         return false;
     }
 
     /* check if there are enough char in the serial buffer to read checksum */
     if (checksum_index >= (buff_size - 2)) {
-        DEBUG_MSG("ERROR: IMPOSSIBLE TO READ NMEA SENTENCE CHECKSUM\n\r");
+        DEBUG_MSG("ERROR: IMPOSSIBLE TO READ NMEA SENTENCE CHECKSUM\n");
         return false;
     }
 
@@ -194,7 +194,7 @@ static bool validate_nmea_checksum(const char *serial_buff, int buff_size) {
     if ((serial_buff[checksum_index] == checksum[0]) && (serial_buff[checksum_index+1] == checksum[1])) {
         return true;
     } else {
-        DEBUG_MSG("ERROR: NMEA CHECKSUM %c%c DOESN'T MATCH VERIFICATION CHECKSUM %c%c\n\r", serial_buff[checksum_index], serial_buff[checksum_index+1], checksum[0], checksum[1]);
+        DEBUG_MSG("ERROR: NMEA CHECKSUM %c%c DOESN'T MATCH VERIFICATION CHECKSUM %c%c\n", serial_buff[checksum_index], serial_buff[checksum_index+1], checksum[0], checksum[1]);
         return false;
     }
 }
@@ -270,7 +270,7 @@ enum gps_msg lgw_parse_ubx(const char *serial_buff, size_t buff_size, size_t *ms
         return IGNORED;
     }
     if (buff_size < 8) {
-        DEBUG_MSG("ERROR: TOO SHORT TO BE A VALID UBX MESSAGE\n\r");
+        DEBUG_MSG("ERROR: TOO SHORT TO BE A VALID UBX MESSAGE\n");
         return IGNORED;
     }
 
@@ -335,7 +335,7 @@ enum gps_msg lgw_parse_ubx(const char *serial_buff, size_t buff_size, size_t *ms
                             ubx_gps_sec = (gps_iTOW / 1000) % 60;
                             ubx_gps_min = (gps_iTOW / 1000 / 60) % 60;
                             ubx_gps_hou = (gps_iTOW / 1000 / 60 / 60) % 24;
-                            printf("  GPS time = %02d:%02d:%02d\n\r", ubx_gps_hou, ubx_gps_min, ubx_gps_sec);
+                            printf("  GPS time = %02d:%02d:%02d\n", ubx_gps_hou, ubx_gps_min, ubx_gps_sec);
                         }
 #endif
                     } else { /* valid */
@@ -344,21 +344,21 @@ enum gps_msg lgw_parse_ubx(const char *serial_buff, size_t buff_size, size_t *ms
 
                     return UBX_NAV_TIMEGPS;
                 } else if ((serial_buff[2] == 0x05) && (serial_buff[3] == 0x00)) {
-                    DEBUG_MSG("NOTE: UBX ACK-NAK received\n\r");
+                    DEBUG_MSG("NOTE: UBX ACK-NAK received\n");
                     return IGNORED;
                 } else if ((serial_buff[2] == 0x05) && (serial_buff[3] == 0x01)) {
-                    DEBUG_MSG("NOTE: UBX ACK-ACK received\n\r");
+                    DEBUG_MSG("NOTE: UBX ACK-ACK received\n");
                     return IGNORED;
                 } else { /* not a supported message */
-                    DEBUG_MSG("ERROR: UBX message is not supported (%02x %02x)\n\r", serial_buff[2], serial_buff[3]);
+                    DEBUG_MSG("ERROR: UBX message is not supported (%02x %02x)\n", serial_buff[2], serial_buff[3]);
                     return IGNORED;
                 }
             } else { /* checksum failed */
-                DEBUG_MSG("ERROR: UBX message is corrupted, checksum failed\n\r");
+                DEBUG_MSG("ERROR: UBX message is corrupted, checksum failed\n");
                 return INVALID;
             }
         } else { /* message contains less bytes than indicated by header */
-            DEBUG_MSG("ERROR: UBX message incomplete\n\r");
+            DEBUG_MSG("ERROR: UBX message incomplete\n");
             return INCOMPLETE;
         }
     } else { /* Not a UBX message */
@@ -381,16 +381,16 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
     }
 
     if(buff_size > (int)(sizeof(parser_buf) - 1)) {
-        DEBUG_MSG("Note: input string to big for parsing\n\r");
+        DEBUG_MSG("Note: input string to big for parsing\n");
         return INVALID;
     }
 
     /* look for some NMEA sentences in particular */
     if (buff_size < 8) {
-        DEBUG_MSG("ERROR: TOO SHORT TO BE A VALID NMEA SENTENCE\n\r");
+        DEBUG_MSG("ERROR: TOO SHORT TO BE A VALID NMEA SENTENCE\n");
         return UNKNOWN;
     } else if (!validate_nmea_checksum(serial_buff, buff_size)) {
-        DEBUG_MSG("Warning: invalid NMEA sentence (bad checksum)\n\r");
+        DEBUG_MSG("Warning: invalid NMEA sentence (bad checksum)\n");
         return INVALID;
     } else if (match_label(serial_buff, "$G?RMC", 6, '?')) {
         /*
@@ -403,7 +403,7 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         parser_buf[buff_size] = '\0';
         nb_fields = str_chop(parser_buf, buff_size, ',', str_index, ARRAY_SIZE(str_index));
         if (nb_fields != 13) {
-            DEBUG_MSG("Warning: invalid RMC sentence (number of fields)\n\r");
+            DEBUG_MSG("Warning: invalid RMC sentence (number of fields)\n");
             return IGNORED;
         }
         /* parse GPS status */
@@ -419,15 +419,15 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         if ((i == 4) && (j == 3)) {
             if ((gps_mod == 'A') || (gps_mod == 'D')) {
                 gps_time_ok = true;
-                DEBUG_MSG("Note: Valid RMC sentence, GPS locked, date: 20%02d-%02d-%02dT%02d:%02d:%06.3fZ\n\r", gps_yea, gps_mon, gps_day, gps_hou, gps_min, gps_fra + (float)gps_sec);
+                DEBUG_MSG("Note: Valid RMC sentence, GPS locked, date: 20%02d-%02d-%02dT%02d:%02d:%06.3fZ\n", gps_yea, gps_mon, gps_day, gps_hou, gps_min, gps_fra + (float)gps_sec);
             } else {
                 gps_time_ok = false;
-                DEBUG_MSG("Note: Valid RMC sentence, no satellite fix, estimated date: 20%02d-%02d-%02dT%02d:%02d:%06.3fZ\n\r", gps_yea, gps_mon, gps_day, gps_hou, gps_min, gps_fra + (float)gps_sec);
+                DEBUG_MSG("Note: Valid RMC sentence, no satellite fix, estimated date: 20%02d-%02d-%02dT%02d:%02d:%06.3fZ\n", gps_yea, gps_mon, gps_day, gps_hou, gps_min, gps_fra + (float)gps_sec);
             }
         } else {
             /* could not get a valid hour AND date */
             gps_time_ok = false;
-            DEBUG_MSG("Note: Valid RMC sentence, mode %c, no date\n\r", gps_mod);
+            DEBUG_MSG("Note: Valid RMC sentence, mode %c, no date\n", gps_mod);
         }
         return NMEA_RMC;
     } else if (match_label(serial_buff, "$G?GGA", 6, '?')) {
@@ -439,7 +439,7 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         parser_buf[buff_size] = '\0';
         nb_fields = str_chop(parser_buf, buff_size, ',', str_index, ARRAY_SIZE(str_index));
         if (nb_fields != 15) {
-            DEBUG_MSG("Warning: invalid GGA sentence (number of fields)\n\r");
+            DEBUG_MSG("Warning: invalid GGA sentence (number of fields)\n");
             return IGNORED;
         }
         /* parse number of satellites used for fix */
@@ -454,15 +454,15 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         k = sscanf(parser_buf + str_index[9], "%f", &gps_alt);
         if ((i == 2) && (j == 2) && (k == 1) && ((gps_ola=='N')||(gps_ola=='S')) && ((gps_olo=='E')||(gps_olo=='W'))) {
             gps_pos_ok = true;
-            DEBUG_MSG("Note: Valid GGA sentence, %d sat, lat %02ddeg %06.3fmin %c, lon %03ddeg%06.3fmin %c, alt %f\n\r", gps_sat, gps_dla, gps_mla, gps_ola, gps_dlo, gps_mlo, gps_olo, gps_alt);
+            DEBUG_MSG("Note: Valid GGA sentence, %d sat, lat %02ddeg %06.3fmin %c, lon %03ddeg%06.3fmin %c, alt %f\n", gps_sat, gps_dla, gps_mla, gps_ola, gps_dlo, gps_mlo, gps_olo, gps_alt);
         } else {
             /* could not get a valid latitude, longitude AND altitude */
             gps_pos_ok = false;
-            DEBUG_MSG("Note: Valid GGA sentence, %d sat, no coordinates\n\r", gps_sat);
+            DEBUG_MSG("Note: Valid GGA sentence, %d sat, no coordinates\n", gps_sat);
         }
         return NMEA_GGA;
     } else {
-        DEBUG_MSG("Note: ignored NMEA sentence\n\r"); /* quite verbose */
+        DEBUG_MSG("Note: ignored NMEA sentence\n"); /* quite verbose */
         return IGNORED;
     }
 }
@@ -476,7 +476,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
 
     if (utc != NULL) {
         if (!gps_time_ok) {
-            DEBUG_MSG("ERROR: NO VALID TIME TO RETURN\n\r");
+            DEBUG_MSG("ERROR: NO VALID TIME TO RETURN\n");
             return LGW_GPS_ERROR;
         }
         memset(&x, 0, sizeof(x));
@@ -492,7 +492,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
         x.tm_sec = gps_sec;
         y = mktime(&x); /* need to substract timezone bc mktime assumes time vector is local time */
         if (y == (time_t)(-1)) {
-            DEBUG_MSG("ERROR: FAILED TO CONVERT BROKEN-DOWN TIME\n\r");
+            DEBUG_MSG("ERROR: FAILED TO CONVERT BROKEN-DOWN TIME\n");
             return LGW_GPS_ERROR;
         }
         utc->tv_sec = y+GPS_TIME_OFFSET_FROM_BUFFER_SEC;
@@ -500,7 +500,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
     }
     if (gps_time != NULL) {
         if (!gps_time_ok) {
-            DEBUG_MSG("ERROR: NO VALID TIME TO RETURN\n\r");
+            DEBUG_MSG("ERROR: NO VALID TIME TO RETURN\n");
             return LGW_GPS_ERROR;
         }
         fractpart = modf(((double)gps_iTOW / 1E3) + ((double)gps_fTOW / 1E9), &intpart);
@@ -515,7 +515,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
     }
     if (loc != NULL) {
         if (!gps_pos_ok) {
-            DEBUG_MSG("ERROR: NO VALID POSITION TO RETURN\n\r");
+            DEBUG_MSG("ERROR: NO VALID POSITION TO RETURN\n");
             return LGW_GPS_ERROR;
         }
         loc->lat = ((double)gps_dla + (gps_mla/60.0)) * ((gps_ola == 'N')?1.0:-1.0);
@@ -528,7 +528,7 @@ int lgw_gps_get(struct timespec *utc, struct timespec *gps_time, struct coord_s 
 
     }
     if (err != NULL) {
-        DEBUG_MSG("Warning: localization error processing not implemented yet\n\r");
+        DEBUG_MSG("Warning: localization error processing not implemented yet\n");
         err->lat = 0.0;
         err->lon = 0.0;
         err->alt = 0;
@@ -558,7 +558,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     if (utc_diff != 0) { // prevent divide by zero
         slope = cnt_diff/utc_diff;
         if ((slope > PLUS_1PERCENT) || (slope < MINUS_1PERCENT)) {
-            DEBUG_MSG("Warning: correction range exceeded\n\r");
+            DEBUG_MSG("Warning: correction range exceeded\n");
             aber_n0 = false;
         } else {
             aber_n0 = false;
@@ -577,7 +577,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
             }
         }
     } else {
-        DEBUG_MSG("Warning: aberrant UTC value for synchronization\n\r");
+        DEBUG_MSG("Warning: aberrant UTC value for synchronization\n");
         aber_n0 = true;
     }
 
@@ -590,9 +590,9 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
     mean_tmp/=ref->array_valid_data_count;
     for(int i=0;i<ref->array_valid_data_count;i++)
     	std_tmp += (ref->xtal_err_array[i] - mean_tmp)*(ref->xtal_err_array[i] - mean_tmp);
-    DEBUG_MSG("GPS Slope std val is:%d\n\r",std_tmp);
+    DEBUG_MSG("GPS Slope std val is:%d\n",std_tmp);
     std_tmp=sqrt(std_tmp/(ref->array_valid_data_count-1));
-    DEBUG_MSG("GPS Slope std val is:%d\n\r",std_tmp);
+    DEBUG_MSG("GPS Slope std val is:%d\n",std_tmp);
     /* watch if the 3 latest sync point were aberrant or not */
     if (aber_n0 == false) {
         /* value no aberrant -> sync with smoothed slope */
@@ -620,7 +620,7 @@ int lgw_gps_sync(struct tref *ref, uint64_t count_us, struct timespec utc, struc
         if ((ref->xtal_err > PLUS_1PERCENT) || (ref->xtal_err < MINUS_1PERCENT)) {
             ref->xtal_err = 1.0;
         }
-        DEBUG_MSG("Warning: 3 successive aberrant sync attempts, sync reset\n\r");
+        DEBUG_MSG("Warning: 3 successive aberrant sync attempts, sync reset\n");
         aber_min2 = aber_min1;
         aber_min1 = aber_n0;
         return LGW_GPS_SUCCESS;
@@ -645,7 +645,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
 
     CHECK_NULL(utc);
     if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
-        DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> UTC CONVERSION\n\r");
+        DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> UTC CONVERSION\n");
         return LGW_GPS_ERROR;
     }
 
@@ -655,7 +655,7 @@ int lgw_cnt2utc(struct tref ref, uint64_t count_us, struct timespec *utc,uint32_
 #if DEBUG_GPS == 1
     if(cntdiff64<0)
     {
-    	DEBUG_MSG("DELTA TICKS<0\n\r");
+    	DEBUG_MSG("DELTA TICKS<0\n");
     }
 #endif
     delta_sec = (double)(cntdiff64) / (ref.xtal_err);//TS_CPS *
@@ -691,7 +691,7 @@ int lgw_utc2cnt(struct tref ref, struct timespec utc, uint64_t *count_us) {
 
     CHECK_NULL(count_us);
     if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
-        DEBUG_MSG("ERROR: INVALID REFERENCE FOR UTC -> CNT CONVERSION\n\r");
+        DEBUG_MSG("ERROR: INVALID REFERENCE FOR UTC -> CNT CONVERSION\n");
         return LGW_GPS_ERROR;
     }
 
@@ -716,7 +716,7 @@ int lgw_cnt2gps(struct tref ref, uint64_t count_us, struct timespec *gps_time) {
 
     CHECK_NULL(gps_time);
     if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
-        DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> GPS CONVERSION\n\r");
+        DEBUG_MSG("ERROR: INVALID REFERENCE FOR CNT -> GPS CONVERSION\n");
         return LGW_GPS_ERROR;
     }
 
@@ -744,7 +744,7 @@ int lgw_gps2cnt(struct tref ref, struct timespec gps_time, uint64_t *count_us) {
 
     CHECK_NULL(count_us);
     if ((ref.systime == 0) || (ref.xtal_err > PLUS_1PERCENT) || (ref.xtal_err < MINUS_1PERCENT)) {
-        DEBUG_MSG("ERROR: INVALID REFERENCE FOR GPS -> CNT CONVERSION\n\r");
+        DEBUG_MSG("ERROR: INVALID REFERENCE FOR GPS -> CNT CONVERSION\n");
         return LGW_GPS_ERROR;
     }
 

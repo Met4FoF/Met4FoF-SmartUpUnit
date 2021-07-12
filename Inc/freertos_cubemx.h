@@ -84,7 +84,7 @@ const uint8_t UDP_TARGET_DEFAULT_IP_ADDRESS[4] = { 192, 168, 0, 200 };
 
 
 #define NMEABUFFERSIZE 3
-#define NMEBUFFERLEN 1200
+#define NMEBUFFERLEN 900
 #define NMEAMINLEN 9
 #define MAXNEMASENTENCECOUNT NMEBUFFERLEN/NMEAMINLEN
 
@@ -93,6 +93,7 @@ typedef struct {
 	uint64_t RawTimerCount;
 	uint32_t CaptureCount;
 	uint8_t NMEAMessage[NMEBUFFERLEN]; //248 3 NMEA Sentences
+	HAL_StatusTypeDef GPSUARTDMA_START_result; // result of the DMA start call
 }NMEASTamped;
 
 /* Private includes ----------------------------------------------------------*/

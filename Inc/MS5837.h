@@ -88,6 +88,7 @@ public:
 
 	uint32_t getSampleCount(){return _SampleCount;};
 
+	void increaseCaptureCountWORead(){_SampleCount++;return ;};
 	int setBaseID(uint32_t BaseID){_ID=BaseID;return 1;};
 
 	float getNominalSamplingFreq(){return 0.0;};

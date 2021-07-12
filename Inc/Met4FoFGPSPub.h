@@ -17,6 +17,7 @@ class Met4FoFGPSPub: public Met4FoFSensor{
   int getData(DataMessage * Message,uint64_t RawTimeStamp);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   uint32_t getSampleCount();
+  void increaseCaptureCountWORead(){_SampleCount++;return ;};
   int setBaseID(uint32_t BaseID);
   float getNominalSamplingFreq(){return 0.0;};
   private:

@@ -63,6 +63,7 @@ int Met4FoF_adc::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	return result;
 }
 
+
 int Met4FoF_adc::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;

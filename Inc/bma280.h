@@ -150,6 +150,7 @@ class BMA280:public Met4FoFSensor
   void selfTest();
   void activateDataRDYINT();
   uint32_t getSampleCount();
+  void increaseCaptureCountWORead(){_SampleCount++;return ;};
   float getNominalSamplingFreq();
   private:
   float getConversionfactor();

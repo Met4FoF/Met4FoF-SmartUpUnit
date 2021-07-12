@@ -16,6 +16,7 @@ public:
   virtual uint32_t getSampleCount();// get sample count
   virtual float getNominalSamplingFreq();// get nominal sampling freq
   virtual int setBaseID(uint32_t BaseID);// set base id
+  virtual void increaseCaptureCountWORead();// increade capture count even if we dont capture the data use if MailAlloc fails
   //virtual ~Met4FoFSensor()=0; // Pure virtual destructor
 protected:
 	bool _publish_time_ticks=false;

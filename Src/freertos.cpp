@@ -261,8 +261,11 @@ void StartDefaultTask(void const * argument) {
 
 void StartNmeaParserThread(void const * argument) {
 	NMEAMail = osMailCreate(osMailQ(NMEAMail), NULL);
-	if (NMEAMail != NULL) {
-		SEGGER_RTT_printf(0,"Fatal Error Could Not Create NMEA Mail Que!!!");
+	if (NMEAMail == NULL) {
+		SEGGER_RTT_printf(0,"Fatal Error Could Not Create NMEA Mail Que!!!\n");
+	}
+	else{
+		SEGGER_RTT_printf(0," Created NMEA Mail Que\n");
 	}
 	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
 	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
@@ -274,6 +277,11 @@ void StartNmeaParserThread(void const * argument) {
 	osEvent evt;
 	enum gps_msg latest_msg;
 	struct timespec utc, gps_time;
+	struct timespec last_utc;
+	last_utc.tv_sec=NULL;
+	last_utc.tv_nsec=NULL;
+#define SAMETIMEUTCSYNCTRIESUNTIEREBOOT 1200 // wating 20 minutes to have an good GPS fix again
+	int SameTimeGPSSyncTryes=0;
 	while (1) {
 		evt = osMailGet(NMEAMail, osWaitForever);
 		if (evt.status == osEventMail) {
@@ -285,7 +293,7 @@ void StartNmeaParserThread(void const * argument) {
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int DollarCount = 0;
 			int NewLineCount = 0;
-			//SEGGER_RTT_printf(0,"Parsing: NMEA Message\n\r %s\n\r",(rptr->NMEAMessage));
+			//SEGGER_RTT_printf(0,"Parsing: NMEA Message\n %s\n",(rptr->NMEAMessage));
 			for (int i = 0; i < sizeof(rptr->NMEAMessage); i++) {
 				if (rptr->NMEAMessage[i]
 						== '$'&&DollarCount<MAXNEMASENTENCECOUNT) {
@@ -317,7 +325,32 @@ void StartNmeaParserThread(void const * argument) {
 		        {
 		    //TODO COMPARE WITH NTP may be a second diference !!
 			lgw_gps_get(&utc, &gps_time, NULL, NULL);
-			lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
+
+			if(last_utc.tv_sec!=utc.tv_sec ||last_utc.tv_nsec!=utc.tv_nsec){
+				lgw_gps_sync(&GPS_ref, rptr->RawTimerCount, utc, gps_time);
+				last_utc=utc;
+				SameTimeGPSSyncTryes=0;
+			}
+			else
+			{
+				if(rptr->GPSUARTDMA_START_result!=HAL_OK)
+				{
+					SEGGER_RTT_printf(0,"Error cause by DMA Error and not by bad GPS reception\nPenalty 100 retry times\n");
+						SameTimeGPSSyncTryes=SameTimeGPSSyncTryes+100;
+				}
+				else
+				{
+				SameTimeGPSSyncTryes++;
+				}
+				SEGGER_RTT_printf(0, "GPS SYNC UPDATE FAILE Time Already used ignoring this data point!\n%d/%d Times until SoftReset\n",SameTimeGPSSyncTryes,SAMETIMEUTCSYNCTRIESUNTIEREBOOT);
+				if(SameTimeGPSSyncTryes==(SAMETIMEUTCSYNCTRIESUNTIEREBOOT-1)){
+					SEGGER_RTT_printf(0,"Goodbye world preparing for reboot!\n");
+				}
+				if(SameTimeGPSSyncTryes>(SAMETIMEUTCSYNCTRIESUNTIEREBOOT)){
+					SEGGER_RTT_printf(0,"Better die than suffer!\n Calling resthandler\n");
+					NVIC_SystemReset();
+				}
+			}
 			DataMessage *mptr;
 			mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 			GPSPub.getData(mptr, rptr->RawTimerCount);
@@ -328,7 +361,7 @@ void StartNmeaParserThread(void const * argument) {
 		        {
 		            /* We could not obtain the semaphore and can therefore not access
 		            the shared resource safely. */
-		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+		        	SEGGER_RTT_printf(0,"GPS SYNC UPDATE FAIL SEMAPHORE NOT READY !!!\n");
 		        }
 		    }
 			osMailFree(NMEAMail, rptr);
@@ -515,7 +548,7 @@ void StartBlinkThread(void const * argument) {
 		lastSampleCount1=actualSampleCount1;
 		lastSampleCount2=actualSampleCount2;
 		lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Delta Samples = %d %d %d %d\n\r",deltaSamples0,deltaSamples1,deltaSamples2,deltaSamples3);
+		SEGGER_RTT_printf(0,"Delta Samples = %d %d %d %d\n",deltaSamples0,deltaSamples1,deltaSamples2,deltaSamples3);
 		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
@@ -699,7 +732,7 @@ void StartDataStreamerThread(void const * argument) {
 
 
 	SEGGER_RTT_printf(0,
-			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n\r",
+			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",
 			UDID_Read8(0), UDID_Read8(1), UDID_Read8(2), UDID_Read8(3),
 			UDID_Read8(4), UDID_Read8(5), UDID_Read8(6), UDID_Read8(7),
 			UDID_Read8(8), UDID_Read8(9), UDID_Read8(10), UDID_Read8(11));
@@ -788,7 +821,7 @@ void StartDataStreamerThread(void const * argument) {
 					/* We could not obtain the semaphore and can therefore not access
 					 the shared resource safely. */
 					SEGGER_RTT_printf(0,
-							"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n\r");
+							"cnt to GPS time  UPDATE FAIL SEMAPHORE NOT READY !!!\n");
 					taskYIELD()
 					;
 				}
@@ -886,6 +919,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	uint64_t timestamp24 = 0;
 	static uint64_t timestamp13OLD = 0;
 	static uint64_t timestamp21OLD = 0;
+	static HAL_StatusTypeDef GPSUARTDMA_START_result=HAL_OK;
 	if (htim->Instance == TIM2){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 		Channel4Tim2CaptureCount++;
@@ -894,26 +928,36 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		static NMEASTamped *mptr = NULL;
 		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 		if (GPScaptureCount > 0) {
+			//STOP DMA transfers
 			HAL_UART_RxCpltCallback(&huart7);
 			HAL_UART_DMAStop(&huart7);
 			//HAL_DMA_Abort(&hdma_uart7_rx);
+
+			// Allocating Message from Pool
 			mptr = (NMEASTamped *) osMailAlloc(NMEAMail, 0);//The parameter millisec must be 0 for using this function in an ISR.
 			if (mptr != NULL) {
 				mptr->RawTimerCount = timestamp24;
 				mptr->CaptureCount = GPScaptureCount;
 				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
 				SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage);
+				mptr->GPSUARTDMA_START_result=GPSUARTDMA_START_result;
 				osMailPut(NMEAMail, mptr);
 
 			}
 			//SEGGER_RTT_printf(0,"DMA BUFFER:=%s\n",DMA_NMEABUFFER);
+			//Flushing Buffer for safety
 			memset(DMA_NMEABUFFER, 0, sizeof(DMA_NMEABUFFER));
-			HAL_StatusTypeDef DMA_START_result = HAL_UART_Receive_DMA(&huart7,
+			GPSUARTDMA_START_result = HAL_UART_Receive_DMA(&huart7,
 					DMA_NMEABUFFER,
 					NMEBUFFERLEN - 1);
 			GPScaptureCount++;
-			if (DMA_START_result != HAL_OK) {
-				SEGGER_RTT_printf(0, "DMA start ERROR");
+			if (GPSUARTDMA_START_result != HAL_OK) {
+				SEGGER_RTT_printf(0, "DMA start ERROR ");
+				switch(GPSUARTDMA_START_result){
+				case HAL_ERROR: SEGGER_RTT_printf(0, "HAL_ERROR\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
+				case HAL_BUSY: SEGGER_RTT_printf(0, "HAL_BUSY\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
+				case HAL_TIMEOUT:SEGGER_RTT_printf(0, "HAL_TIMEOUT\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
+				}
 			}
 		} else if (GPScaptureCount == 0) {
 			HAL_UART_Receive_DMA(&huart7, &(DMA_NMEABUFFER[0]),
@@ -925,12 +969,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM2CH1: %"PRIu64"\n\r",timestamp21);
+		//SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
 		if(timestamp21<timestamp21OLD)
 		{
 			SEGGER_RTT_printf(0,
-					"TIM2: %llx is smaler than  %llx !!!!!!!\n\r",timestamp21,timestamp21OLD);
+					"TIM2: %llx is smaler than  %llx !!!!!!!\n",timestamp21,timestamp21OLD);
 		}
 		timestamp21OLD=timestamp21;
 
@@ -942,9 +985,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		 Sensor0.getData(mptr, timestamp21);
 		 osMailPut(DataMail, mptr);
 		 }
+		 else
+		 {
+			Sensor0.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, " FATAL ERROR Could't allocate Message for TIM2CH1\n");
+		 }
 		 if(mptrADC != NULL){
 		 Met4FoFADC.getData(mptrADC, timestamp21);
 		 osMailPut(DataMail, mptrADC);
+		 }
+		 else
+		 {
+			 Met4FoFADC.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM2CH1\n");
 		 }
 
 	}
@@ -952,23 +1005,25 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim2CaptureCount++;
 		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
-		SEGGER_RTT_printf(0,
-				"TIM2CH3: %"PRIu64"\n\r",timestamp23);
+		//SEGGER_RTT_printf(0,"TIM2CH3: %"PRIu64"\n",timestamp23);
 
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL) {
 		Sensor1.getData(mptr, timestamp23);
 		osMailPut(DataMail, mptr);
 		}
+		else
+		 {
+			 Sensor1.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM2CH2\n");
+		 }
 	}
 	}
 	if (htim->Instance == TIM1){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,
-				"TIM1CH1: %"PRIu64"\n\r",timestamp11);
-
+		//SEGGER_RTT_printf(0,"TIM1CH1: %"PRIu64"\n",timestamp11);
 		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
@@ -976,21 +1031,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		EdgePub0.getData(mptr, timestamp11);
 		osMailPut(DataMail, mptr);
 		}
+		else
+		 {
+			EdgePub0.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM1CH1\n");
+		 }
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
-			SEGGER_RTT_printf(0,
-					"TIM1CH2: %"PRIu64"\n\r",timestamp12);
-
+	    //SEGGER_RTT_printf(0,"TIM1CH2: %"PRIu64"\n",timestamp12);
+		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		EdgePub1.getData(mptr, timestamp12);
 		osMailPut(DataMail, mptr);
 		}
+		else
+		 {
+			EdgePub1.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM1CH2\n");
+		 }
 
 
 	}
@@ -998,11 +1061,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
 //SEGGER_RTT_printf(0,
-	//			"TIM1: %llx\n\r",timestamp13);
+	//			"TIM1: %llx\n",timestamp13);
 		if(timestamp13<timestamp13OLD)
 		{
-			SEGGER_RTT_printf(0,
-					"TIM1: %llx is smaler than  %llx !!!!!!!\n\r",timestamp13,timestamp13OLD);
+			SEGGER_RTT_printf(0,"TIM1: %llx is smaler than  %llx !!!!!!!\n",timestamp13,timestamp13OLD);
 		}
 		timestamp13OLD=timestamp13;
 		/*
@@ -1010,9 +1072,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				if (mptr != NULL)
 				{
 				mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-				Sensor.getData(mptr, timestamp12);
+				Sensor2.getData(mptr, timestamp12);
 				osMailPut(DataMail, mptr);
 				}
+						else
+		 {
+			 Sensor2.increaseCaptureCountWORead();
+			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message");
+		 }
 			*/
 
 	}
@@ -1059,7 +1126,7 @@ void NTP_time_CNT_update(time_t t,uint32_t us){
     }
     uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9;
     		deltaTime+=NTPUtc.tv_nsec-GPSUtc.tv_nsec;
-    SEGGER_RTT_printf(0,"NTP-GPS time diff=%d ns\n\r",deltaTime);
+    SEGGER_RTT_printf(0,"NTP-GPS time diff=%d ns\n",deltaTime);
 }
 
 /* Private application code --------------------------------------------------*/

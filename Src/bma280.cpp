@@ -290,7 +290,6 @@ int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	}
 	return result;
 }
-
 int BMA280::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;

@@ -143,6 +143,7 @@ class MPU9250: public Met4FoFSensor {
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
     uint32_t getSampleCount();
+    void increaseCaptureCountWORead(){_SampleCount++;return ;};
     float getNominalSamplingFreq();
   protected:
     const uint8_t SPI_READ = 0x80;
