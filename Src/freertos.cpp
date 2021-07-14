@@ -288,6 +288,7 @@ void StartNmeaParserThread(void const * argument) {
 			NMEASTamped *rptr;
 			rptr = (NMEASTamped*) evt.value.p;
 
+			SEGGER_RTT_WriteString(0,(const char*)rptr->NMEAMessage);
 			//find all $ start tokens and '\n' end tokens
 			int DollarIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
@@ -335,14 +336,14 @@ void StartNmeaParserThread(void const * argument) {
 			{
 				if(rptr->GPSUARTDMA_START_result!=HAL_OK)
 				{
-					SEGGER_RTT_printf(0,"Error cause by DMA Error and not by bad GPS reception\nPenalty 100 retry times\n");
-						SameTimeGPSSyncTryes=SameTimeGPSSyncTryes+100;
+					SEGGER_RTT_printf(0,"Error cause by DMA Error and not by bad GPS reception\nPenalty 10 retry times\n");
+						SameTimeGPSSyncTryes=SameTimeGPSSyncTryes+10;
 				}
 				else
 				{
 				SameTimeGPSSyncTryes++;
 				}
-				SEGGER_RTT_printf(0, "GPS SYNC UPDATE FAILE Time Already used ignoring this data point!\n%d/%d Times until SoftReset\n",SameTimeGPSSyncTryes,SAMETIMEUTCSYNCTRIESUNTIEREBOOT);
+				SEGGER_RTT_printf(0, "GPS SYNC UPDATE FAILED Time Already used ignoring this data point!\n%d/%d Times until SoftReset\n",SameTimeGPSSyncTryes,SAMETIMEUTCSYNCTRIESUNTIEREBOOT);
 				if(SameTimeGPSSyncTryes==(SAMETIMEUTCSYNCTRIESUNTIEREBOOT-1)){
 					SEGGER_RTT_printf(0,"Goodbye world preparing for reboot!\n");
 				}
@@ -939,7 +940,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 				mptr->RawTimerCount = timestamp24;
 				mptr->CaptureCount = GPScaptureCount;
 				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
-				SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage);
+				//SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage); maybe to expencive in ISR moving to data processing thread
 				mptr->GPSUARTDMA_START_result=GPSUARTDMA_START_result;
 				osMailPut(NMEAMail, mptr);
 

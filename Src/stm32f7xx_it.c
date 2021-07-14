@@ -131,15 +131,12 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
-	SEGGER_SYSVIEW_RecordEnterISR();
-  /* USER CODE BEGIN BusFault_IRQn 0 */
-
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
+	  /* USER CODE BEGIN HardFault_IRQn 0 */
+		HAL_GPIO_WritePin(SIG_HARDFAULT_GPIO_Port, SIG_HARDFAULT_Pin, GPIO_PIN_SET);
+	  /* USER CODE END HardFault_IRQn 0 */
+	   /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+		SEGGER_RTT_printf(0,"Oh no BusFault :( Doing noting");
+	    /* USER CODE END W1_HardFault_IRQn 0 */
 }
 
 /**

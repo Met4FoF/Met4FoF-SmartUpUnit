@@ -399,7 +399,6 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         No fix: $GPRMC,,V,,,,,,,,,,N*00
         */
         memcpy(parser_buf, serial_buff, buff_size);
-        DEBUG_MSG("parser_buf=%s",parser_buf);
         parser_buf[buff_size] = '\0';
         nb_fields = str_chop(parser_buf, buff_size, ',', str_index, ARRAY_SIZE(str_index));
         if (nb_fields != 13) {
