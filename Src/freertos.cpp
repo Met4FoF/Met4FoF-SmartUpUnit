@@ -128,7 +128,7 @@ struct tref NTP_ref={0};
 //MemPool For the data
 osMailQDef (NMEAMail, NMEABUFFERSIZE , NMEASTamped);
 osMailQId NMEAMail;
-
+static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
@@ -288,7 +288,7 @@ void StartNmeaParserThread(void const * argument) {
 			NMEASTamped *rptr;
 			rptr = (NMEASTamped*) evt.value.p;
 
-			SEGGER_RTT_WriteString(0,(const char*)rptr->NMEAMessage);
+			//SEGGER_RTT_WriteString(0,(const char*)rptr->NMEAMessage);
 			//find all $ start tokens and '\n' end tokens
 			int DollarIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
@@ -598,9 +598,9 @@ void StartLCDThread(void const * argument) {
 	static int lcdupdatecnt = 0;
 	while (1) {
 		osDelay(1000);
-
+/*
 		lcdupdatecnt++;
-		/*
+
 		timespec utc;
 		timespec gps_time;
 		lgw_gps_get(&utc, &gps_time, NULL, NULL);
@@ -664,6 +664,7 @@ void StartLCDThread(void const * argument) {
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		}
 		*/
+
 	}
 	osThreadTerminate(NULL);
 }
@@ -927,12 +928,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
-		static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 		if (GPScaptureCount > 0) {
 			//STOP DMA transfers
-			HAL_UART_RxCpltCallback(&huart7);
+			//HAL_UART_RxCpltCallback(&huart7);
 			HAL_UART_DMAStop(&huart7);
-			//HAL_DMA_Abort(&hdma_uart7_rx);
+			HAL_DMA_Abort(&hdma_uart7_rx);
 
 			// Allocating Message from Pool
 			mptr = (NMEASTamped *) osMailAlloc(NMEAMail, 0);//The parameter millisec must be 0 for using this function in an ISR.

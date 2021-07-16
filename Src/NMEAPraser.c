@@ -379,7 +379,8 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
     if (serial_buff == NULL) {
         return UNKNOWN;
     }
-
+    DEBUG_MSG("MSG to Parse :");
+    SEGGER_RTT_Write(0, serial_buff, buff_size);
     if(buff_size > (int)(sizeof(parser_buf) - 1)) {
         DEBUG_MSG("Note: input string to big for parsing\n");
         return INVALID;
