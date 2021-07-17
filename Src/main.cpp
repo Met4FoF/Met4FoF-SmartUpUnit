@@ -52,25 +52,20 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
-#include "can.h"
-#include "dac.h"
 #include "dma.h"
-#include "fatfs.h"
 #include "i2c.h"
 #include "lwip.h"
 #include "rng.h"
 #include "rtc.h"
-#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_device.h"
 #include "gpio.h"
 #include "freertos_cubemx.h"
 
 // Segger RTT
 #include "SEGGER_RTT.h"
-
+#include "SEGGER_SYSVIEW.h"
 //Protbuff
 #include "pb.h"
 //BACKUP SRAM
@@ -146,26 +141,22 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-
   MX_DMA_Init();
   MX_USART3_UART_Init();
-  //MX_USB_DEVICE_Init(); USb usage results in hardfault needs to be debugged but has low priority
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_SPI1_Init();
-  MX_SPI2_Init();
+  MX_ADC3_Init();
   MX_SPI3_Init();
-  MX_SPI4_Init();
-  MX_SPI5_Init();
+  MX_SPI1_Init();
   MX_I2C1_Init();
-  //MX_USART6_UART_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
-  MX_ADC3_Init();
   MX_UART7_Init();
-  //MX_SDMMC2_SD_Init();
   MX_RTC_Init();
   MX_RNG_Init();
+  MX_SPI2_Init();
+  MX_SPI4_Init();
+  MX_SPI5_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, GPIO_PIN_SET);
@@ -190,10 +181,6 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -243,8 +230,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART3
-                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_UART7
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_I2C1
                               |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.PLLSAI.PLLSAIN = 192;
   PeriphClkInitStruct.PLLSAI.PLLSAIR = 2;
@@ -254,11 +240,9 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLLSAIDivR = RCC_PLLSAIDIVR_2;
   PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
-  PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
   PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLLSAIP;
-  PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();

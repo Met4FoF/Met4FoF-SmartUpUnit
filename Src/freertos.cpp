@@ -149,8 +149,8 @@ const int numSensors=7;
 Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC,&GPSPub,&EdgePub0,&EdgePub1};//,&Sensor2,&Sensor3
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
-bool Lwip_anf_FAT_init_finished=false;
-
+static bool Lwip_init_finished=false;
+static bool GPS_init_finished=false;
 
 #define NUMDESCRIPTIONSTOSEND 6
 DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
@@ -243,7 +243,7 @@ void StartDefaultTask(void const * argument) {
 	/* init code for FATFS */
 	//MX_FATFS_Init();
 
-	Lwip_anf_FAT_init_finished=true;
+	Lwip_init_finished=true;
 	/* USER CODE BEGIN StartDefaultTask */
 
 	//TODO implent NPTP ip array
@@ -275,20 +275,19 @@ void StartNmeaParserThread(void const * argument) {
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	uint32_t porcessedCount = 0;
 	osEvent evt;
-	enum gps_msg latest_msg;
+
 	struct timespec utc, gps_time;
 	struct timespec last_utc;
 	last_utc.tv_sec=NULL;
 	last_utc.tv_nsec=NULL;
 #define SAMETIMEUTCSYNCTRIESUNTIEREBOOT 1200 // wating 20 minutes to have an good GPS fix again
-	int SameTimeGPSSyncTryes=0;
+	static int SameTimeGPSSyncTryes=0;
 	while (1) {
 		evt = osMailGet(NMEAMail, osWaitForever);
 		if (evt.status == osEventMail) {
+			GPS_init_finished=true;// wait until first gps fix
 			NMEASTamped *rptr;
 			rptr = (NMEASTamped*) evt.value.p;
-
-			//SEGGER_RTT_WriteString(0,(const char*)rptr->NMEAMessage);
 			//find all $ start tokens and '\n' end tokens
 			int DollarIndexs[MAXNEMASENTENCECOUNT] = { 0 };
 			int NewLineIndexs[MAXNEMASENTENCECOUNT] = { 0 };
@@ -316,6 +315,7 @@ void StartNmeaParserThread(void const * argument) {
 			}
 			for (int i = 0; i <= DollarCount; i++) {
 					//lgw_parse_nmea(const char *serial_buff, int buff_size)
+					enum gps_msg latest_msg;
 					latest_msg = lgw_parse_nmea((const char*)&(rptr->NMEAMessage[DollarIndexs[i]]),NewLineIndexs[i] - DollarIndexs[i]);
 			}
 		    if( xSemaphoreGPS_REF != NULL )
@@ -334,16 +334,19 @@ void StartNmeaParserThread(void const * argument) {
 			}
 			else
 			{
+				SEGGER_RTT_printf(0, "GPS SYNC UPDATE FAILED Time Already used ignoring this data point!\n%d/%d Times until SoftReset\n",SameTimeGPSSyncTryes,SAMETIMEUTCSYNCTRIESUNTIEREBOOT);
+				SEGGER_RTT_printf(0, "__________NMEA MSG In BUffer__________\n");
+				SEGGER_RTT_WriteString(0,(const char*)rptr->NMEAMessage);
+				SEGGER_RTT_printf(0, "__________NMEA MSG END________________\n");
 				if(rptr->GPSUARTDMA_START_result!=HAL_OK)
 				{
-					SEGGER_RTT_printf(0,"Error cause by DMA Error and not by bad GPS reception\nPenalty 10 retry times\n");
+					SEGGER_RTT_printf(0,"Error cause by DMA Error and not by bad GPS reception\nPenalty 10 retry times\nRestarting UART interface\n");
 						SameTimeGPSSyncTryes=SameTimeGPSSyncTryes+10;
 				}
 				else
 				{
 				SameTimeGPSSyncTryes++;
 				}
-				SEGGER_RTT_printf(0, "GPS SYNC UPDATE FAILED Time Already used ignoring this data point!\n%d/%d Times until SoftReset\n",SameTimeGPSSyncTryes,SAMETIMEUTCSYNCTRIESUNTIEREBOOT);
 				if(SameTimeGPSSyncTryes==(SAMETIMEUTCSYNCTRIESUNTIEREBOOT-1)){
 					SEGGER_RTT_printf(0,"Goodbye world preparing for reboot!\n");
 				}
@@ -376,7 +379,7 @@ osThreadTerminate(NULL);
 
 
 void StartTempSensorThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(not Lwip_init_finished||not GPS_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -428,7 +431,7 @@ void StartTempSensorThread(void const * argument) {
 }
 
 void StartWebserverThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(not Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -443,6 +446,7 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	/*
 	uint32_t lastSampleCount0=0;
 	uint32_t actualSampleCount0=0;
 	uint32_t deltaSamples0=0;
@@ -452,7 +456,7 @@ void StartBlinkThread(void const * argument) {
 	uint32_t actualSampleCount1=0;
 	uint32_t deltaSamples1=0;
 	float nominalSamplingFreq1=-1;
-/*
+
 	uint32_t lastSampleCount2=0;
 	uint32_t actualSampleCount2=0;
 	uint32_t deltaSamples2=0;
@@ -462,9 +466,10 @@ void StartBlinkThread(void const * argument) {
 	uint32_t actualSampleCount3=0;
 	uint32_t deltaSamples3=0;
 	float nominalSamplingFreq3=-1;
-*/
+
 	bool justRestarted=true;
 	bool justRestartedDelay=false;
+	*/
 	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
@@ -560,7 +565,7 @@ void StartBlinkThread(void const * argument) {
 }
 
 void StartLCDThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(not Lwip_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -670,7 +675,7 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamerThread(void const * argument) {
-	while(! Lwip_anf_FAT_init_finished){
+	while(not Lwip_init_finished||not GPS_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -989,7 +994,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		 else
 		 {
 			Sensor0.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, " FATAL ERROR Could't allocate Message for TIM2CH1\n");
+			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
 		 if(mptrADC != NULL){
 		 Met4FoFADC.getData(mptrADC, timestamp21);
@@ -998,7 +1003,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		 else
 		 {
 			 Met4FoFADC.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM2CH1\n");
+			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
 
 	}
@@ -1016,7 +1021,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		else
 		 {
 			 Sensor1.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM2CH2\n");
+			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH2\n");
 		 }
 	}
 	}
@@ -1035,7 +1040,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		else
 		 {
 			EdgePub0.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM1CH1\n");
+			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH1\n");
 		 }
 
 	}
@@ -1053,7 +1058,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		else
 		 {
 			EdgePub1.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message for TIM1CH2\n");
+			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH2\n");
 		 }
 
 
@@ -1132,7 +1137,7 @@ void NTP_time_CNT_update(time_t t,uint32_t us){
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
 /* USER CODE END Application */
+
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

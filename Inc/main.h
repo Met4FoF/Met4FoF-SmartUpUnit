@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -53,7 +53,6 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void SystemClock_Config(void);
 
 /* USER CODE BEGIN EFP */
 
@@ -132,16 +131,12 @@ void SystemClock_Config(void);
 #define TCK_GPIO_Port GPIOA
 #define T_CS_Pin GPIO_PIN_2
 #define T_CS_GPIO_Port GPIOD
-#define SD_DETECT_Pin GPIO_PIN_4
-#define SD_DETECT_GPIO_Port GPIOD
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
 #define RMII_TXD0_GPIO_Port GPIOG
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
-#define SD_DETECTB4_Pin GPIO_PIN_4
-#define SD_DETECTB4_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
 #define SENSOR_CS1_Pin GPIO_PIN_8
