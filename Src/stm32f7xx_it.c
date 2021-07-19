@@ -22,6 +22,7 @@
 #include "main.h"
 #include "stm32f7xx_it.h"
 #include "cmsis_os.h"
+#include "tim64extender.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -112,11 +113,8 @@ void MemManage_Handler(void)
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
   /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
+	SEGGER_RTT_printf(0,"Oh no MemManageFault :( Reseting MCU");
+	NVIC_SystemReset();
 }
 
 /**
@@ -128,7 +126,8 @@ void BusFault_Handler(void)
 		HAL_GPIO_WritePin(SIG_HARDFAULT_GPIO_Port, SIG_HARDFAULT_Pin, GPIO_PIN_SET);
 	  /* USER CODE END HardFault_IRQn 0 */
 	   /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-		SEGGER_RTT_printf(0,"Oh no BusFault :( Doing noting");
+		SEGGER_RTT_printf(0,"Oh no BusFault :( Reseting MCU");
+		NVIC_SystemReset();
 	    /* USER CODE END W1_HardFault_IRQn 0 */
 }
 
@@ -137,7 +136,6 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
-	SEGGER_SYSVIEW_RecordEnterISR();
   /* USER CODE BEGIN UsageFault_IRQn 0 */
 
   /* USER CODE END UsageFault_IRQn 0 */
@@ -218,7 +216,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim1);
+  //HAL_TIM_IRQHandler(&htim1);
+	__HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);// clear update status bit
+  TIM1_Increase_Upper_bitmask();
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
@@ -232,7 +232,7 @@ void TIM1_CC_IRQHandler(void)
   /* USER CODE BEGIN TIM1_CC_IRQn 0 */
 
   /* USER CODE END TIM1_CC_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim1);
+	HAL_TIM_IRQHandlerOnlyCC(&htim1);
   /* USER CODE BEGIN TIM1_CC_IRQn 1 */
 
   /* USER CODE END TIM1_CC_IRQn 1 */

@@ -7,12 +7,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "tim64extender.h"
-//Top 32 bit for timer2 inputcapture values
-static uint64_t tim2_update_counts=0;
-static uint64_t tim2_upper_bits_mask=0;
-//Top 48 bit for timer2 inputcapture values
-static uint64_t tim1_update_counts=0;
-static uint64_t tim1_upper_bits_mask=0;
+ //Top 32 bit for timer2 inputcapture values
+ static uint64_t tim2_update_counts=0;
+ static uint64_t tim2_upper_bits_mask=0;
+ //Top 48 bit for timer2 inputcapture values
+ static uint64_t tim1_update_counts=0;
+ static uint64_t tim1_upper_bits_mask=0;
 
 uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 	uint64_t timestamp=0;
@@ -47,38 +47,9 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 			}
 		}
 	}
-	uint64_t tim1_upper_bits_mask_race_condition = 0;
-	bool tim1_race_condition_up_date = false;
 	if (htim->Instance == TIM1) {
-		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
-			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
-				__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
-				//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
-				//DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
-				tim1_race_condition_up_date = true;
-				tim1_upper_bits_mask_race_condition = tim1_upper_bits_mask;
-				tim1_update_counts++;
-				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-			}
-		}
-	}
-	if (htim->Instance == TIM1) {
-				if (tim1_race_condition_up_date == false) {
-					//this is the nromal case
-					timestamp = tim1_upper_bits_mask
-							+ (uint64_t) __HAL_TIM_GetCounter(&htim1)+1;
-				} else {
-					uint32_t timestamp_raw = __HAL_TIM_GetCounter(&htim1);
-					if (timestamp_raw < TIM16OLDTIMERVALMIN)
-					//the timer has overflowen tak the updateted bitmask
-					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
-					} else {
-						//this is an old value using the old bitmask
-						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw+1;
-					}
-				}
+			// there can't be a race condition here since TIM1 has an an independent interupt for update, so the pending isr are in the right order in the NVIC
+		timestamp = tim1_upper_bits_mask+ (uint64_t) __HAL_TIM_GetCounter(&htim1)+1;
 
 			}
 
@@ -126,8 +97,6 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 #define TIM16OLDTIMERVALMIN 0xF000 // if an inputcaputure value is biger than this its prppably an old one
 		uint64_t tim2_upper_bits_mask_race_condition = 0;
 		bool tim2_race_condition_up_date = false;
-		uint64_t tim1_upper_bits_mask_race_condition = 0;
-		bool tim1_race_condition_up_date = false;
 
 		if (htim->Instance == TIM2) {
 			if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
@@ -210,78 +179,31 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 
 
 		if (htim->Instance == TIM1) {
-			if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
-				if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
-					__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
-					//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
-					//DEBUG_MSG("WARNING!!! TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
-					tim1_race_condition_up_date = true;
-					tim1_upper_bits_mask_race_condition = tim1_upper_bits_mask;
-					tim1_update_counts++;
-					tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-				}
-			}
-
+			// there can't be a race condition here since TIM1 has an an independent interupt for update, so the pending isr are in the right order in the NVIC
 			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-				if (tim1_race_condition_up_date == false) {
 					//this is the nromal case
-					timestamp = tim1_upper_bits_mask
-							+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-									TIM_CHANNEL_1)+1;
-				} else {
-					uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
-					TIM_CHANNEL_1);
-					if (timestamp_raw < TIM16OLDTIMERVALMIN)
-					//the timer has overflowen tak the updateted bitmask
-					{
-						timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
-					} else {
-						//this is an old value using the old bitmask
-						timestamp = tim1_upper_bits_mask_race_condition
-								+ (uint64_t) timestamp_raw+1;
-					}
-				}
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_1)+1;
 			}
 
 			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-					if (tim1_race_condition_up_date == false) {
-						//this is the nromal case
-						timestamp = tim1_upper_bits_mask
-								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-										TIM_CHANNEL_2)+1;
-					} else {
-						uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
-						TIM_CHANNEL_1);
-						if (timestamp_raw < TIM16OLDTIMERVALMIN)
-						//the timer has overflowen tak the updateted bitmask
-						{
-							timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
-						} else {
-							//this is an old value using the old bitmask
-							timestamp = tim1_upper_bits_mask_race_condition
-									+ (uint64_t) timestamp_raw+1;
-						}
-					}
+					//this is the nromal case
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_2)+1;
 			}
 			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-					if (tim1_race_condition_up_date == false) {
-						//this is the nromal case
-						timestamp = tim1_upper_bits_mask
-								+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,
-										TIM_CHANNEL_3)+1;
-					} else {
-						uint32_t timestamp_raw = HAL_TIM_ReadCapturedValue(&htim1,
-						TIM_CHANNEL_1);
-						if (timestamp_raw < TIM16OLDTIMERVALMIN)
-						//the timer has overflowen tak the updateted bitmask
-						{
-							timestamp = tim1_upper_bits_mask + (uint64_t) timestamp_raw+1;
-						} else {
-							//this is an old value using the old bitmask
-							timestamp = tim1_upper_bits_mask_race_condition
-									+ (uint64_t) timestamp_raw+1;
-						}
-					}
+					//this is the nromal case
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_3)+1;
+			}
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+					//this is the nromal case
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_4)+1;
+			}
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5) {
+					//this is the nromal case
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_5)+1;
+			}
+			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_6) {
+					//this is the nromal case
+					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_6)+1;
 			}
 		}
 
@@ -308,15 +230,140 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			tim2_update_counts++;
 			tim2_upper_bits_mask = (uint64_t)(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 
-		}
-		if (htim->Instance == TIM1) {
-			{
-				tim1_update_counts++;
-				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-
-			}
 	}
 	/* USER CODE BEGIN Callback 1 */
 
 	/* USER CODE END Callback 1 */
+}
+
+void 	 TIM1_Increase_Upper_bitmask(){
+		tim1_update_counts++;
+		tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+}
+
+void HAL_TIM_IRQHandlerOnlyCC(TIM_HandleTypeDef *htim)
+{
+  /* Capture compare 1 event */
+  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC1) != RESET)
+  {
+    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_CC1) != RESET)
+    {
+      {
+        __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
+        htim->Channel = HAL_TIM_ACTIVE_CHANNEL_1;
+
+        /* Input capture event */
+        if ((htim->Instance->CCMR1 & TIM_CCMR1_CC1S) != 0x00U)
+        {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+          htim->IC_CaptureCallback(htim);
+#else
+          HAL_TIM_IC_CaptureCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+        }
+        /* Output compare event */
+        else
+        {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+          htim->OC_DelayElapsedCallback(htim);
+          htim->PWM_PulseFinishedCallback(htim);
+#else
+          HAL_TIM_OC_DelayElapsedCallback(htim);
+          HAL_TIM_PWM_PulseFinishedCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+        }
+        htim->Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
+      }
+    }
+  }
+  /* Capture compare 2 event */
+  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC2) != RESET)
+  {
+    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_CC2) != RESET)
+    {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_2;
+      /* Input capture event */
+      if ((htim->Instance->CCMR1 & TIM_CCMR1_CC2S) != 0x00U)
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->IC_CaptureCallback(htim);
+#else
+        HAL_TIM_IC_CaptureCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      /* Output compare event */
+      else
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->OC_DelayElapsedCallback(htim);
+        htim->PWM_PulseFinishedCallback(htim);
+#else
+        HAL_TIM_OC_DelayElapsedCallback(htim);
+        HAL_TIM_PWM_PulseFinishedCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
+    }
+  }
+  /* Capture compare 3 event */
+  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC3) != RESET)
+  {
+    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_CC3) != RESET)
+    {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_3;
+      /* Input capture event */
+      if ((htim->Instance->CCMR2 & TIM_CCMR2_CC3S) != 0x00U)
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->IC_CaptureCallback(htim);
+#else
+        HAL_TIM_IC_CaptureCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      /* Output compare event */
+      else
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->OC_DelayElapsedCallback(htim);
+        htim->PWM_PulseFinishedCallback(htim);
+#else
+        HAL_TIM_OC_DelayElapsedCallback(htim);
+        HAL_TIM_PWM_PulseFinishedCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
+    }
+  }
+  /* Capture compare 4 event */
+  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC4) != RESET)
+  {
+    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_CC4) != RESET)
+    {
+      __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC4);
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_4;
+      /* Input capture event */
+      if ((htim->Instance->CCMR2 & TIM_CCMR2_CC4S) != 0x00U)
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->IC_CaptureCallback(htim);
+#else
+        HAL_TIM_IC_CaptureCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      /* Output compare event */
+      else
+      {
+#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+        htim->OC_DelayElapsedCallback(htim);
+        htim->PWM_PulseFinishedCallback(htim);
+#else
+        HAL_TIM_OC_DelayElapsedCallback(htim);
+        HAL_TIM_PWM_PulseFinishedCallback(htim);
+#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+      }
+      htim->Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
+    }
+  }
 }

@@ -960,6 +960,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			if (GPSUARTDMA_START_result != HAL_OK) {
 				SEGGER_RTT_printf(0, "DMA start ERROR ");
 				switch(GPSUARTDMA_START_result){
+				case HAL_OK: break;
 				case HAL_ERROR: SEGGER_RTT_printf(0, "HAL_ERROR\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
 				case HAL_BUSY: SEGGER_RTT_printf(0, "HAL_BUSY\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
 				case HAL_TIMEOUT:SEGGER_RTT_printf(0, "HAL_TIMEOUT\n");HAL_DMA_Abort(&hdma_uart7_rx); break;
