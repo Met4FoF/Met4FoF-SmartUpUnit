@@ -595,7 +595,7 @@ void StartLCDThread(void const * argument) {
 	}
 	else
 	{
-		sprintf(Temp_Buffer_text,"DCHP FAILD !!\0");
+		sprintf(Temp_Buffer_text,"DCHP FAILD !!");
 		dhcp_start(&gnetif);
 
 	}
@@ -603,9 +603,9 @@ void StartLCDThread(void const * argument) {
 	static int lcdupdatecnt = 0;
 	while (1) {
 		osDelay(1000);
-/*
-		lcdupdatecnt++;
 
+		lcdupdatecnt++;
+		/*
 		timespec utc;
 		timespec gps_time;
 		lgw_gps_get(&utc, &gps_time, NULL, NULL);
@@ -614,16 +614,17 @@ void StartLCDThread(void const * argument) {
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 100, WHITE, 2, BLUE);
 
 		//TODO fix nanospecs printf bug to reactivate --specs=nano.specs -u _printf_float -u _scanf_float to save 50 kb Code size
-		sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ", GPS_ref.xtal_err);
+		GPSCounterFreq=GPS_ref.xtal_err;
+		GPSCounterFreqUncer=GPS_ref.xtal_err_deviation;
+		NTPCounterFreq=NTP_ref.xtal_err;
+		NTPCounterFreqUncer=NTP_ref.xtal_err_deviation;
+		sprintf(Temp_Buffer_text, "Counter Freq.: %lf Hz   ",GPS_ref.xtal_err);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 120, WHITE, 1, BLUE);
-		sprintf(Temp_Buffer_text, "F std.: %lf Hz      ",
-				GPS_ref.xtal_err_deviation);
+		sprintf(Temp_Buffer_text, "F std.: %lf Hz      ",GPSCounterFreqUncer);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 140, WHITE, 1, BLUE);
-		sprintf(Temp_Buffer_text, "NTP Counter Freq.: %lf Hz   ",
-				NTP_ref.xtal_err);
+		sprintf(Temp_Buffer_text, "NTP Counter Freq.: %lf Hz   ",NTPCounterFreq);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 160, WHITE, 1, BLUE);
-		sprintf(Temp_Buffer_text, "NTP F std.: %lf Hz      ",
-				NTP_ref.xtal_err_deviation);
+		sprintf(Temp_Buffer_text, "NTP F std.: %lf Hz      ",NTPCounterFreqUncer);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 180, WHITE, 1, BLUE);
 		tm* ntp_update_time = localtime(&(NTP_ref.utc.tv_sec));
 		strftime(Temp_Buffer_text, 40, "NTP Updte: %Y-%m-%d %H:%M:%S",
@@ -632,9 +633,9 @@ void StartLCDThread(void const * argument) {
 
 		sprintf(Temp_Buffer_text, "Counting happy: %i",lcdupdatecnt);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 210, WHITE, 1, BLUE);
-		uint32_t startcount=configMan.getStartcount();
 		sprintf(Temp_Buffer_text, "Start count: %i",startcount);
 		ILI9341_Draw_Text(Temp_Buffer_text, 0, 220, WHITE, 1, BLUE);
+
 		if (lcdupdatecnt %100==0) {
 			ILI9341_Init();		//initial driver setup to drive ili9341
 			ILI9341_Fill_Screen(BLUE);
@@ -654,8 +655,8 @@ void StartLCDThread(void const * argument) {
 			sprintf(Temp_Buffer_text, "IP %s", (const char *) &iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 60, WHITE, 2, BLUE);
 		}
-
-		if (lcdupdatecnt %10==0) {
+		*/
+		if (lcdupdatecnt ==15) {
 			iPadressBuffer[17]= {};
 			ip4addr_ntoa_r(&(gnetif.ip_addr), iPadressBuffer,
 					sizeof(iPadressBuffer));
@@ -668,7 +669,6 @@ void StartLCDThread(void const * argument) {
 			sprintf(Temp_Buffer_text, "UPD Targ:%s", iPadressBuffer);
 			ILI9341_Draw_Text(Temp_Buffer_text, 0, 80, WHITE, 2, BLUE);
 		}
-		*/
 
 	}
 	osThreadTerminate(NULL);
