@@ -679,6 +679,7 @@ void StartDataStreamerThread(void const * argument) {
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
+	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 
 	//MPU9250
 	uint32_t SensorID0=configMan.getSensorBaseID(0);
@@ -785,7 +786,7 @@ void StartDataStreamerThread(void const * argument) {
 	pb_write(&ProtoStreamData, (const pb_byte_t*) &DataString, 4);
 	pb_write(&ProtoStreamDescription, (const pb_byte_t*) &DescriptionString, 4);
 
-	DataMail = osMailCreate(osMailQ(DataMail), NULL);
+
 
 	/* Enable ADCs external trigger */
 	//TODO check if this belonges into the adc functionality
