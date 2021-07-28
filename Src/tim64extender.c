@@ -180,30 +180,32 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 
 		if (htim->Instance == TIM1) {
 			// there can't be a race condition here since TIM1 has an an independent interupt for update, so the pending isr are in the right order in the NVIC
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+			switch (htim->Channel) {
+			case HAL_TIM_ACTIVE_CHANNEL_1:
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_1)+1;
-			}
+					break;
 
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
+			case HAL_TIM_ACTIVE_CHANNEL_2 :
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_2)+1;
-			}
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+					break;
+			case HAL_TIM_ACTIVE_CHANNEL_3:
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_3)+1;
-			}
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+					break;
+			case HAL_TIM_ACTIVE_CHANNEL_4:
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_4)+1;
-			}
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5) {
+					break;
+			case HAL_TIM_ACTIVE_CHANNEL_5:
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_5)+1;
-			}
-			if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_6) {
+					break;
+			case HAL_TIM_ACTIVE_CHANNEL_6:
 					//this is the nromal case
 					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_6)+1;
+					break;
 			}
 		}
 
