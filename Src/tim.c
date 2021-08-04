@@ -163,8 +163,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
     HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
     /* TIM1 interrupt Init */
-    HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 4, 0);// tim1 higher prio than tim2 since its overflowing more often
-    HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn); // DAMNED  TIM1_UP_TIM10_IRQn is 25 TIM1_CC_IRQn is 27 so if both are pending UP is serverd first this needs to be cached since it generates a time glichs for the next CC interrupt if this has an old value https://stackoverflow.com/questions/48567316/two-external-interrupts-with-same-priority-at-the-same-time-cortex-m
+    HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 4, 1);// DAMNED  TIM1_UP_TIM10_IRQn is 25 TIM1_CC_IRQn is 27 so if both are pending UP is serverd first this needs to be cached since it generates a time glichs for the next CC interrupt if this has an old value https://stackoverflow.com/questions/48567316/two-external-interrupts-with-same-priority-at-the-same-time-cortex-m
+    HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn); // We set se Sub Priority to one so the capture compare interrupt is called first if both are pending du to race condition handling this situation will be handled
     HAL_NVIC_SetPriority(TIM1_CC_IRQn, 4, 0);// tim1 higher prio than tim2 since its overflowing more often
     HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
   /* USER CODE BEGIN TIM1_MspInit 1 */

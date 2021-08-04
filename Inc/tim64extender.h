@@ -19,11 +19,6 @@
 
 uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim);
 uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim);
-void 	 TIM1_Increase_Upper_bitmask();
-void     HAL_TIM_IRQHandlerOnlyCC(TIM_HandleTypeDef *htim);
-
-
-
 #ifdef __cplusplus
 }
 #endif
