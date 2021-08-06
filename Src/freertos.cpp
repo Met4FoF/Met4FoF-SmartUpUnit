@@ -134,19 +134,19 @@ SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-//MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
-//MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
-BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
+MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
+MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+//BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
-Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
+//Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 Met4FoFGPSPub GPSPub(&GPS_ref,20);
-Met4FoFEdgeTS EdgePub0(1.0,30);
-Met4FoFEdgeTS EdgePub1(1.0,31);
+//Met4FoFEdgeTS EdgePub0(1.0,30);
+//Met4FoFEdgeTS EdgePub1(1.0,31);
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors=7;
-Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&TempSensor0,&Met4FoFADC,&GPSPub,&EdgePub0,&EdgePub1};//,&Sensor2,&Sensor3
+Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&Sensor2,&Sensor3,&GPSPub};//,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 static bool Lwip_init_finished=false;
@@ -386,9 +386,10 @@ void StartTempSensorThread(void const * argument) {
 
 	static uint32_t TempsensoreCaptureCount=0;
 	uint32_t SensorID3=configMan.getSensorBaseID(5);
-	TempSensor0.init(SensorID3);
+	//TempSensor0.init(SensorID3);
 	for (;;) {
 		osDelay(2000);
+		/*
 		DataMessage *mptr;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 20);
 		uint64_t timestamp = TIM_Get_64Bit_TimeStamp_Base(&htim2);
@@ -398,6 +399,7 @@ void StartTempSensorThread(void const * argument) {
 		osStatus result = osMailPut(DataMail, mptr);
 		TempsensoreCaptureCount++;
 		osDelay(10);
+		*/
 		/*
 	SEGGER_RTT_printf(0,"Scanning I2C bus:\r\n");
 
@@ -690,13 +692,13 @@ void StartDataStreamerThread(void const * argument) {
 	//Sensor0.setSrd(1);
 	Sensor0.enableDataReadyInterrupt();
 	//MPU9250
-/*
+
 	uint32_t SensorID1=configMan.getSensorBaseID(1);
 	Sensor1.setBaseID(SensorID1);
 	Sensor1.begin();
 	Sensor1.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 	Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor1.setSrd(1);
+	Sensor1.setSrd(0);
 	Sensor1.enableDataReadyInterrupt();
 
 
@@ -707,7 +709,7 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor2.begin();
 	Sensor2.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 	Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor2.setSrd(1);
+	Sensor2.setSrd(0);
 	Sensor2.enableDataReadyInterrupt();
 
 	//MPU9250
@@ -716,9 +718,9 @@ void StartDataStreamerThread(void const * argument) {
 	Sensor3.begin();
 	Sensor3.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 	Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor3.setSrd(1);
+	Sensor3.setSrd(0);
 	Sensor3.enableDataReadyInterrupt();
-*/
+/*
 	//BMA280
 
 	 uint32_t SensorID1=configMan.getSensorBaseID(1);
@@ -729,15 +731,15 @@ void StartDataStreamerThread(void const * argument) {
 	 //Internal ADC
 	 uint32_t SensorID10=configMan.getSensorBaseID(10);
 	 Met4FoFADC.setBaseID(SensorID10);
-
+*/
 	 uint32_t SensorID20=configMan.getSensorBaseID(20);
 	 GPSPub.setBaseID(SensorID20);
-
+/*
 	 uint32_t SensorID30=configMan.getSensorBaseID(30);
 	 EdgePub0.setBaseID(SensorID30);
 	 uint32_t SensorID31=configMan.getSensorBaseID(31);
 	 EdgePub1.setBaseID(SensorID31);
-
+*/
 
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",
@@ -987,8 +989,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-		 DataMessage *mptrADC=NULL;
-		 mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
+		 //DataMessage *mptrADC=NULL;
+		 //mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
 		 if (mptr != NULL) {
 		 Sensor0.getData(mptr, timestamp21);
 		 osMailPut(DataMail, mptr);
@@ -998,6 +1000,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor0.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
+		 /*
 		 if(mptrADC != NULL){
 		 Met4FoFADC.getData(mptrADC, timestamp21);
 		 osMailPut(DataMail, mptrADC);
@@ -1007,6 +1010,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			 Met4FoFADC.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
+		 */
 
 	}
 	if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
@@ -1036,12 +1040,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		EdgePub0.getData(mptr, timestamp11);
+		Sensor2.getData(mptr, timestamp11);
 		osMailPut(DataMail, mptr);
 		}
 		else
 		 {
-			EdgePub0.increaseCaptureCountWORead();
+			Sensor2.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH1\n");
 		 }
 
@@ -1054,12 +1058,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		EdgePub1.getData(mptr, timestamp12);
+		Sensor3.getData(mptr, timestamp12);
 		osMailPut(DataMail, mptr);
 		}
 		else
 		 {
-			EdgePub1.increaseCaptureCountWORead();
+			Sensor3.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH2\n");
 		 }
 
