@@ -247,7 +247,6 @@ NVIC.SavedPendsvIrqHandlerGenerated=true
 NVIC.SavedSvcallIrqHandlerGenerated=true
 NVIC.SavedSystickIrqHandlerGenerated=true
 NVIC.SysTick_IRQn=true\:15\:0\:false\:false\:false\:true\:true\:true
-NVIC.TIM1_CC_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
 NVIC.TIM2_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
 NVIC.TIM4_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
 NVIC.TIM8_TRG_COM_TIM14_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:true
