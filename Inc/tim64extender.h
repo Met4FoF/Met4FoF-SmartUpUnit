@@ -16,7 +16,8 @@
 #include "main.h"
 #include "tim.h"
 #include "stdbool.h"
-
+#define TIM32OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+#define TIM16OLDTIMERVALMIN 0xF000 // if an inputcaputure value is biger than this its prppably an old one
 uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim);
 uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim);
 #ifdef __cplusplus
