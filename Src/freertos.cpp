@@ -271,6 +271,9 @@ void StartNmeaParserThread(void const * argument) {
 	xSemaphoreGPS_REF = xSemaphoreCreateMutex();
 	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
 	//Slave (TIM1) before Master (TIM2)
+	//HAL_TIM_Base_Start(&htim1);
+	//HAL_TIM_Base_Start(&htim4);
+	HAL_TIM_Base_Start(&htim2);
 	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 	__HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
