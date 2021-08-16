@@ -145,7 +145,7 @@ Met4FoFGPSPub GPSPub(&GPS_ref,20);
 //Met4FoFEdgeTS EdgePub0(1.0,30);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
 //std::vector<Met4FoFSensor *> Sensors;
-const int numSensors=7;
+const int numSensors=5;
 Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&Sensor2,&Sensor3,&GPSPub};//,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -683,43 +683,23 @@ void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 
-	//MPU9250
-	uint32_t SensorID0=configMan.getSensorBaseID(0);
-	Sensor0.setBaseID(SensorID0);
-	Sensor0.begin();
-	Sensor0.setGyroRange(MPU9250::GYRO_RANGE_2000DPS);
-	Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_16G);
-	//Sensor0.setSrd(1);
-	Sensor0.enableDataReadyInterrupt();
-	//MPU9250
-
-	uint32_t SensorID1=configMan.getSensorBaseID(1);
-	Sensor1.setBaseID(SensorID1);
-	Sensor1.begin();
-	Sensor1.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-	Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor1.setSrd(0);
-	Sensor1.enableDataReadyInterrupt();
+	Met4FoFSensor* MPUSs[4]={Sensor0,Sensor1,Sensor2,Sensor3};
+	for(int i=0;i<4;i++){
+		MPU=MPUs[i];
+		//MPU9250
+		uint32_t MPUId=configMan.getSensorBaseID(i);
+		MPU.setBaseID(MPUId);
+		MPU.begin();
+		MPU.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+		MPU.setAccelRange(MPU9250::ACCEL_RANGE_4G);
+		//MPU.setSrd(1);
+		MPU.enableDataReadyInterrupt();
+		//MPU9250
 
 
-	//MPU9250
+	}
 
-	uint32_t SensorID2=configMan.getSensorBaseID(2);
-	Sensor2.setBaseID(SensorID2);
-	Sensor2.begin();
-	Sensor2.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-	Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor2.setSrd(0);
-	Sensor2.enableDataReadyInterrupt();
 
-	//MPU9250
-	uint32_t SensorID3=configMan.getSensorBaseID(3);
-	Sensor3.setBaseID(SensorID3);
-	Sensor3.begin();
-	Sensor3.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-	Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-	Sensor3.setSrd(0);
-	Sensor3.enableDataReadyInterrupt();
 /*
 	//BMA280
 
