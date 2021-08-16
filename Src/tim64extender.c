@@ -69,6 +69,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef * htim){
 							+ (uint64_t) __HAL_TIM_GetCounter(&htim1)+1;
 				} else {
 					uint32_t timestamp_raw = __HAL_TIM_GetCounter(&htim1);
+					timestamp_raw += __HAL_TIM_GetCounter(&htim4)<16;
 					if (timestamp_raw < TIM16OLDTIMERVALMIN)
 					//the timer has overflowen tak the updateted bitmask
 					{
@@ -210,32 +211,37 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef * htim){
 
 
 		if (htim->Instance == TIM1) {
-			// there can't be a race condition here since TIM1 has an an independent interupt for update, so the pending isr are in the right order in the NVIC
+			uint32_t MSB=0;
+			uint32_t LSB=0;
 			switch (htim->Channel) {
 			case HAL_TIM_ACTIVE_CHANNEL_1:
 					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_1)+1;
+				MSB=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_1);
+				LSB= HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_1)+1;
+				timestamp = tim1_upper_bits_mask+(MSB<<16);
+				timestamp+=(uint64_t)LSB;
 					break;
 
 			case HAL_TIM_ACTIVE_CHANNEL_2 :
 					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_2)+1;
+				MSB=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_2);
+				LSB= HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_2)+1;
+				timestamp = tim1_upper_bits_mask+(MSB<<16);
+				timestamp+=(uint64_t)LSB;
 					break;
 			case HAL_TIM_ACTIVE_CHANNEL_3:
 					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_3)+1;
+				MSB=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_3);
+				LSB= HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_3)+1;
+				timestamp = tim1_upper_bits_mask+(MSB<<16);
+				timestamp+=(uint64_t)LSB;
 					break;
 			case HAL_TIM_ACTIVE_CHANNEL_4:
 					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_4)+1;
-					break;
-			case HAL_TIM_ACTIVE_CHANNEL_5:
-					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_5)+1;
-					break;
-			case HAL_TIM_ACTIVE_CHANNEL_6:
-					//this is the nromal case
-					timestamp = tim1_upper_bits_mask+ (uint64_t) HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_6)+1;
+				MSB=HAL_TIM_ReadCapturedValue(&htim4,TIM_CHANNEL_4);
+				LSB= HAL_TIM_ReadCapturedValue(&htim1,TIM_CHANNEL_4)+1;
+				timestamp = tim1_upper_bits_mask+(MSB<<16);
+				timestamp+=(uint64_t)LSB;
 					break;
 			}
 		}
@@ -264,10 +270,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			tim2_upper_bits_mask = (uint64_t)(tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 
 		}
-		if (htim->Instance == TIM1) {
+		if (htim->Instance == TIM4) {
 			{
 				tim1_update_counts++;
-				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-2) << 16;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+				tim1_upper_bits_mask = (uint64_t)(tim1_update_counts-1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 
 			}
 	}

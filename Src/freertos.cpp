@@ -137,6 +137,7 @@ MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
@@ -271,6 +272,7 @@ void StartNmeaParserThread(void const * argument) {
 	xSemaphoreNTP_REF = xSemaphoreCreateMutex();
 	//Slave (TIM1) before Master (TIM2)
 	__HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
+	__HAL_TIM_ENABLE_IT(&htim4, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_IT_UPDATE);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_4);
 	uint32_t porcessedCount = 0;
@@ -278,8 +280,8 @@ void StartNmeaParserThread(void const * argument) {
 
 	struct timespec utc, gps_time;
 	struct timespec last_utc;
-	last_utc.tv_sec=NULL;
-	last_utc.tv_nsec=NULL;
+	last_utc.tv_sec=0;
+	last_utc.tv_nsec=0;
 #define SAMETIMEUTCSYNCTRIESUNTIEREBOOT 1200 // wating 20 minutes to have an good GPS fix again
 	static int SameTimeGPSSyncTryes=0;
 	while (1) {
@@ -683,20 +685,18 @@ void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 
-	Met4FoFSensor* MPUSs[4]={Sensor0,Sensor1,Sensor2,Sensor3};
+	MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 	for(int i=0;i<4;i++){
-		MPU=MPUs[i];
+		MPU9250* MPUSensor=MPUSSenors[i];
 		//MPU9250
 		uint32_t MPUId=configMan.getSensorBaseID(i);
-		MPU.setBaseID(MPUId);
-		MPU.begin();
-		MPU.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-		MPU.setAccelRange(MPU9250::ACCEL_RANGE_4G);
+		MPUSensor->setBaseID(MPUId);
+		MPUSensor->begin();
+		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
 		//MPU.setSrd(1);
-		MPU.enableDataReadyInterrupt();
+		MPUSensor->enableDataReadyInterrupt();
 		//MPU9250
-
-
 	}
 
 
@@ -706,12 +706,12 @@ void StartDataStreamerThread(void const * argument) {
 	 uint32_t SensorID1=configMan.getSensorBaseID(1);
 	 Sensor1.setBaseID(SensorID1);
 	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-
+*/
 	 //TODO put id configuration in al loop
 	 //Internal ADC
-	 uint32_t SensorID10=configMan.getSensorBaseID(10);
-	 Met4FoFADC.setBaseID(SensorID10);
-*/
+	 //uint32_t SensorID10=configMan.getSensorBaseID(10);
+	 //Met4FoFADC.setBaseID(SensorID10);
+
 	 uint32_t SensorID20=configMan.getSensorBaseID(20);
 	 GPSPub.setBaseID(SensorID20);
 /*
@@ -779,7 +779,10 @@ void StartDataStreamerThread(void const * argument) {
 	//arm inputcapture
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_2);
-	//HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_4);
+	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
+	HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_2);
+	HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1);
+	HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
@@ -959,14 +962,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 		Channel1Tim2CaptureCount++;
 		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		//SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
+		SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
 		if(timestamp21<timestamp21OLD)
 		{
 			SEGGER_RTT_printf(0,
 					"TIM2: %llx is smaler than  %llx !!!!!!!\n",timestamp21,timestamp21OLD);
 		}
 		timestamp21OLD=timestamp21;
-
+		 /*
 		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 //DataMessage *mptrADC=NULL;
@@ -980,7 +983,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor0.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
-		 /*
+
 		 if(mptrADC != NULL){
 		 Met4FoFADC.getData(mptrADC, timestamp21);
 		 osMailPut(DataMail, mptrADC);
@@ -997,8 +1000,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 		Channel3Tim2CaptureCount++;
 		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
-		//SEGGER_RTT_printf(0,"TIM2CH3: %"PRIu64"\n",timestamp23);
-
+		SEGGER_RTT_printf(0,"TIM2CH3: %"PRIu64"\n",timestamp23);
+		/*
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL) {
 		Sensor1.getData(mptr, timestamp23);
@@ -1009,14 +1012,16 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			 Sensor1.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH2\n");
 		 }
+		 */
 	}
 	}
 	if (htim->Instance == TIM1){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
-		//SEGGER_RTT_printf(0,"TIM1CH1: %"PRIu64"\n",timestamp11);
+		SEGGER_RTT_printf(0,"TIM1CH1: %"PRIu64"\n",timestamp11);
 		DataMessage *mptr=NULL;
+		/*
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
@@ -1028,13 +1033,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor2.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH1\n");
 		 }
+		 */
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
 		DataMessage *mptr=NULL;
-	    //SEGGER_RTT_printf(0,"TIM1CH2: %"PRIu64"\n",timestamp12);
+	    SEGGER_RTT_printf(0,"TIM1CH2: %"PRIu64"\n",timestamp12);
+	    /*
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
@@ -1046,14 +1053,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor3.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH2\n");
 		 }
+		 */
 
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
-//SEGGER_RTT_printf(0,
-	//			"TIM1: %llx\n",timestamp13);
+SEGGER_RTT_printf(0,"TIM1: %llx\n",timestamp13);
 		if(timestamp13<timestamp13OLD)
 		{
 			SEGGER_RTT_printf(0,"TIM1: %llx is smaler than  %llx !!!!!!!\n",timestamp13,timestamp13OLD);
