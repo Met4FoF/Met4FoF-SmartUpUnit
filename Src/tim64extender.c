@@ -193,23 +193,23 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 		case HAL_TIM_ACTIVE_CHANNEL_1:
 			//this is the nromal case
 			MSB = HAL_TIM_ReadCapturedValue(&htim4, TIM_CHANNEL_1);
-			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1) + 1;
+			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_1) + 2;
 			break;
 
 		case HAL_TIM_ACTIVE_CHANNEL_2:
 			//this is the nromal case
 			MSB = HAL_TIM_ReadCapturedValue(&htim4, TIM_CHANNEL_2);
-			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2) + 1;
+			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2) + 2;
 			break;
 		case HAL_TIM_ACTIVE_CHANNEL_3:
 			//this is the nromal case
 			MSB = HAL_TIM_ReadCapturedValue(&htim4, TIM_CHANNEL_3);
-			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_3) + 1;
+			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_3) + 2;
 			break;
 		case HAL_TIM_ACTIVE_CHANNEL_4:
 			//this is the nromal case
 			MSB = HAL_TIM_ReadCapturedValue(&htim4, TIM_CHANNEL_4);
-			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_4) + 1;
+			LSB = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_4) + 2;
 			break;
 		default:
 			MSB = 0;

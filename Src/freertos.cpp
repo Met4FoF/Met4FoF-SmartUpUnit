@@ -254,7 +254,7 @@ void StartDefaultTask(void const * argument) {
 	sntp_init();
 	/* Infinite loop */
 	for (;;) {
-		osDelay(10000);
+		osDelay(1000);
 		sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
@@ -972,7 +972,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 					"TIM2: %llx is smaler than  %llx !!!!!!!\n",timestamp21,timestamp21OLD);
 		}
 		timestamp21OLD=timestamp21;
-		 /*
+
 		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 //DataMessage *mptrADC=NULL;
@@ -986,7 +986,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor0.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1\n");
 		 }
-
+		 /*
 		 if(mptrADC != NULL){
 		 Met4FoFADC.getData(mptrADC, timestamp21);
 		 osMailPut(DataMail, mptrADC);
@@ -1002,9 +1002,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim2CaptureCount++;
 		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		DataMessage *mptr=NULL;
 		SEGGER_RTT_printf(0,"TIM2CH3: %"PRIu64"\n",timestamp23);
-		/*
+		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL) {
 		Sensor1.getData(mptr, timestamp23);
@@ -1015,16 +1014,15 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			 Sensor1.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH2\n");
 		 }
-		 */
+
 	}
 	}
-	if (htim->Instance == TIM1){
+	if (htim->Instance == TIM4){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 		Channel1Tim1CaptureCount++;
 		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
-		SEGGER_RTT_printf(0,"TIM1CH1: %"PRIu64"\n",timestamp11);
+		//SEGGER_RTT_printf(0,"TIM4CH1: %"PRIu64"\n",timestamp11);
 		DataMessage *mptr=NULL;
-		/*
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
@@ -1036,15 +1034,14 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor2.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH1\n");
 		 }
-		 */
+
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 		Channel2Tim1CaptureCount++;
 		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
+		//SEGGER_RTT_printf(0,"TIM4CH2: %" PRIu64"\n",timestamp12);
 		DataMessage *mptr=NULL;
-	    SEGGER_RTT_printf(0,"TIM1CH2: %"PRIu64"\n",timestamp12);
-	    /*
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
@@ -1056,17 +1053,17 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			Sensor3.increaseCaptureCountWORead();
 			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH2\n");
 		 }
-		 */
+
 
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 		Channel3Tim1CaptureCount++;
 		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
-SEGGER_RTT_printf(0,"TIM1: %llx\n",timestamp13);
+			//SEGGER_RTT_printf(0,"TIM4CH3: %llx\n",timestamp13);
 		if(timestamp13<timestamp13OLD)
 		{
-			SEGGER_RTT_printf(0,"TIM1: %llx is smaler than  %llx !!!!!!!\n",timestamp13,timestamp13OLD);
+			//SEGGER_RTT_printf(0,"TIM4: %llx is smaler than  %llx !!!!!!!\n",timestamp13,timestamp13OLD);
 		}
 		timestamp13OLD=timestamp13;
 		/*
@@ -1128,7 +1125,7 @@ void NTP_time_CNT_update(time_t t,uint32_t us){
     }
     uint64_t deltaTime=((uint32_t)NTPUtc.tv_sec-(uint32_t)GPSUtc.tv_sec)*1e9;
     		deltaTime+=NTPUtc.tv_nsec-GPSUtc.tv_nsec;
-    SEGGER_RTT_printf(0,"NTP-GPS time diff=%d ns\n",deltaTime);
+    SEGGER_RTT_printf(0,"NTP-GPS time dif=%d ns\n",deltaTime);
 }
 
 /* Private application code --------------------------------------------------*/
