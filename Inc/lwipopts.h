@@ -90,7 +90,7 @@
 /*----- Default Value for LWIP_SNTP: 0 ---*/
 #define LWIP_SNTP 1
 /*----- Default Value for SNTP_UPDATE_DELAY: 3600000 ---*/
-#define SNTP_UPDATE_DELAY 15000
+#define SNTP_UPDATE_DELAY 65000
 /*----- Value in opt.h for LWIP_STATS: 1 -----*/
 #define LWIP_STATS 0
 /*----- Value in opt.h for CHECKSUM_GEN_IP: 1 -----*/

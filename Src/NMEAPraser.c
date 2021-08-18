@@ -381,7 +381,7 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         return UNKNOWN;
     }
     DEBUG_MSG("MSG to Parse :");
-    DEBUG_MSG(serial_buff);
+    //DEBUG_MSG(serial_buff); TODO check this
     if(buff_size > (int)(sizeof(parser_buf) - 1)) {
         DEBUG_MSG("Note: input string to big for parsing\n");
         return INVALID;

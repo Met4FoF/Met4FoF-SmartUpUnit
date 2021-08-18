@@ -455,33 +455,72 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
-	/*
-	uint32_t lastSampleCount0=0;
-	uint32_t actualSampleCount0=0;
-	uint32_t deltaSamples0=0;
-	float nominalSamplingFreq0=-1;
+	ConfigManager& configMan = ConfigManager::instance();
+	uint32_t lastSampleCount[4]={0};
 
-	uint32_t lastSampleCount1=0;
-	uint32_t actualSampleCount1=0;
-	uint32_t deltaSamples1=0;
-	float nominalSamplingFreq1=-1;
 
-	uint32_t lastSampleCount2=0;
-	uint32_t actualSampleCount2=0;
-	uint32_t deltaSamples2=0;
-	float nominalSamplingFreq2=-1;
-
-	uint32_t lastSampleCount3=0;
-	uint32_t actualSampleCount3=0;
-	uint32_t deltaSamples3=0;
-	float nominalSamplingFreq3=-1;
-
-	bool justRestarted=true;
-	bool justRestartedDelay=false;
-	*/
+	bool justRestarted[4]={true};
+	bool justRestartedDelay[4]={false};
 	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
+		for(int i=0;i<4;i++){
+			MPU9250* MPUSensor=MPUSSenors[i];
+			float nominalFreq=MPUSensor->getNominalSamplingFreq();
+			uint32_t actualSampleCount=MPUSensor->getSampleCount();
+			float deltaSamples=actualSampleCount-lastSampleCount[i];
+			lastSampleCount[i]=actualSampleCount;
+			if( (deltaSamples*1.25)<nominalFreq||(deltaSamples*0.75)>nominalFreq){
+				if(justRestarted[i]==false){
+				if(i==0 || i==1)
+				{
+					Sensor0.disableDataReadyInterrupt();
+					Sensor1.disableDataReadyInterrupt();
+				}
+				else
+				{
+					Sensor2.disableDataReadyInterrupt();
+					Sensor3.disableDataReadyInterrupt();
+				}
+				//MPU9250 reconfigure
+				SEGGER_RTT_printf(0,"WARNING SAMPLE FREQ WATCHDOG TRIPPED !\n RESETING SENSOR\n");
+				SEGGER_RTT_printf(0,"Sensor ID %u \n",i);
+				SEGGER_RTT_printf(0,"Nopminal sample freq %f actual sample freq ID %f \n",deltaSamples,nominalFreq);
+				uint32_t MPUId=configMan.getSensorBaseID(i);
+				MPUSensor->setBaseID(MPUId);
+				MPUSensor->begin();
+				MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+				MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
+				lastSampleCount[i] = 0;
+				justRestarted[i]=true;
+				//MPUSensor->setSrd(1);
+				if(i==0 || i==1)
+				{
+					Sensor0.enableDataReadyInterrupt();
+					Sensor1.enableDataReadyInterrupt();
+				}
+				else
+				{
+					Sensor2.enableDataReadyInterrupt();
+					Sensor3.enableDataReadyInterrupt();
+				}
+				}
+			}
+
+
+			/*
+			//MPU9250
+			uint32_t MPUId=configMan.getSensorBaseID(i);
+			MPUSensor->setBaseID(MPUId);
+			MPUSensor->begin();
+			MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+			MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
+			//MPUSensor->setSrd(1);
+			*/
+
+			//MPU9250
+		}
 		/*
 		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		osDelay(1);
@@ -684,7 +723,7 @@ void StartLCDThread(void const * argument) {
 }
 
 void StartDataStreamerThread(void const * argument) {
-	while(not Lwip_init_finished||not GPS_init_finished){
+	while(not Lwip_init_finished ||not GPS_init_finished){
 		osDelay(100);
 	}
 	ConfigManager& configMan = ConfigManager::instance();
@@ -699,9 +738,13 @@ void StartDataStreamerThread(void const * argument) {
 		MPUSensor->begin();
 		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
-		//MPU.setSrd(1);
-		MPUSensor->enableDataReadyInterrupt();
+		//MPUSensor->setSrd(1);
+
 		//MPU9250
+	}
+	for(int i=0;i<4;i++){
+		MPU9250* MPUSensor=MPUSSenors[i];
+		MPUSensor->enableDataReadyInterrupt();
 	}
 
 
