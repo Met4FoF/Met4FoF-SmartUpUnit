@@ -144,10 +144,12 @@
 #undef LWIP_DEBUG
 #endif
 
+/*
 #ifdef LWIP_DEBUG
 #ifndef LWIP_PLATFORM_DIAG
 #error "If you want to use LWIP_DEBUG, LWIP_PLATFORM_DIAG(message) needs to be defined in your arch/cc.h"
 #endif
+*/
 #define LWIP_DEBUGF(debug, message) do { \
                                if ( \
                                    ((debug) & LWIP_DBG_ON) && \
@@ -160,8 +162,9 @@
                                } \
                              } while(0)
 
-#else  /* LWIP_DEBUG */
-#define LWIP_DEBUGF(debug, message)
-#endif /* LWIP_DEBUG */
+
+//#else  /* LWIP_DEBUG */
+//#define LWIP_DEBUGF(debug, message)
+//#endif /* LWIP_DEBUG */
 
 #endif /* LWIP_HDR_DEBUG_H */

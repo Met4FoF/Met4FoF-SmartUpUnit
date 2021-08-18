@@ -50,6 +50,7 @@
  */
 #include "lwipopts.h"
 #include "lwip/debug.h"
+#define LWIP_DEBUG 1
 
 /**
  * @defgroup lwip_opts Options (lwipopts.h)

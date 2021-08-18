@@ -3,10 +3,10 @@
   <FileVersion>3.0</FileVersion>
   <Workspace>
     <WorkspaceType>Single-project</WorkspaceType>
-    <WorkspacePath>C:\Users\seeger01\Met4FoF-SmartUpUnit\</WorkspacePath>
+    <WorkspacePath>D:\Met4FoF-SmartUpUnit\</WorkspacePath>
     <underRoot>true</underRoot>
     <TrustZone>0</TrustZone>
-    <HAL_Driver>C:\Users\seeger01\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0</HAL_Driver>
+    <HAL_Driver>C:\Users\benes\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0</HAL_Driver>
     <CMSIS>Drivers/CMSIS</CMSIS>
     <Toolchain>STM32CubeIDE</Toolchain>
     <IocFile>met4FOF_SSU_V2.ioc</IocFile>
@@ -30,7 +30,7 @@
             <memory access="xrw" name="RAM" size="512" start="0x20000000" />
             <memory access="rx" name="FLASH" size="2048" start="0x8000000" />
           </memories>
-          <startup>C:\Users\seeger01\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0\Drivers\CMSIS\Device\ST\STM32F7xx\Source\Templates\gcc\startup_stm32f767xx.s</startup>
+          <startup>C:\Users\benes\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0\Drivers\CMSIS\Device\ST\STM32F7xx\Source\Templates\gcc\startup_stm32f767xx.s</startup>
           <LinkSettings>
             <LinkAdditionalLibs />
           </LinkSettings>

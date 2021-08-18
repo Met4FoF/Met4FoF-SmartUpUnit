@@ -41,13 +41,14 @@ Maintainer: Michael Coracin
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #if DEBUG_GPS == 0
-    #define DEBUG_MSG(args...)  SEGGER_RTT_printf(0, args)
-    #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) SEGGER_RTT_printf(0,"%x.",c[a]);SEGGER_RTT_printf(0,"end\n")
-    #define CHECK_NULL(a)       if(a==NULL){SEGGER_RTT_printf(0,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
-#else
     #define DEBUG_MSG(args...)
     #define DEBUG_ARRAY(a,b,c)  for(a=0;a!=0;){}
     #define CHECK_NULL(a)       if(a==NULL){return LGW_GPS_ERROR;}
+#else
+    #define DEBUG_MSG(args...)  SEGGER_RTT_printf(0, args)
+    #define DEBUG_ARRAY(a,b,c)  for(a=0;a<b;++a) SEGGER_RTT_printf(0,"%x.",c[a]);SEGGER_RTT_printf(0,"end\n")
+    #define CHECK_NULL(a)       if(a==NULL){SEGGER_RTT_printf(0,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_GPS_ERROR;}
+
 #endif
 #define TRACE()         fprintf(stderr, "@ %s %d\n", __FUNCTION__, __LINE__);
 
@@ -380,7 +381,7 @@ enum gps_msg lgw_parse_nmea(const char *serial_buff, int buff_size) {
         return UNKNOWN;
     }
     DEBUG_MSG("MSG to Parse :");
-    SEGGER_RTT_Write(0, serial_buff, buff_size);
+    DEBUG_MSG(serial_buff);
     if(buff_size > (int)(sizeof(parser_buf) - 1)) {
         DEBUG_MSG("Note: input string to big for parsing\n");
         return INVALID;

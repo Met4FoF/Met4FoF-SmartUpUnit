@@ -250,12 +250,14 @@ void StartDefaultTask(void const * argument) {
 	//TODO implent NPTP ip array
 	ip_addr_t NTPIP = configMan.getUDPTargetIP();
 	osDelay(5000);
+	//Set the method of obtaining SNTP -> Use the method of obtaining from the server
+	sntp_setoperatingmode(SNTP_OPMODE_POLL);
 	sntp_setserver(0, &NTPIP);
 	sntp_init();
 	/* Infinite loop */
 	for (;;) {
 		osDelay(1000);
-		sntp_request(NULL);
+		//sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
 }

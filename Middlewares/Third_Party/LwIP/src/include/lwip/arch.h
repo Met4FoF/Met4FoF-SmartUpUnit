@@ -46,6 +46,7 @@
 #endif
 
 #include "arch/cc.h"
+#include "SEGGER_RTT.h"
 
 /**
  * @defgroup compiler_abstraction Compiler/platform abstraction
@@ -76,7 +77,7 @@
  * systems, this should be defined to something less resource-consuming.
  */
 #ifndef LWIP_PLATFORM_DIAG
-#define LWIP_PLATFORM_DIAG(x) do {printf x;} while(0)
+#define LWIP_PLATFORM_DIAG(x) do {SEGGER_RTT_printfCHNULL x;} while(0)
 #include <stdio.h>
 #include <stdlib.h>
 #endif
