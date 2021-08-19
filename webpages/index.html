@@ -23,24 +23,24 @@
            	 $("#usr-btn").removeClass("alert-success").addClass("alert-info");
            else
              $("#usr-btn").removeClass("alert-info").addClass("alert-success");
-             
-           $("#usr-btn").find("b").html(res);           
-        }); 
+
+           $("#usr-btn").find("b").html(res);
+        });
         $.get("adc", function(res) {
-           $("#mcu-temp").find("b").html(res);           
-        }); 
-	   setTimeout(refreshValues, 250); 
+           $("#mcu-temp").find("b").html(res);
+        });
+	   setTimeout(refreshValues, 250);
 	}
 	setTimeout(refreshValues, 250);
-  
+
   //################################################################################
-  
- 
+
+
     $('.IP').mask('999.999.999.999');
-	
+
 //$('#button1').on('click', function() {
         //alert(tbox1);
-		//$("#result").html($('#first input').serialize());	
+		//$("#result").html($('#first input').serialize());
 //    });
    function getUrlVars() {
     var vars = {};
@@ -50,25 +50,28 @@
     return vars;
 }
        var tbox1 = getUrlVars()["tbox1"];
-	   var tbox2 = getUrlVars()["tbox1"];
-	 
- 
+	     var tbox2 = getUrlVars()["tbox2"];
+       var tbox3 = getUrlVars()["tbox3"];
+
+
   });
 </script>
   <script>
 
         strLine1 = "";
         strLine2 = "";
-        
+        strLine3 = "";
+
         function SendText()
         {
             //nocache = "&nocache=" + Math.random() * 1000000;
             var request = new XMLHttpRequest();
-            
+
             strLine1 = "&L1=" + document.getElementById("txt_form").tbox1.value;
             strLine2 = "&L2=" + document.getElementById("txt_form").tbox2.value;
-            
-            request.open("GET", "ajax_inputs" + strLine1 + strLine2 , true);
+            strLine3 = "&L3=" + document.getElementById("txt_form").tbox3.value;
+
+            request.open("GET", "ajax_inputs" + strLine1 + strLine2+ strLine3 , true);
             request.send(null);
         }
         </script>
@@ -85,45 +88,46 @@
 		  </div>
 		  <div class="col-md-6 cell">
 		  	 <button type="button" class="btn btn-default btn-block led" id="led2">LED2</button>
-		  </div>	  	 
+		  </div>
 		  <div class="col-md-6 cell">
 		  	 <button type="button" class="btn btn-default btn-block led" id="led3">LED3</button>
 		  </div>
 		</div>
 	  </div>
 	</div>
-	
+
 	<div class="panel panel-default">
 	<form method="get">
     <div id="first" style=" ">
 	<div class="panel-heading" style="background-color: #ddd;">Setting IP</div>
 	<div style="padding: 10px;" >
 	                         <form id="txt_form" name="frmText">
-    &nbsp;&nbsp;&nbsp;&nbsp; UDP Target IP: <input name="tbox1"  placeholder="---,---,---,---" type="text" class='IP led' id="ipv4" style="width: 110px;">
-                             Subnet Max:    <input name="tbox2"  placeholder="---,---,---,---" type="text" class='IP led' id="sub1" style="width: 110px;"> &nbsp;&nbsp;&nbsp;&nbsp;
+                             UDP Target IP:<input name="tbox1"  placeholder="---,---,---,---" type="text" class='IP led' id="ipv4" style="width: 110px;"><br>
+                             Subnet Mask: <input name="tbox2"  placeholder="---,---,---,---" type="text" class='IP led' id="sub1" style="width: 110px;"><br>
+                             NTP Sever:   <input name="tbox3"  placeholder="---,---,---,---" type="text" class='IP led' id="sub1" style="width: 110px;"><br>
 							 </form>
                                             <input id="button1" type="submit" value="save" onclick="SendText()">
-      </div> 
-     
+      </div>
+
     </div>
-	
+
      </form>
 	</div>
-	
-	
+
+
 	<div class="panel panel-default">
-	
+
 	  <div class="panel-heading">Nucleo USER BUTTON</div>
 	  <div class="panel-body">
 	     <div id="usr-btn" class="alert alert-info" role="alert"><b>OFF</b></div>
 	  </div>
-	</div>	
+	</div>
 	<div class="panel panel-default">
 	  <div class="panel-heading">MCU Temperature</div>
 	  <div class="panel-body">
 	     <div id="mcu-temp" class="alert alert-warning" role="alert"><b>TEMP</b></div>
 	  </div>
-	</div>	
+	</div>
 </div>
 </body>
 </html>

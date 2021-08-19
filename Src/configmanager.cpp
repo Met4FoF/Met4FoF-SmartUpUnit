@@ -61,6 +61,19 @@ bool ConfigManager::setUDPTargetIP(ip_addr_t UDPTargetIP){
 	}
 	return retVal;
 }
+ip_addr_t ConfigManager::getNTPServerIP(){
+	ip_addr_t retVal;
+	retVal.addr=BKPSRAM_Read32(NTPSERVERTIPADRESS);
+	return retVal;
+}
+bool ConfigManager::setNTPServerIP(ip_addr_t NTPServerIP){
+	bool retVal=false;
+	BKPSRAM_Write32(NTPSERVERTIPADRESS,NTPServerIP.addr);
+	if(BKPSRAM_Read32(NTPSERVERTIPADRESS)==NTPServerIP.addr){
+		retVal=true;
+	}
+	return retVal;
+}
 ip_addr_t ConfigManager::getUDPSubnetmarsk(){
 	ip_addr_t retVal;
 	retVal.addr=BKPSRAM_Read32(UDPSUBNETMASKADRESS);

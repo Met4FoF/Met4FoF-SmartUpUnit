@@ -464,6 +464,7 @@ void StartBlinkThread(void const * argument) {
 	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 		for(int i=0;i<4;i++){
 			MPU9250* MPUSensor=MPUSSenors[i];
@@ -507,106 +508,8 @@ void StartBlinkThread(void const * argument) {
 				}
 				}
 			}
-
-
-			/*
-			//MPU9250
-			uint32_t MPUId=configMan.getSensorBaseID(i);
-			MPUSensor->setBaseID(MPUId);
-			MPUSensor->begin();
-			MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-			MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
-			//MPUSensor->setSrd(1);
-			*/
-
-			//MPU9250
 		}
-		/*
-		//Sensor0.setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(1);
-		//Sensor0.setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-		actualSampleCount0=Sensor0.getSampleCount();
-		actualSampleCount1=Sensor1.getSampleCount();
-		actualSampleCount2=Sensor2.getSampleCount();
-		actualSampleCount3=Sensor3.getSampleCount();
-		nominalSamplingFreq0=Sensor0.getNominalSamplingFreq();
-		nominalSamplingFreq1=Sensor1.getNominalSamplingFreq();
-		nominalSamplingFreq2=Sensor2.getNominalSamplingFreq();
-		nominalSamplingFreq3=Sensor3.getNominalSamplingFreq();
-		//Hack to gether Watchdog
-
-		deltaSamples0=actualSampleCount0-lastSampleCount0;
-		deltaSamples1=actualSampleCount1-lastSampleCount1;
-		deltaSamples2=actualSampleCount2-lastSampleCount2;
-		deltaSamples3=actualSampleCount3-lastSampleCount3;
-
-		if(deltaSamples0<nominalSamplingFreq0*0.75||deltaSamples0>nominalSamplingFreq0*1.25){
-			if(justRestarted==false){
-			Sensor0.begin();
-			Sensor0.setSrd(1);
-			Sensor0.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-			Sensor0.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-			Sensor0.enableDataReadyInterrupt();
-			lastSampleCount0 = 0;
-			actualSampleCount0 = 0;
-			justRestarted=true;
-			}
-		}
-		if(deltaSamples1<nominalSamplingFreq1*0.75||deltaSamples1>nominalSamplingFreq1*1.25){
-			if(justRestarted==false){
-				Sensor1.begin();
-				Sensor1.setSrd(1);
-				Sensor1.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-				Sensor1.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-				Sensor1.enableDataReadyInterrupt();
-				lastSampleCount0 = 0;
-				actualSampleCount0 = 0;
-				justRestarted=true;
-			}
-		}
-
-		if(deltaSamples2<nominalSamplingFreq2*0.75||deltaSamples2>nominalSamplingFreq2*1.25){
-			if(justRestarted==false){
-			Sensor2.begin();
-			Sensor2.setSrd(1);
-			Sensor2.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-			Sensor2.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-			Sensor2.enableDataReadyInterrupt();
-			lastSampleCount2 = 0;
-			actualSampleCount2 = 0;
-			justRestarted=true;
-			}
-		}
-		if(deltaSamples3<nominalSamplingFreq3*0.75||deltaSamples3>nominalSamplingFreq3*1.25){
-			if(justRestarted==false){
-			Sensor3.begin();
-			Sensor3.setSrd(1);
-			Sensor3.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-			Sensor3.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-			Sensor3.enableDataReadyInterrupt();
-			lastSampleCount3 = 0;
-			actualSampleCount3 = 0;
-			justRestarted=true;
-			}
-		}
-
-		if(justRestartedDelay==true && justRestarted==true){
-			justRestartedDelay=false;
-			justRestarted=false;
-		}
-		if(justRestartedDelay==false && justRestarted==true){
-			justRestartedDelay=true;
-		}
-		lastSampleCount0=actualSampleCount0;
-		lastSampleCount1=actualSampleCount1;
-		lastSampleCount2=actualSampleCount2;
-		lastSampleCount3=actualSampleCount3;
-		SEGGER_RTT_printf(0,"Delta Samples = %d %d %d %d\n",deltaSamples0,deltaSamples1,deltaSamples2,deltaSamples3);
-		//Sensor0.setGyroSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		osDelay(1);
-		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
-		 */
+		*/
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);

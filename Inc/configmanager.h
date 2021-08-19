@@ -57,6 +57,8 @@ public:
 	bool set_SubNetMaskDeviceIP(ip_addr_t SubNetMaskDeviceIP);
 	ip_addr_t getUDPTargetIP();
 	bool setUDPTargetIP(ip_addr_t UDPTargetIP);
+	ip_addr_t getNTPServerIP();
+	bool setNTPServerIP(ip_addr_t UDPTargetIP);
 	ip_addr_t getUDPSubnetmarsk();
 	bool setUDPSubnetmarsk(ip_addr_t UDPSubnetmarsk);
 	int16_t getUDPPort();

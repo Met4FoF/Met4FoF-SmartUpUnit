@@ -72,7 +72,7 @@ void http_server_serve(struct netconn *conn)
       {
     	  //SEGGER_RTT_printf(0,"%s.\r\n",buf);
     	  if (strncmp((char const *)buf,"GET /index.html",15)==0) {
-    		  netconn_write(conn, (const unsigned char*)index_html, index_html_len, NETCONN_NOCOPY);
+    		  netconn_write(conn, (const unsigned char*)__index_html, __index_html_len, NETCONN_NOCOPY);
     	  }
 
     	  if (strncmp((char const *)buf,"GET /led1", 9) == 0) {
@@ -106,30 +106,23 @@ void http_server_serve(struct netconn *conn)
     	  }
     	  if (strncmp((char const *)buf,"GET /index.html?tbox1=",22)==0) {
     		  SEGGER_RTT_printf(0,"PARSING IP\n\r");
-    		  const char *stop=strstr(buf,"&tbox2=");
-    		  uint32_t len=(uint32_t)stop-(uint32_t)buf-22;
-    		  SEGGER_RTT_printf(0,"LEN %llu \n\r",len);
-    		  char * asciip[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-			  memcpy(asciip,buf+22,len);
-			  SEGGER_RTT_printf(0,"PARSING >%s< \n\r",asciip);
+    		  const char *UDPIpStr=strstr(buf,"&box1=");
+    		  const char *UDPNetMaskStr=strstr(buf,"&tbox2=");
+    		  const char *NTPServerIpStr=strstr(buf,"&tbox3=");
     		  ip4_addr_t UDPip;
     		  ip4_addr_t UDPNetmask;
-    		  ip4addr_aton((char const *)asciip,(ip4_addr_t*)&UDPip);
-
+    		  ip4_addr_t NTPServerIP;
     		  char iPadressBuffer[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     		  char NetMaskBuffer[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
+    		  char NTPServerIPBuffer[17]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    		  ip4addr_aton(UDPIpStr+6,(ip4_addr_t*)&UDPip);
+    		  ip4addr_aton(UDPNetMaskStr+6,(ip4_addr_t*)&UDPNetmask);
+    		  ip4addr_aton(NTPServerIpStr+6,(ip4_addr_t*)&NTPServerIP);
   			  ip4addr_ntoa_r((ip4_addr_t*)&UDPip, iPadressBuffer,sizeof(iPadressBuffer));
-    		  uint32_t start=(uint32_t)buf+22+7+len;
-  			  stop=strstr((const char *)start," ");
-  			  len=(uint32_t)stop-(uint32_t)start;
-    		  memcpy(&asciip,(const void *)start,len);
-  			  ip4addr_aton((char const *)asciip,(ip4_addr_t*)&UDPNetmask);
-  			  SEGGER_RTT_printf(0,"PARSING>%s<",asciip);
-  			  ip4addr_ntoa_r((ip4_addr_t*)&UDPNetmask, NetMaskBuffer,sizeof(NetMaskBuffer));
-
+  			  ip4addr_ntoa_r((ip4_addr_t*)&UDPip, iPadressBuffer,sizeof(iPadressBuffer));
+  			  ip4addr_ntoa_r((ip4_addr_t*)&UDPip, iPadressBuffer,sizeof(iPadressBuffer));
   			  char HTMLBuff[300]={};
-  			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>UDPTargetIP= %s NetMask= %s softreset (black button) to activate changes if battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer);
+  			  sprintf(HTMLBuff,"<div class=\"panel-body\"><div id=\"IP_info\" class=\"alert alert-info\" role=\"alert\"><b>UDPTargetIP= %s NetMask= %s  NTPServer= %s softreset (black button) to activate changes if battery is installed</b></div></div>\0",&iPadressBuffer,&NetMaskBuffer,&NTPServerIPBuffer);
   			  configMan.setUDPSubnetmarsk(UDPNetmask);
   			  configMan.setUDPTargetIP(UDPip);
   			  netconn_write(conn, (const unsigned char*)HTMLBuff, strlen(HTMLBuff), NETCONN_NOCOPY);
