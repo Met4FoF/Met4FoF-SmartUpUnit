@@ -236,8 +236,8 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
-
-
+	uint32_t random32bit=0;
+	HAL_RNG_GenerateRandomNumber(&hrng, &random32bit);// genrate some random data for dhcp inting will be read from rng register by LWIP
 	/* init code for LWIP */
 	MX_LWIP_Init();
 

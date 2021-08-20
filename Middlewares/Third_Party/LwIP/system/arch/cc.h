@@ -35,6 +35,7 @@
 #include "cpu.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "rng.h"
 
 typedef int sys_prot_t;
 
@@ -83,6 +84,7 @@ typedef int sys_prot_t;
                                      x, __LINE__, __FILE__); } while(0)
 
 /* Define random number generator function */
-#define LWIP_RAND() ((u32_t)rand())
+//#define LWIP_RAND() ((u32_t)rand())
+#define LWIP_RAND() ((u32_t)(HAL_RNG_GetRandomNumber(&hrng)))
 
 #endif /* __CC_H__ */
