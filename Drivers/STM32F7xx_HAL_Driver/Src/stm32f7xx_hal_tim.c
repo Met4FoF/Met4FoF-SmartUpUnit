@@ -3168,6 +3168,21 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Stop_DMA(TIM_HandleTypeDef *htim, uint32_t Cha
   */
 void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim)
 {
+	//CHANGE UPDATE BEFORE INPUT CAPTURE
+	  /* TIM Update event */
+	  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET)
+	  {
+	    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET)
+	    {
+	      __HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
+	#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
+	      htim->PeriodElapsedCallback(htim);
+	#else
+	      HAL_TIM_PeriodElapsedCallback(htim);
+	#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
+	    }
+	  }
+
   /* Capture compare 1 event */
   if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_CC1) != RESET)
   {
@@ -3289,19 +3304,6 @@ void HAL_TIM_IRQHandler(TIM_HandleTypeDef *htim)
 #endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
       }
       htim->Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
-    }
-  }
-  /* TIM Update event */
-  if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET)
-  {
-    if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET)
-    {
-      __HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
-#if (USE_HAL_TIM_REGISTER_CALLBACKS == 1)
-      htim->PeriodElapsedCallback(htim);
-#else
-      HAL_TIM_PeriodElapsedCallback(htim);
-#endif /* USE_HAL_TIM_REGISTER_CALLBACKS */
     }
   }
   /* TIM Break input event */
