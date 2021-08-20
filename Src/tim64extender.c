@@ -14,6 +14,8 @@ static uint64_t tim2_upper_bits_mask = 0;
 //Top 48 bit for timer2 inputcapture values
 static uint64_t tim4_update_counts = 0;
 static uint64_t tim4_upper_bits_mask = 0;
+static bool tim2justOverflown=false;
+static bool tim4justOverflown=false;
 
 
 uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
@@ -32,8 +34,13 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
 	// ...
 	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
 	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
+
 	uint64_t tim2_upper_bits_mask_race_condition = 0;
 	bool tim2_race_condition_up_date = false;
+
+	uint64_t tim4_upper_bits_mask_race_condition = 0;
+	bool tim4_race_condition_up_date = false;
+	/*
 	if (htim->Instance == TIM2) {
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
 			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
@@ -47,8 +54,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
 			}
 		}
 	}
-	uint64_t tim4_upper_bits_mask_race_condition = 0;
-	bool tim4_race_condition_up_date = false;
+
 	if (htim->Instance == TIM4) {
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
 			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
@@ -63,6 +69,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
 			}
 		}
 	}
+	*/
 	if (htim->Instance == TIM4) {
 		uint32_t MSB = __HAL_TIM_GetCounter(&htim4);
 		uint32_t LSB = __HAL_TIM_GetCounter(&htim1) + 1;
@@ -123,13 +130,14 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 	// ...
 	// if an update and an inputcapure event occures while jumping or processing  in the HAL_TIM_IRQHandler() then the inputcapure event will be
 	// procesed before the update event and the tim2_upper_bits_mask is not set right so we have to check the timer values and decive if they are from befor or after the overflow.
-#define TIM32OLDTIMERVALMIN 0xFF000000 // if an inputcaputure value is biger than this its prppably an old one
+/*
 	static uint64_t tim2_upper_bits_mask_race_condition = 0;
 	static bool tim2_race_condition_up_date = false;
 	static uint64_t tim4_upper_bits_mask_race_condition = 0;
 	static bool tim4_race_condition_up_date = false;
-
+*/
 	if (htim->Instance == TIM2) {
+/*
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
 			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
 			__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
@@ -141,6 +149,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			tim2_upper_bits_mask = (uint64_t) (tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 			}
 		}
+*/
 		uint32_t timestamp_raw=0;
 		switch (htim->Channel) {
 		case HAL_TIM_ACTIVE_CHANNEL_1:
@@ -159,7 +168,25 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			timestamp_raw = 0;
 			SEGGER_RTT_printf(0,"WARNING!!! TIM2 UNHANDLED CHANNEL AS INTERRUPT SOURCE\n");
 		}
+		if(tim2justOverflown==false){
+			timestamp = tim2_upper_bits_mask + timestamp_raw;
+		}
+		else{
+			SEGGER_RTT_printf(0,"INFO TIM2  First Capture after Update\n");
+			tim2justOverflown=false;
+			if (timestamp_raw>TIM32OLDTIMERVALMIN){
+				timestamp = (tim2_upper_bits_mask-1) + timestamp_raw;
+				SEGGER_RTT_printf(0,"INFO Old Value\n");
+			}
+			else
+			{
+				timestamp = tim2_upper_bits_mask + timestamp_raw;
+				SEGGER_RTT_printf(0,"INFO New Value\n");
+			}
 
+		}
+	}
+/*
 			if (tim2_race_condition_up_date == false) {
 				//this is the nromal case
 				timestamp = tim2_upper_bits_mask +timestamp_raw;
@@ -177,8 +204,10 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			}
 
 	}
+	*/
 
 	if (htim->Instance == TIM4) {
+		/*
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
 			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
 			__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
@@ -190,6 +219,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			tim4_upper_bits_mask = (uint64_t) (tim4_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
 			}
 		}
+		*/
 		uint32_t MSB = 0;
 		uint32_t LSB = 0;
 		switch (htim->Channel) {
@@ -219,8 +249,25 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			LSB = 0;
 			SEGGER_RTT_printf(0,"WARNING!!! TIM4 UNHANDLED CHANNEL AS INTERRUPT SOURCE\n");
 		}
+		uint32_t timestamp_raw=(MSB << 16)+LSB;
+if(tim4justOverflown==false){
+	timestamp = tim4_upper_bits_mask + timestamp_raw;
+}
+else{
+	SEGGER_RTT_printf(0,"INFO TIM4  First Capture after Update\n");
+	tim4justOverflown=false;
+	if (timestamp_raw>TIM32OLDTIMERVALMIN){
+		timestamp = (tim4_upper_bits_mask-1) + timestamp_raw;
+		SEGGER_RTT_printf(0,"INFO Old Value\n");
+	}
+	else
+	{
+		timestamp = tim4_upper_bits_mask + timestamp_raw;
+		SEGGER_RTT_printf(0,"INFO New Value\n");
+	}
 
-
+}
+/*
 	if (tim4_race_condition_up_date == false) {
 		//this is the nromal case
 		timestamp = tim4_upper_bits_mask + (MSB << 16)+LSB;
@@ -237,6 +284,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 		}
 		tim4_race_condition_up_date = false;
 	}
+	*/
 	}
 	return timestamp;
 }
@@ -256,17 +304,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM14) {
 		HAL_IncTick();
 	}
+
 	if (htim->Instance == TIM2) {
 		tim2_update_counts++;
 		tim2_upper_bits_mask = (uint64_t) (tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
+		tim2justOverflown=true;
 
 	}
 	if (htim->Instance == TIM4) {
-		{
 			tim4_update_counts++;
 			tim4_upper_bits_mask = (uint64_t) (tim4_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-
-		}
+			tim4justOverflown=true;
 	}
 	/* USER CODE BEGIN Callback 1 */
 

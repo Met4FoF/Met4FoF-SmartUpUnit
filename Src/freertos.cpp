@@ -133,10 +133,12 @@ static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
+/*
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+*/
 
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
@@ -145,6 +147,13 @@ MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 Met4FoFGPSPub GPSPub(&GPS_ref,20);
 //Met4FoFEdgeTS EdgePub0(1.0,30);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
+
+Met4FoFEdgeTS Sensor0(1.0,0);
+Met4FoFEdgeTS Sensor1(1.0,1);
+Met4FoFEdgeTS Sensor2(1.0,2);
+Met4FoFEdgeTS Sensor3(1.0,3);
+
+
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors=5;
 Met4FoFSensor * Sensors[numSensors]= {&Sensor0,&Sensor1,&Sensor2,&Sensor3,&GPSPub};//,
@@ -459,11 +468,12 @@ void StartBlinkThread(void const * argument) {
 	uint32_t lastSampleCount[4]={0};
 
 
-	bool justRestarted[4]={true};
+	bool justRestarted=true;
 	bool justRestartedDelay[4]={false};
 	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 		for(int i=0;i<4;i++){
 			MPU9250* MPUSensor=MPUSSenors[i];
@@ -472,7 +482,7 @@ void StartBlinkThread(void const * argument) {
 			float deltaSamples=actualSampleCount-lastSampleCount[i];
 			lastSampleCount[i]=actualSampleCount;
 			if( (deltaSamples*1.25)<nominalFreq||(deltaSamples*0.75)>nominalFreq){
-				if(justRestarted[i]==false){
+				if(justRestarted==false){
 				if(i==0 || i==1)
 				{
 					Sensor0.disableDataReadyInterrupt();
@@ -493,7 +503,7 @@ void StartBlinkThread(void const * argument) {
 				MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 				MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
 				lastSampleCount[i] = 0;
-				justRestarted[i]=true;
+				justRestarted=true;
 				//MPUSensor->setSrd(1);
 				if(i==0 || i==1)
 				{
@@ -507,7 +517,9 @@ void StartBlinkThread(void const * argument) {
 				}
 				}
 			}
+
 	}
+	*/
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
@@ -629,7 +641,7 @@ void StartDataStreamerThread(void const * argument) {
 	}
 	ConfigManager& configMan = ConfigManager::instance();
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
-
+	/*
 	MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 	for(int i=0;i<4;i++){
 		MPU9250* MPUSensor=MPUSSenors[i];
@@ -647,7 +659,7 @@ void StartDataStreamerThread(void const * argument) {
 		MPU9250* MPUSensor=MPUSSenors[i];
 		MPUSensor->enableDataReadyInterrupt();
 	}
-
+*/
 
 /*
 	//BMA280
