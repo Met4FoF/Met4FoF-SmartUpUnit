@@ -79,6 +79,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
 				//this is an old value using the old bitmask
 				timestamp = tim4_upper_bits_mask_race_condition+timestamp_raw;
 			}
+			tim4_race_condition_up_date = false;
 		}
 
 	}
@@ -97,6 +98,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_Base(TIM_HandleTypeDef *htim) {
 				//this is an old value using the old bitmask
 				timestamp = tim2_upper_bits_mask_race_condition+timestamp_raw;
 			}
+			tim2_race_condition_up_date = false;
 		}
 
 	}
@@ -129,7 +131,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 
 	if (htim->Instance == TIM2) {
 		if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) != RESET) {
-			//if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
+			if (__HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE) != RESET) {
 			__HAL_TIM_CLEAR_IT(htim, TIM_IT_UPDATE);
 			//the flag gets cleared to prevent HAL_TIM_PeriodElapsedCallback() calling and therfore double increasment
 			SEGGER_RTT_printf(0,"WARNING!!! TIM2 TIMER OVERFLOW DETECTED OUTSIDE OF UPDATEEVENTHANDLER\n START SPECIAL HANDLING CHECK RESULTS OF THIS MESURMENT CYCLE");
@@ -137,7 +139,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			tim2_upper_bits_mask_race_condition = tim2_upper_bits_mask;
 			tim2_update_counts++;
 			tim2_upper_bits_mask = (uint64_t) (tim2_update_counts - 1) << 32;//timer gets initaled with set upodateflag but we want to start at zero therfore -1
-			//}
+			}
 		}
 		uint32_t timestamp_raw=0;
 		switch (htim->Channel) {
@@ -171,6 +173,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 					timestamp = tim2_upper_bits_mask_race_condition
 							+ (uint64_t) timestamp_raw;
 				}
+				tim2_race_condition_up_date = false;
 			}
 
 	}
@@ -232,6 +235,7 @@ uint64_t TIM_Get_64Bit_TimeStamp_IC(TIM_HandleTypeDef *htim) {
 			timestamp = tim4_upper_bits_mask_race_condition
 					+ (uint64_t) timestamp_raw;
 		}
+		tim4_race_condition_up_date = false;
 	}
 	}
 	return timestamp;
