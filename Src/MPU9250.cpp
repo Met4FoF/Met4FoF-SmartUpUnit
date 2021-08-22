@@ -1035,9 +1035,13 @@ void MPU9250::setGyroSelfTest(uint8_t SelftestStatus){
 /* writes a byte to MPU9250 register given a register address and data */
 int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
   /* write data to device */
+
     if(_SPIHSBOUDRATEPRESCALERSLOW!=_MPU9250spi->Init.BaudRatePrescaler){
     	_MPU9250spi->Init.BaudRatePrescaler = _SPIHSBOUDRATEPRESCALERSLOW;
-    	HAL_SPI_Init(_MPU9250spi);
+    	HAL_StatusTypeDef SpiRetVal= HAL_ERROR;
+    	while(SpiRetVal== HAL_ERROR){
+    		SpiRetVal=HAL_SPI_Init(_MPU9250spi);
+    	}
     	_useSPILSOLD=true;
     }
     if(_useSPIHS){
@@ -1048,7 +1052,6 @@ int MPU9250::writeRegister(uint8_t subAddress, uint8_t data){
     		SpiRetVal=HAL_SPI_Init(_MPU9250spi);
     	}
     	_useSPILSOLD=false;
-
     }
     }
   	uint8_t buffer[2] = {subAddress, data };

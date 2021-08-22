@@ -642,8 +642,8 @@ void StartDataStreamerThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
 
-	MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
-	for(int i=0;i<4;i++){
+	MPU9250* MPUSSenors[5]={&Sensor0,&Sensor1,&Sensor2,&Sensor3,&Sensor2};//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
+	for(int i=0;i<5;i++){
 		MPU9250* MPUSensor=MPUSSenors[i];
 		//MPU9250
 		uint32_t MPUId=configMan.getSensorBaseID(i);
