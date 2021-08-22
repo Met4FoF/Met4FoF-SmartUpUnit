@@ -161,7 +161,7 @@ osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 static bool Lwip_init_finished=false;
 static bool GPS_init_finished=false;
-
+static bool Sensors_init_finished=false;
 #define NUMDESCRIPTIONSTOSEND 6
 DescriptionMessage_DESCRIPTION_TYPE Tosend[NUMDESCRIPTIONSTOSEND] =
 		{ DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY,
@@ -466,11 +466,12 @@ void StartWebserverThread(void const * argument) {
 void StartBlinkThread(void const * argument) {
 	ConfigManager& configMan = ConfigManager::instance();
 	uint32_t lastSampleCount[4]={0};
-
+	while(not Sensors_init_finished){
+		osDelay(100);
+	}
 
 	bool justRestarted=true;
 	bool justRestartedDelay[4]={false};
-	osDelay(12000);
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 
@@ -481,7 +482,8 @@ void StartBlinkThread(void const * argument) {
 			uint32_t actualSampleCount=MPUSensor->getSampleCount();
 			float deltaSamples=actualSampleCount-lastSampleCount[i];
 			lastSampleCount[i]=actualSampleCount;
-			if( (deltaSamples*1.25)<nominalFreq||(deltaSamples*0.75)>nominalFreq){
+			SEGGER_RTT_printf(0,"Sensor ID %u nopminal sample freq %d actual sample freq %d \n",i,(int)nominalFreq,(int)deltaSamples);
+			if( (deltaSamples>nominalFreq*1.25)||(deltaSamples<(nominalFreq*0.75))){
 				if(justRestarted==false){
 				if(i==0 || i==1)
 				{
@@ -495,8 +497,7 @@ void StartBlinkThread(void const * argument) {
 				}
 				//MPU9250 reconfigure
 				SEGGER_RTT_printf(0,"WARNING SAMPLE FREQ WATCHDOG TRIPPED !\n RESETING SENSOR\n");
-				SEGGER_RTT_printf(0,"Sensor ID %u \n",i);
-				SEGGER_RTT_printf(0,"Nopminal sample freq %f actual sample freq ID %f \n",deltaSamples,nominalFreq);
+				SEGGER_RTT_printf(0,"Sensor ID %u nominal sample freq %d actual sample freq %d \n",i,(int)nominalFreq,(int)deltaSamples);
 				uint32_t MPUId=configMan.getSensorBaseID(i);
 				MPUSensor->setBaseID(MPUId);
 				MPUSensor->begin();
@@ -647,7 +648,16 @@ void StartDataStreamerThread(void const * argument) {
 		//MPU9250
 		uint32_t MPUId=configMan.getSensorBaseID(i);
 		MPUSensor->setBaseID(MPUId);
-		MPUSensor->begin();
+		int retyCount=0;
+		while(retyCount<10)
+		{
+			SEGGER_RTT_printf(0,"Initing Sensor %d\n",i);
+			retyCount++;
+		int initresult=MPUSensor->begin();
+		SEGGER_RTT_printf(0,"Sensor init result  %d\n",initresult);
+		if (initresult==1){break;}
+		}
+
 		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
 		//MPUSensor->setSrd(1);
@@ -658,6 +668,8 @@ void StartDataStreamerThread(void const * argument) {
 		MPU9250* MPUSensor=MPUSSenors[i];
 		MPUSensor->enableDataReadyInterrupt();
 	}
+	Sensors_init_finished=true;
+	SEGGER_RTT_printf(0,"Sensors Init Done\n");
 
 
 /*
@@ -856,27 +868,19 @@ void StartDataStreamerThread(void const * argument) {
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	ConfigManager& configMan = ConfigManager::instance();
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-	static uint32_t Channel1Tim1CaptureCount = 0;
-	static uint32_t Channel2Tim1CaptureCount = 0;
-	static uint32_t Channel3Tim1CaptureCount = 0;
-	static uint32_t Channel4Tim1CaptureCount = 0;
-	static uint32_t Channel1Tim2CaptureCount = 0;
-	static uint32_t Channel3Tim2CaptureCount = 0;
-	static uint32_t Channel4Tim2CaptureCount = 0;
+	static uint32_t missedChannel1Tim4CaptureCount = 0;
+	static uint32_t missedChannel2Tim4CaptureCount = 0;
+	static uint32_t missedChannel3Tim4CaptureCount = 0;
+	static uint32_t missedChannel4Tim4CaptureCount = 0;
+	static uint32_t missedChannel1Tim2CaptureCount = 0;
+	static uint32_t missedChannel3Tim2CaptureCount = 0;
+	static uint32_t missedChannel4Tim2CaptureCount = 0;
 	static uint32_t GPScaptureCount = 0;
-	uint64_t timestamp11 = 0;
-	uint64_t timestamp12 = 0;
-	uint64_t timestamp13 = 0;
-	uint64_t timestamp21 = 0;
-	uint64_t timestamp23 = 0;
-	uint64_t timestamp24 = 0;
-	static uint64_t timestamp13OLD = 0;
-	static uint64_t timestamp21OLD = 0;
+	uint64_t timestamp = 0;
 	static HAL_StatusTypeDef GPSUARTDMA_START_result=HAL_OK;
 	if (htim->Instance == TIM2){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-		Channel4Tim2CaptureCount++;
-		timestamp24 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
 		//pointer needs to be static otherwiese it would be deletet when jumping out of ISR
 		static NMEASTamped *mptr = NULL;
 		if (GPScaptureCount > 0) {
@@ -888,7 +892,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 			// Allocating Message from Pool
 			mptr = (NMEASTamped *) osMailAlloc(NMEAMail, 0);//The parameter millisec must be 0 for using this function in an ISR.
 			if (mptr != NULL) {
-				mptr->RawTimerCount = timestamp24;
+				mptr->RawTimerCount = timestamp;
 				mptr->CaptureCount = GPScaptureCount;
 				memcpy(&(mptr->NMEAMessage[0]), &(DMA_NMEABUFFER[0]),NMEBUFFERLEN);
 				//SEGGER_RTT_WriteString(0,(const char*)mptr->NMEAMessage); maybe to expencive in ISR moving to data processing thread
@@ -920,28 +924,29 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 
-		Channel1Tim2CaptureCount++;
-		timestamp21 = TIM_Get_64Bit_TimeStamp_IC(htim);
-		//SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
-		if(timestamp21<timestamp21OLD)
-		{
-			SEGGER_RTT_printf(0,
-					"TIM2CH1: %llx is smaler than  %llx !!!!!!!\n",timestamp21,timestamp21OLD);
-		}
-		timestamp21OLD=timestamp21;
 
+		timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
+		//SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
 		 DataMessage *mptr=NULL;
 		 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		 //DataMessage *mptrADC=NULL;
 		 //mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
 		 if (mptr != NULL) {
-		 Sensor0.getData(mptr, timestamp21);
+		 Sensor0.getData(mptr, timestamp);
 		 osMailPut(DataMail, mptr);
 		 }
 		 else
-		 {
+		 {  missedChannel1Tim2CaptureCount++;
 			Sensor0.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1\n");
+			if ((missedChannel1Tim2CaptureCount%100)==0){
+			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1 %u Times,\n",missedChannel1Tim2CaptureCount);
+			}
+			if (missedChannel1Tim2CaptureCount>10000)
+			{
+				SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH1 10000 Time stopping this sensor \n");
+				Sensor0.disableDataReadyInterrupt();
+				missedChannel1Tim2CaptureCount=0;
+			}
 		 }
 		 /*
 		 if(mptrADC != NULL){
@@ -957,87 +962,85 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
 
 	}
 	if ( htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-		Channel3Tim2CaptureCount++;
-		timestamp23 = TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
 		//SEGGER_RTT_printf(0,"TIM2CH3: %"PRIu64"\n",timestamp23);
 		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL) {
-		Sensor1.getData(mptr, timestamp23);
+		Sensor1.getData(mptr, timestamp);
 		osMailPut(DataMail, mptr);
 		}
 		else
-		 {
-			 Sensor1.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH2\n");
+		 {  missedChannel3Tim2CaptureCount++;
+			Sensor1.increaseCaptureCountWORead();
+			if ((missedChannel3Tim2CaptureCount%100)==0){
+			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH3 %u Times,\n",missedChannel3Tim2CaptureCount);
+			}
+			if (missedChannel3Tim2CaptureCount>10000)
+			{
+				SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM2CH3 10000 Time stopping this sensor \n");
+				Sensor1.disableDataReadyInterrupt();
+				missedChannel3Tim2CaptureCount=0;
+			}
 		 }
 
 	}
 	}
 	if (htim->Instance == TIM4){
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-		Channel1Tim1CaptureCount++;
-		timestamp11=TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 		//SEGGER_RTT_printf(0,"TIM4CH1: %"PRIu64"\n",timestamp11);
 		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		Sensor2.getData(mptr, timestamp11);
+		Sensor2.getData(mptr, timestamp);
 		osMailPut(DataMail, mptr);
 		}
 		else
-		 {
+		 {  missedChannel1Tim4CaptureCount++;
 			Sensor2.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH1\n");
+			if ((missedChannel1Tim4CaptureCount%100)==0){
+			SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM4CH1 %u Times,\n",missedChannel1Tim4CaptureCount);
+			}
+			if (missedChannel1Tim4CaptureCount>10000)
+			{
+				SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM4CH1 10000 Time stopping this sensor \n");
+				Sensor2.disableDataReadyInterrupt();
+				missedChannel1Tim4CaptureCount=0;
+			}
 		 }
 
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-		Channel2Tim1CaptureCount++;
-		timestamp12=TIM_Get_64Bit_TimeStamp_IC(htim);
+		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 		//SEGGER_RTT_printf(0,"TIM4CH2: %" PRIu64"\n",timestamp12);
 		DataMessage *mptr=NULL;
 		mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 		if (mptr != NULL)
 		{
-		Sensor3.getData(mptr, timestamp12);
+		Sensor3.getData(mptr, timestamp);
 		osMailPut(DataMail, mptr);
 		}
 		else
-		 {
+		 {  missedChannel2Tim4CaptureCount++;
 			Sensor3.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM1CH2\n");
+			if ((missedChannel2Tim4CaptureCount%100)==0){
+			SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM4CH1 %u Times,\n",missedChannel2Tim4CaptureCount);
+			}
+			if (missedChannel2Tim4CaptureCount>10000)
+			{
+				SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM4CH1 10000 Time stopping this sensor \n");
+				Sensor3.disableDataReadyInterrupt();
+				missedChannel2Tim4CaptureCount=0;
+			}
 		 }
-
 
 
 	}
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-		Channel3Tim1CaptureCount++;
-		timestamp13=TIM_Get_64Bit_TimeStamp_IC(htim);
-			//SEGGER_RTT_printf(0,"TIM4CH3: %llx\n",timestamp13);
-		if(timestamp13<timestamp13OLD)
-		{
-			//SEGGER_RTT_printf(0,"TIM4: %llx is smaler than  %llx !!!!!!!\n",timestamp13,timestamp13OLD);
-		}
-		timestamp13OLD=timestamp13;
-		/*
-				DataMessage *mptr=NULL;
-				if (mptr != NULL)
-				{
-				mptr = (DataMessage *) osMailAlloc(DataMail, 0);
-				Sensor2.getData(mptr, timestamp12);
-				osMailPut(DataMail, mptr);
-				}
-						else
-		 {
-			 Sensor2.increaseCaptureCountWORead();
-			SEGGER_RTT_printf(0, "FATAL ERROR Could't allocate Message");
-		 }
-			*/
-
+		timestamp=TIM_Get_64Bit_TimeStamp_IC(htim);
 	}
 	}
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
