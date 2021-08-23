@@ -148,7 +148,8 @@ class BMA280:public Met4FoFSensor
   uint8_t getTapStatus();
   void fastCompensation();
   void selfTest();
-  void activateDataRDYINT();
+  void enableDataReadyInterrupt();
+  void disableDataReadyInterrupt();
   uint32_t getSampleCount();
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
   float getNominalSamplingFreq();

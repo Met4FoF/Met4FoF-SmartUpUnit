@@ -103,8 +103,8 @@ void BMA280::init(uint8_t aRes, uint8_t BW, uint8_t power_Mode, uint8_t sleep_du
 	}
 	writeByte(BMA280_PMU_BW, BW);     // set bandwidth (and thereby sample rate)
 	writeByte(BMA280_PMU_LPW, power_Mode << 5 | sleep_dur << 1); // set power mode and sleep duration
-	writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
-	writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
+	//writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
+	//writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
 	writeByte(BMA280_INT_OUT_CTRL, 0x04 | 0x01); // interrupts push-pull, active HIGH (bits 0:3)
 	switch(BW) {
 		case BW_1000Hz:  _NominalSamplingFreq=2000.0; break;
@@ -213,9 +213,14 @@ void BMA280::selfTest() {
 }
 
 
-void BMA280::activateDataRDYINT() {
-	writeByte(BMA280_INT_EN_1, 0x10);
-	writeByte(BMA280_INT_MAP_1, 0x80);
+void BMA280::enableDataReadyInterrupt() {
+	writeByte(BMA280_INT_EN_1, 0x10);        // set data ready interrupt (bit 4)
+	writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
+}
+
+void BMA280::disableDataReadyInterrupt() {
+	writeByte(BMA280_INT_EN_1, 0x00);        // reset data ready interrupt (bit 4)
+	writeByte(BMA280_INT_MAP_1, 0x01); // map data ready interrupt to INT1 (bit 0)
 }
 
 // SPI read/write functions for the BMA280
