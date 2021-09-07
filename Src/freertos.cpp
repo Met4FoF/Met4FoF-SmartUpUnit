@@ -464,6 +464,7 @@ void StartWebserverThread(void const * argument) {
 }
 
 void StartBlinkThread(void const * argument) {
+	uint32_t loops=0;
 	ConfigManager& configMan = ConfigManager::instance();
 	uint32_t lastSampleCount[4]={0};
 	while(not Sensors_init_finished){
@@ -472,10 +473,9 @@ void StartBlinkThread(void const * argument) {
 
 	bool justRestarted=true;
 	bool justRestartedDelay[4]={false};
+	MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-
-		MPU9250* MPUSSenors[4]={&Sensor0,&Sensor1,&Sensor2,&Sensor3};
 		for(int i=0;i<4;i++){
 			MPU9250* MPUSensor=MPUSSenors[i];
 			float nominalFreq=MPUSensor->getNominalSamplingFreq();
@@ -520,6 +520,25 @@ void StartBlinkThread(void const * argument) {
 			}
 
 	}
+		/*
+		loops++;
+		if(loops%10==0){
+			for(int i=0;i<4;i++){
+				MPU9250* MPUSensor=MPUSSenors[i];
+			    MPUSensor->setAccSelfTest(0b00000111);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+			    MPUSensor->setGyroSelfTest(0b00000111);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+
+		}
+		}
+		if(loops%10==1){
+			for(int i=0;i<4;i++){
+				MPU9250* MPUSensor=MPUSSenors[i];
+			    MPUSensor->setAccSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+			    MPUSensor->setGyroSelfTest(0x00);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
+
+			}
+	}
+	*/
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);

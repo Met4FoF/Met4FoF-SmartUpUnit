@@ -140,8 +140,8 @@ class MPU9250: public Met4FoFSensor {
     void setGyroSelfTest(uint8_t SelftestStatus);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
     int getData(DataMessage * Message,uint64_t RawTimeStamp);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
-    uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_4;
-    uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_64;
+    uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
+    uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
     uint32_t getSampleCount();
     void increaseCaptureCountWORead(){_SampleCount++;return ;};
     float getNominalSamplingFreq();
