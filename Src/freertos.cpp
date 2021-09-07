@@ -437,8 +437,21 @@ void StartBlinkThread(void const *argument) {
 			SEGGER_RTT_printf(0,
 					"Sensor ID %u nopminal sample freq %d actual sample freq %d \n",
 					i, (int) nominalFreq, (int) deltaSamples);
-			if ((deltaSamples > nominalFreq * 1.25)
-					|| (deltaSamples < (nominalFreq * 0.75))) {
+			bool freqToHigh=deltaSamples > (nominalFreq * 1.25);
+			bool freqToLow=deltaSamples < (nominalFreq * 0.75);
+			if (freqToHigh or freqToLow){
+				if(freqToHigh)
+				{
+				SEGGER_RTT_printf(0,
+						"Sensor ID %u Freq to HIGH\n",
+						i) ;
+				}
+				else
+				{
+				SEGGER_RTT_printf(0,
+						"Sensor ID %u Freq to LOW\n",
+						i) ;
+				}
 				if (justRestarted == false) {
 					Sensor0.disableDataReadyInterrupt();
 					Sensor1.disableDataReadyInterrupt();
@@ -469,6 +482,10 @@ void StartBlinkThread(void const *argument) {
 					Sensor0.enableDataReadyInterrupt();
 					Sensor1.enableDataReadyInterrupt();
 
+				}
+				else
+				{
+					justRestarted = false;// reset just restarted flag
 				}
 			}
 
