@@ -137,10 +137,10 @@ BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 Met4FoFEdgeTS Sensor2(1.0, 2);
 MS5837 TempSensor0(&hi2c1, MS5837::MS5837_02BA);
 Met4FoFGPSPub GPSPub(&GPS_ref, 20);
-
-const int numSensors = 5;
+Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
+const int numSensors = 6;
 Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2,
-		&TempSensor0, &GPSPub }; //,
+		&TempSensor0, &GPSPub,&Met4FoFADC }; //,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 static bool Lwip_init_finished = false;
@@ -632,6 +632,8 @@ void StartDataStreamerThread(void const *argument) {
 	Sensor1.setBaseID(BMASensorID);
 	Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
 
+	uint32_t SensorID10=configMan.getSensorBaseID(10);
+	Met4FoFADC.setBaseID(SensorID10);
 	uint32_t SensorID20 = configMan.getSensorBaseID(20);
 	GPSPub.setBaseID(SensorID20);
 	uint32_t SensorID30 = configMan.getSensorBaseID(30);
@@ -887,8 +889,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			//SEGGER_RTT_printf(0,"TIM2CH1: %"PRIu64"\n",timestamp21);
 			DataMessage *mptr = NULL;
 			mptr = (DataMessage*) osMailAlloc(DataMail, 0);
-			//DataMessage *mptrADC=NULL;
-			//mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
+			DataMessage *mptrADC=NULL;
+			mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
 			if (mptr != NULL) {
 				Sensor0.getData(mptr, timestamp);
 				osMailPut(DataMail, mptr);
@@ -907,9 +909,9 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 					missedChannel1Tim2CaptureCount = 0;
 				}
 			}
-			/*
+
 			 if(mptrADC != NULL){
-			 Met4FoFADC.getData(mptrADC, timestamp21);
+			 Met4FoFADC.getData(mptrADC, timestamp);
 			 osMailPut(DataMail, mptrADC);
 			 }
 			 else
@@ -917,7 +919,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			 Met4FoFADC.increaseCaptureCountWORead();
 			 SEGGER_RTT_printf(0, "MEM ERROR Could't allocate Message for TIM2CH1\n");
 			 }
-			 */
+
 
 		}
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
