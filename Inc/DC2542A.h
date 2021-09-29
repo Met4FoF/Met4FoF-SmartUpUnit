@@ -96,7 +96,8 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
 		TIM2_CH3,
 		TIM1_CH1,
 		TIM1_CH2,
-    	TIM3_CH2
+    	TIM3_CH2,
+		AUX
 	};
     enum SOFTSPAN
 	{
@@ -147,8 +148,8 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     GPIO_TypeDef* _S1Port=S1_GPIO_Port;
     uint16_t _S1Pin=S1_Pin;
 
-    GPIO_TypeDef* _S2Port=S1_GPIO_Port;
-    uint16_t _S2Pin=S1_Pin;
+    GPIO_TypeDef* _S2Port=S2_GPIO_Port;
+    uint16_t _S2Pin=S2_Pin;
 
     GPIO_TypeDef* _INVPort=INV_GPIO_Port;
     uint16_t _INVPin=INV_Pin;

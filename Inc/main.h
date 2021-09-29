@@ -65,8 +65,8 @@ void SystemClock_Config(void);
 #define USER_Btn_EXTI_IRQn EXTI15_10_IRQn
 #define LCD_RESET_Pin GPIO_PIN_0
 #define LCD_RESET_GPIO_Port GPIOF
-#define S3_Pin GPIO_PIN_2
-#define S3_GPIO_Port GPIOF
+#define S2_Pin GPIO_PIN_2
+#define S2_GPIO_Port GPIOF
 #define T_IRQ_Pin GPIO_PIN_5
 #define T_IRQ_GPIO_Port GPIOF
 #define MCO_Pin GPIO_PIN_0
