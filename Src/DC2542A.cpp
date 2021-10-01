@@ -22,6 +22,7 @@ int DC2542A::begin(){
 
 /* starts communication with the MPU-9250 */
 int DC2542A::configLTM2893(){
+	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
 	// UserConfig 0 Register
     _CFGREG0=0;
     _CFGREG1=0;
@@ -124,9 +125,11 @@ int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	  tx_array[23] = (uint8_t)(cfgWORD >> 16);
 	  tx_array[22] = (uint8_t)(cfgWORD >> 8);
 	  tx_array[21] = (uint8_t)(cfgWORD);
-	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 	  HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
-	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
+	  //HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 24);
+	  osDelay(1);
+	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	if (Message!=NULL){
 		int readresult=-1;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array

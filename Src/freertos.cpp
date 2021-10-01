@@ -419,7 +419,7 @@ void StartBlinkThread(void const * argument) {
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		 */
 		extADC.tiggerCNVSOftware();
-		osDelay(1);
+		osDelay(2);
 		extADC.getData(NULL,0);
 		osDelay(10);
 	}
