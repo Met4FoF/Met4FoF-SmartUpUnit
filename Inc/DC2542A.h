@@ -63,14 +63,14 @@ class DC2542A: public Met4FoFSensor {
   public:
     enum WORDL
     {
-WORDL_8   =       ((0 << 0) | (1 << 7)),
-WORDL_12  =       ((1 << 0) | (1 << 7)),
-WORDL_14   =      ((2 << 0) | (1 << 7)),
-WORDL_16    =     ((3 << 0) | (1 << 7)),
-WORDL_18     =    ((4 << 0) | (1 << 7)),
-WORDL_20      =   ((5 << 0) | (1 << 7)),
-WORDL_24       =  ((6 << 0) | (1 << 7)),
-WORDL_32        = ((7 << 0) | (1 << 7))
+WORDL_8   =       (0 << 0),
+WORDL_12  =       (1 << 0),
+WORDL_14   =      (2 << 0),
+WORDL_16    =     (3 << 0),
+WORDL_18     =    (4 << 0),
+WORDL_20      =   (5 << 0),
+WORDL_24       =  (6 << 0),
+WORDL_32        = (7 << 0)
     };
     enum OSCDIV
     {
@@ -85,10 +85,10 @@ OSCDIV_6         =(7 << 4)
     };
     enum DEVCNT
     {
-DEVCNT_1  =       ((0 << 3) | (1 << 7)),
-DEVCNT_2   =      ((1 << 3) | (1 << 7)),
-DEVCNT_3    =     ((2 << 3) | (1 << 7)),
-DEVCNT_4     =    ((3 << 3) | (1 << 7))
+DEVCNT_1  =       (0 << 3),
+DEVCNT_2   =      (1 << 3),
+DEVCNT_3    =     (2 << 3),
+DEVCNT_4     =    (3 << 3)
     };
     enum CNV_TRIG
 	{
@@ -133,12 +133,13 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     bool _SADir=true;//True = iso-->Logic
     bool _SBDir=true;//True = iso-->Logic
     bool _SCDir=true;//True = iso-->Logic
-    bool _CRC=true;
-    uint8_t _OSCDIV=OSCDIV_100;
+    bool _CRC=false;
+    //uint8_t _OSCDIV=OSCDIV_100;
+    uint8_t _OSCDIV=OSCDIV_6;
     uint8_t _UC1_WORDL=WORDL_24;
-    uint8_t _DEVCNT=DEVCNT_1;
-    uint8_t _CFGREG0;
-    uint8_t _CFGREG1;
+    uint8_t _DEVCNT=DEVCNT_4;
+    uint8_t _CFGREG0=0;
+    uint8_t _CFGREG1=128;
     uint8_t _CNV_TRIG=TIM3_CH2;
     bool _CNV_EDGE=true;//true=rising false =falling
     //conv mux pins
@@ -155,6 +156,8 @@ DEVCNT_4     =    ((3 << 3) | (1 << 7))
     uint16_t _INVPin=INV_Pin;
     enum SOFTSPAN _SoftSpanConf[8]={PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24};
     uint32_t cfgWORD;
+	uint8_t tx_array[24]={0};
+	uint8_t rx_array[24]={0};
     void generateCFGWord();
     int configLTM2893();
     int32_t sign_extend_17(uint32_t data);

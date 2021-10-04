@@ -23,9 +23,8 @@ int DC2542A::begin(){
 /* starts communication with the MPU-9250 */
 int DC2542A::configLTM2893(){
 	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
+	 HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	// UserConfig 0 Register
-    _CFGREG0=0;
-    _CFGREG1=0;
     if(_SADir){
     	_CFGREG0+=(1 << 0);
     }
@@ -40,13 +39,13 @@ int DC2542A::configLTM2893(){
     }
     _CFGREG0+=_OSCDIV;
     _CFGREG1+=_UC1_WORDL;
-    _CFGREG1+=_OSCDIV;
+    _CFGREG1+=_DEVCNT;
     uint8_t buffer[2] = {_CFGREG0, _CFGREG1 };
 
 
-    _MasterSPI->Init.NSS = SPI_NSS_SOFT;// Disable HRD NSS
+    //_MasterSPI->Init.NSS = SPI_NSS_SOFT;// Disable HRD NSS
 
-    HAL_SPI_Init(_MasterSPI);
+    //HAL_SPI_Init(_MasterSPI);
   	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_RESET);
   	HAL_SPI_Transmit(_MasterSPI, buffer, 1, SPI_TIMEOUT);
   	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
@@ -54,8 +53,8 @@ int DC2542A::configLTM2893(){
   	HAL_SPI_Transmit(_MasterSPI, buffer+1, 1, SPI_TIMEOUT);
   	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
 
-    _MasterSPI->Init.NSS = SPI_NSS_HARD_OUTPUT;
-    HAL_SPI_Init(_MasterSPI);
+    //_MasterSPI->Init.NSS = SPI_NSS_HARD_OUTPUT;
+    //HAL_SPI_Init(_MasterSPI);
   	if(_CNV_TRIG==TIM2_CH1){
   		HAL_GPIO_WritePin(_S0Port, _S0Pin, GPIO_PIN_RESET);
   		HAL_GPIO_WritePin(_S1Port, _S1Pin, GPIO_PIN_RESET);
@@ -92,6 +91,9 @@ int DC2542A::configLTM2893(){
   	else{
   		HAL_GPIO_WritePin(_INVPort, _INVPin, GPIO_PIN_RESET);
   	}
+	tx_array[0] = (uint8_t)(cfgWORD >> 16);
+	tx_array[1] = (uint8_t)(cfgWORD >> 8);
+	tx_array[2] = (uint8_t)(cfgWORD);
 	return 0;
 	}
 
@@ -109,7 +111,6 @@ int DC2542A::setBaseID(uint32_t BaseID)
 
 void DC2542A::tiggerCNVSOftware(){
 	HAL_GPIO_WritePin(EXT_CNV_GPIO_Port, EXT_CNV_Pin, GPIO_PIN_SET);
-	osDelay(1);
 	HAL_GPIO_WritePin(EXT_CNV_GPIO_Port, EXT_CNV_Pin,  GPIO_PIN_RESET);
 	return;
 }
@@ -119,16 +120,11 @@ float DC2542A::getNominalSamplingFreq(){
 }
 
 int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
-	_SampleCount++;
-	  uint8_t tx_array[24]={0};
-	  uint8_t rx_array[24]={0};
-	  tx_array[23] = (uint8_t)(cfgWORD >> 16);
-	  tx_array[22] = (uint8_t)(cfgWORD >> 8);
-	  tx_array[21] = (uint8_t)(cfgWORD);
 	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
-	  HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
-	  //HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 24);
-	  osDelay(1);
+	  //osDelay(1);
+	  //HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
+	  HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 24);
+	  osDelay(5);
 	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	if (Message!=NULL){
 		int readresult=-1;
