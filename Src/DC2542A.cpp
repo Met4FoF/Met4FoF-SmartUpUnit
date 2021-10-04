@@ -23,7 +23,7 @@ int DC2542A::begin(){
 /* starts communication with the MPU-9250 */
 int DC2542A::configLTM2893(){
 	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
-	 HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	// UserConfig 0 Register
     if(_SADir){
     	_CFGREG0+=(1 << 0);
@@ -41,20 +41,10 @@ int DC2542A::configLTM2893(){
     _CFGREG1+=_UC1_WORDL;
     _CFGREG1+=_DEVCNT;
     uint8_t buffer[2] = {_CFGREG0, _CFGREG1 };
-
-
-    //_MasterSPI->Init.NSS = SPI_NSS_SOFT;// Disable HRD NSS
-
-    //HAL_SPI_Init(_MasterSPI);
-  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_RESET);
+    //TODO add SPI NSS Mux controal
   	HAL_SPI_Transmit(_MasterSPI, buffer, 1, SPI_TIMEOUT);
-  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
-  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_RESET);
   	HAL_SPI_Transmit(_MasterSPI, buffer+1, 1, SPI_TIMEOUT);
-  	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
-
-    //_MasterSPI->Init.NSS = SPI_NSS_HARD_OUTPUT;
-    //HAL_SPI_Init(_MasterSPI);
+  	//TODO add SPI NSS Mux controal
   	if(_CNV_TRIG==TIM2_CH1){
   		HAL_GPIO_WritePin(_S0Port, _S0Pin, GPIO_PIN_RESET);
   		HAL_GPIO_WritePin(_S1Port, _S1Pin, GPIO_PIN_RESET);
@@ -120,12 +110,12 @@ float DC2542A::getNominalSamplingFreq(){
 }
 
 int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
-	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
+	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 	  //osDelay(1);
 	  //HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
 	  HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 24);
 	  osDelay(5);
-	  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
+	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	if (Message!=NULL){
 		int readresult=-1;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array

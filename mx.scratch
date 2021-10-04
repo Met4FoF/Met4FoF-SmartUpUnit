@@ -3,10 +3,10 @@
   <FileVersion>3.0</FileVersion>
   <Workspace>
     <WorkspaceType>Single-project</WorkspaceType>
-    <WorkspacePath>D:\Met4FoF-SmartUpUnit\</WorkspacePath>
+    <WorkspacePath>C:\Users\seeger01\Met4FoF-SmartUpUnit\</WorkspacePath>
     <underRoot>true</underRoot>
     <TrustZone>0</TrustZone>
-    <HAL_Driver>C:\Users\benes\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0</HAL_Driver>
+    <HAL_Driver>C:\Users\seeger01\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0</HAL_Driver>
     <CMSIS>Drivers/CMSIS</CMSIS>
     <Toolchain>STM32CubeIDE</Toolchain>
     <IocFile>met4FOF_SSU_V2.ioc</IocFile>
@@ -14,41 +14,7 @@
       <ProjectName>met4FOF_SSU_V2</ProjectName>
       <ProjectNature>CPP</ProjectNature>
       <Secure />
-      <filestoremove>
-        <file>
-          <name>Src\usb_device.c</name>
-        </file>
-        <file>
-          <name>Src\usbd_conf.c</name>
-        </file>
-        <file>
-          <name>Src\usbd_desc.c</name>
-        </file>
-        <file>
-          <name>Src\usbd_cdc_if.c</name>
-        </file>
-        <file>
-          <name>Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pcd.c</name>
-        </file>
-        <file>
-          <name>Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_hal_pcd_ex.c</name>
-        </file>
-        <file>
-          <name>Drivers\STM32F7xx_HAL_Driver\Src\stm32f7xx_ll_usb.c</name>
-        </file>
-        <file>
-          <name>Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_core.c</name>
-        </file>
-        <file>
-          <name>Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ctlreq.c</name>
-        </file>
-        <file>
-          <name>Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ioreq.c</name>
-        </file>
-        <file>
-          <name>Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c</name>
-        </file>
-      </filestoremove>
+      <filestoremove />
       <sourceEntriesToRemove>
         <sourceEntry />
       </sourceEntriesToRemove>
@@ -64,7 +30,7 @@
             <memory access="xrw" name="RAM" size="512" start="0x20000000" />
             <memory access="rx" name="FLASH" size="2048" start="0x8000000" />
           </memories>
-          <startup>C:\Users\benes\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0\Drivers\CMSIS\Device\ST\STM32F7xx\Source\Templates\gcc\startup_stm32f767xx.s</startup>
+          <startup>C:\Users\seeger01\STM32Cube\Repository\STM32Cube_FW_F7_V1.15.0\Drivers\CMSIS\Device\ST\STM32F7xx\Source\Templates\gcc\startup_stm32f767xx.s</startup>
           <LinkSettings>
             <LinkAdditionalLibs />
           </LinkSettings>
