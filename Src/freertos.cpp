@@ -135,11 +135,12 @@ SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 Met4FoFEdgeTS Sensor2(1.0, 2);
+Met4FoFEdgeTS Sensor3(1.0, 3);
 MS5837 TempSensor0(&hi2c1, MS5837::MS5837_02BA);
 Met4FoFGPSPub GPSPub(&GPS_ref, 20);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
-const int numSensors = 6;
-Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2,
+const int numSensors = 7;
+Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3,
 		&TempSensor0, &GPSPub,&Met4FoFADC }; //,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -638,6 +639,8 @@ void StartDataStreamerThread(void const *argument) {
 	GPSPub.setBaseID(SensorID20);
 	uint32_t SensorID30 = configMan.getSensorBaseID(30);
 	Sensor2.setBaseID(SensorID30);
+	uint32_t SensorID40 = configMan.getSensorBaseID(40);
+	Sensor3.setBaseID(SensorID40);
 
 	Sensor0.enableDataReadyInterrupt();
 	Sensor1.enableDataReadyInterrupt();
@@ -976,7 +979,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 			timestamp = TIM_Get_64Bit_TimeStamp_IC(htim);
 			//SEGGER_RTT_printf(0,"TIM4CH2: %" PRIu64"\n",timestamp12);
-			/*
+
 			 DataMessage *mptr=NULL;
 			 mptr = (DataMessage *) osMailAlloc(DataMail, 0);
 			 if (mptr != NULL)
@@ -993,11 +996,11 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			 if (missedChannel2Tim4CaptureCount>10000)
 			 {
 			 SEGGER_RTT_printf(0, " MEM ERROR Could't allocate Message for TIM4CH1 10000 Time stopping this sensor \n");
-			 Sensor3.disableDataReadyInterrupt();
+			 //Sensor3.disableDataReadyInterrupt();
 			 missedChannel2Tim4CaptureCount=0;
 			 }
 			 }
-			 */
+
 
 		}
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
