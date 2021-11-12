@@ -1,9 +1,11 @@
 #include "DC2542A.h"
+#include "SEGGER_RTT.h"
 
-DC2542A::DC2542A(GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge){
-   _ConfCSPort=ConfCSPort;
-   _ConfCSPin=ConfCSPin;
+DC2542A::DC2542A(GPIO_TypeDef* CSMuxPort, uint16_t CSMuxPin,SPI_HandleTypeDef* MasterSpi,SPI_HandleTypeDef* SlaveSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge){
+   _CSMuxPort=CSMuxPort;
+   _CSMuxPin=CSMuxPin;
    _MasterSPI=MasterSpi;
+   _SlaveSPI=SlaveSpi;
    _BaseID=BaseID;
    _SetingsID=0;
    _ID=_BaseID+(uint32_t)_SetingsID;
@@ -22,7 +24,7 @@ int DC2542A::begin(){
 
 /* starts communication with the MPU-9250 */
 int DC2542A::configLTM2893(){
-	HAL_GPIO_WritePin(_ConfCSPort, _ConfCSPin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(_CSMuxPort, _CSMuxPin, GPIO_PIN_RESET);
 	//HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	// UserConfig 0 Register
     if(_SADir){
@@ -44,6 +46,7 @@ int DC2542A::configLTM2893(){
     //TODO add SPI NSS Mux controal
   	HAL_SPI_Transmit(_MasterSPI, buffer, 1, SPI_TIMEOUT);
   	HAL_SPI_Transmit(_MasterSPI, buffer+1, 1, SPI_TIMEOUT);
+  	HAL_GPIO_WritePin(_CSMuxPort, _CSMuxPin, GPIO_PIN_SET);
   	//TODO add SPI NSS Mux controal
   	if(_CNV_TRIG==TIM2_CH1){
   		HAL_GPIO_WritePin(_S0Port, _S0Pin, GPIO_PIN_RESET);
@@ -113,7 +116,32 @@ int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_RESET);
 	  //osDelay(1);
 	  //HAL_SPI_TransmitReceive(_MasterSPI, tx_array,rx_array, 24, SPI_TIMEOUT);
-	  HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 24);
+	  HAL_SPI_Receive_DMA(_SlaveSPI,rx_array+12, 12);
+	  HAL_SPI_TransmitReceive_DMA(_MasterSPI, tx_array,rx_array, 12);
+	  uint8_t channelIds[8]={0};
+	  for (int i=0;i<8;i++)
+	  {
+		  uint8_t tmp=rx_array[2+(3*i)];
+		  uint8_t id=(tmp& 0x38)>>3;
+		  channelIds[i]=id;
+
+
+		  uint8_t softspan=(tmp& 0x07);
+		  int32_t rawadcData=0;
+		  //memcpy((char *)&rawadcData,(char *)rx_array[(3*i)],3);
+		  rawadcData+=rx_array[(3*i)]<<24;
+		  rawadcData+=rx_array[(3*i)+1]<<16;
+		  rawadcData+=rx_array[(3*i)+2]<<8;
+		  rawadcData=rawadcData&0b11111111111111111100000000000000;
+		  //uint32_t swapped= __builtin_bswap32 (rawadcData);
+
+		  rawadcData=rawadcData/16384;//int devision is fine since divisor is 2^14
+		  SEGGER_RTT_printf(0,"%d ; ",rawadcData);
+		  //dcData=swapped>>6;// remove softspan and channel id
+		  //int adcdata=sign_extend_17(rawadcData);
+		  values[i]=calculateVoltage(rawadcData,(DC2542A::SOFTSPAN)softspan);
+	  }
+	  SEGGER_RTT_printf(0,"\n");
 	  osDelay(5);
 	  //HAL_GPIO_WritePin(GPIOF, GPIO_PIN_6, GPIO_PIN_SET);
 	if (Message!=NULL){
@@ -135,18 +163,21 @@ int DC2542A::getData(DataMessage * Message,uint64_t RawTimeStamp){
 void DC2542A::setSoftSPanConf(uint8_t channel,enum SOFTSPAN softSPanCode){
 	if(channel<=7){
 		_SoftSpanConf[channel]=softSPanCode;
-		cfgWORD = cfgWORD | (uint32_t(_SoftSpanConf[channel] & 0x07) << (channel * 3));
+		generateCFGWord();
+		tx_array[0] = (uint8_t)(cfgWORD >> 16);
+		tx_array[1] = (uint8_t)(cfgWORD >> 8);
+		tx_array[2] = (uint8_t)(cfgWORD);
 	}
 }
 
 void DC2542A::generateCFGWord(){
-	int i;
-	for (i=0;i<8;i++)
+	cfgWORD=0;
+	for (int i=0;i<8;i++)
 	{
 		cfgWORD = cfgWORD | (uint32_t(_SoftSpanConf[i] & 0x07) << (i * 3));
 	}
-
 }
+
 
 int32_t DC2542A::sign_extend_17(uint32_t data)
 {
@@ -160,39 +191,34 @@ int32_t DC2542A::sign_extend_17(uint32_t data)
 }
 
 // Calculates the voltage from ADC output data depending on the channel configuration
-float DC2542A::calculateVoltage(uint32_t data, enum SOFTSPAN channel_configuration)
+float DC2542A::calculateVoltage(int32_t data, enum SOFTSPAN channel_configuration)
 {
   float voltage=NAN;
-  int32_t data_signed;
   switch (channel_configuration)
   {
     case DISABLED:
       voltage = 0;
       break;   // Disable Channel
     case ZEROTO5V12:
-      voltage = (float)data * (1.25 * _vref / 1.000) / POW2_18;
+      voltage = ((float)data+(float)POW2_18) * (1.25 * _vref) / POW2_18;
       break;
     case PM5:
-      data_signed = sign_extend_17(data);
-      voltage = (float)data_signed * (1.25 * _vref  / 1.024) / POW2_17;
+      voltage = (float)data * (1.25 * _vref  / 1.024) / POW2_17;
       break;
     case PM5V12:
-      data_signed = sign_extend_17(data);
-      voltage = (float)data_signed * (1.25 * _vref  / 1.000) / POW2_17;
+      voltage = (float)data* (1.25 * _vref) / POW2_17;
       break;
     case ZEROTO10:
-      voltage = (float)data * (2.50 * _vref  / 1.024) / POW2_18;
+      voltage = ((float)data+(float)POW2_18) * (2.50 * _vref  / 1.024) / POW2_18;
       break;
     case ZEROTO10V24:
-      voltage = (float)data * (2.50 * _vref  / 1.000) / POW2_18;
+      voltage = (float)data * (2.50 * _vref) / POW2_18;
       break;
     case PM10:
-      data_signed = sign_extend_17(data);
-      voltage = (float)data_signed * (2.50 * _vref  / 1.024) / POW2_17;
+      voltage = (float)data * (2.50 * _vref  / 1.024) / POW2_17;
       break;
     case PM10V24:
-      data_signed = sign_extend_17(data);
-      voltage = (float)data_signed * (2.50 * _vref  ) / POW2_17;
+      voltage = (float)data * (2.50 * _vref) / POW2_17;
       break;
   }
   return voltage;

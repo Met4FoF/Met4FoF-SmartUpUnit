@@ -110,7 +110,7 @@ DEVCNT_4     =    (3 << 3)
 		PM10=0x06,
 		PM10V24=0x07
 	};
-    DC2542A(GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge);
+    DC2542A(GPIO_TypeDef* ConfCSPort, uint16_t ConfCSPin,SPI_HandleTypeDef* MasterSpi,SPI_HandleTypeDef* SlaveSpi,uint32_t BaseID,uint8_t cnv_trig,bool edge);
     int begin();
     int setBaseID(uint32_t BaseID) override;
     int getData(DataMessage * Message,uint64_t RawTimeStamp) override;
@@ -127,9 +127,10 @@ DEVCNT_4     =    (3 << 3)
     double _vref=4.096;
     float _NominalSamplingFreq=-1;
     // spi
-    GPIO_TypeDef* _ConfCSPort;
-    uint16_t _ConfCSPin;
+    GPIO_TypeDef* _CSMuxPort;
+    uint16_t _CSMuxPin;
     SPI_HandleTypeDef* _MasterSPI;
+    SPI_HandleTypeDef* _SlaveSPI;
     bool _SADir=true;//True = iso-->Logic
     bool _SBDir=true;//True = iso-->Logic
     bool _SCDir=true;//True = iso-->Logic
@@ -156,14 +157,15 @@ DEVCNT_4     =    (3 << 3)
     uint16_t _INVPin=INV_Pin;
     enum SOFTSPAN _SoftSpanConf[8]={PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24,PM10V24};
     uint32_t cfgWORD;
-	uint8_t tx_array[24]={0};
-	uint8_t rx_array[24]={0};
+    uint8_t rx_array[24+4]={0};//make it one 32 bit int longer so we will not generate memfaults
+	uint8_t tx_array[12]={0};
+	float values[8]={0};
     void generateCFGWord();
     int configLTM2893();
     int32_t sign_extend_17(uint32_t data);
     float getMaxVal(uint8_t channel);
     float getMinVal(uint8_t channel);
-    float calculateVoltage(uint32_t data, enum SOFTSPAN channel_configuration);
+    float calculateVoltage(int32_t data, enum SOFTSPAN channel_configuration);
 };
 
 

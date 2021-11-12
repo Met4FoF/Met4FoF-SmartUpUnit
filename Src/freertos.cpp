@@ -120,10 +120,10 @@ osThreadId TempSensorTID;
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
-MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi4, 2);
+MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi4, 3);
 MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
-DC2542A extADC(ISOCS_GPIO_Port,ISOCS_Pin,&hspi5,50,DC2542A::TIM3_CH2,true);
+DC2542A extADC(CSMUX_GPIO_Port,CSMUX_Pin,&hspi5,&hspi2,50,DC2542A::TIM3_CH2,true);
 //BMP280 AirPressSensor(hi2c1);
 Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
@@ -418,6 +418,7 @@ void StartBlinkThread(void const * argument) {
 		osDelay(1);
 		//Sensor0.setAccSelfTest(0x07);//bytemask 0x00000xyz 1=selftest active 0=normal mesurment
 		 */
+		extADC.setSoftSPanConf(4,DC2542A::SOFTSPAN::ZEROTO10);
 		extADC.tiggerCNVSOftware();
 		osDelay(1);
 		extADC.getData(NULL,0);

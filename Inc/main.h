@@ -149,8 +149,8 @@ void SystemClock_Config(void);
 #define SC_GPIO_Port GPIOD
 #define T_CS_Pin GPIO_PIN_2
 #define T_CS_GPIO_Port GPIOD
-#define ISOCS_Pin GPIO_PIN_4
-#define ISOCS_GPIO_Port GPIOD
+#define CSMUX_Pin GPIO_PIN_4
+#define CSMUX_GPIO_Port GPIOD
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
