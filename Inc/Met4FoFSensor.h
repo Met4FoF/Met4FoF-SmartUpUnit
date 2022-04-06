@@ -11,13 +11,13 @@
 
 class Met4FoFSensor {
 public:
-  virtual int getData(DataMessage * Message,uint64_t RawTimeStamp); //data getter function handels sensor communication
-  virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);// get the protobuff description
-  virtual uint32_t getSampleCount();// get sample count
-  virtual float getNominalSamplingFreq();// get nominal sampling freq
-  virtual int setBaseID(uint32_t BaseID);// set base id
-  virtual void increaseCaptureCountWORead();// increade capture count even if we dont capture the data use if MailAlloc fails
-  //virtual ~Met4FoFSensor()=0; // Pure virtual destructor
+	//  =0 is needed to generate vtable for call with only virtual functions
+  virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
+  virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
+  virtual uint32_t getSampleCount()= 0;// get sample count
+  virtual float getNominalSamplingFreq()= 0;// get nominal sampling freq
+  virtual int setBaseID(uint32_t BaseID)= 0;// set base id
+  virtual void increaseCaptureCountWORead()= 0;// increade capture count even if we dont capture the data use if MailAlloc fails
 protected:
 	bool _publish_time_ticks=false;
 };
