@@ -85,6 +85,7 @@
 #include "backupsram.h"
 
 #include "lwip/apps/sntp.h"
+#include "dns.h"
 #include "lwip_return_ckeck.h"
 #include "DC2542A.h"
 //#include "fatfs.h"//fat file System
@@ -215,6 +216,9 @@ void StartDefaultTask(void const * argument) {
 	/* Infinite loop */
 	for (;;) {
 		osDelay(10000);
+		ip_addr_t * ipresolvedHostName;
+		const char hostname="google.de";
+		dns_gethostbyname(hostname,ipresolvedHostName,void,void);
 		//sntp_request(NULL);
 	}
 	/* USER CODE END StartDefaultTask */
