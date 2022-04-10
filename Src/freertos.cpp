@@ -131,11 +131,12 @@ static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
-
+/*
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+*/
 
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
@@ -144,12 +145,12 @@ MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 Met4FoFGPSPub GPSPub(&GPS_ref, 20);
 //Met4FoFEdgeTS EdgePub0(1.0,30);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
-/*
+
  Met4FoFEdgeTS Sensor0(1.0,0);
  Met4FoFEdgeTS Sensor1(1.0,1);
  Met4FoFEdgeTS Sensor2(1.0,2);
  Met4FoFEdgeTS Sensor3(1.0,3);
- */
+
 
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors = 5;
@@ -472,9 +473,11 @@ void StartBlinkThread(void const *argument) {
 
 	bool justRestarted = true;
 	bool justRestartedDelay[4] = { false };
-	MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
+
+	//MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		for (int i = 0; i < 4; i++) {
 			MPU9250 *MPUSensor = MPUSSenors[i];
 			float nominalFreq = MPUSensor->getNominalSamplingFreq();
@@ -493,6 +496,7 @@ void StartBlinkThread(void const *argument) {
 				} else {
 					SEGGER_RTT_printf(0, "Sensor ID %u Freq to LOW\n", i);
 				}
+
 				if (justRestarted == false) {
 					if (i == 0 || i == 1) {
 						Sensor0.disableDataReadyInterrupt();
@@ -501,6 +505,7 @@ void StartBlinkThread(void const *argument) {
 						Sensor2.disableDataReadyInterrupt();
 						Sensor3.disableDataReadyInterrupt();
 					}
+
 					//MPU9250 reconfigure
 					SEGGER_RTT_printf(0,
 							"WARNING SAMPLE FREQ WATCHDOG TRIPPED !\n RESETING SENSOR\n");
@@ -515,6 +520,7 @@ void StartBlinkThread(void const *argument) {
 					lastSampleCount[i] = 0;
 					justRestarted = true;
 					//MPUSensor->setSrd(1);
+
 					if (i == 0 || i == 1) {
 						Sensor0.enableDataReadyInterrupt();
 						Sensor1.enableDataReadyInterrupt();
@@ -525,9 +531,11 @@ void StartBlinkThread(void const *argument) {
 				} else {
 					justRestarted = false;	// reset just restarted flag
 				}
+
 			}
 
 		}
+		*/
 		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
@@ -648,7 +656,12 @@ void StartDataStreamerThread(void const *argument) {
 	}
 	ConfigManager &configMan = ConfigManager::instance();
 	DataMail = osMailCreate(osMailQ(DataMail), NULL);
-
+	 Met4FoFEdgeTS *EdgeTSs[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
+	 for (int i = 0; i < 4; i++) {
+			uint32_t EDgeTSID = configMan.getSensorBaseID(i);
+			EdgeTSs[i]->setBaseID(EDgeTSID);
+	 }
+	/*
 	MPU9250 *MPUSSenors[5] =
 			{ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
 	for (int i = 0; i < 5; i++) {
@@ -679,7 +692,7 @@ void StartDataStreamerThread(void const *argument) {
 	}
 	Sensors_init_finished = true;
 	SEGGER_RTT_printf(0, "Sensors Init Done\n");
-
+ 	 */
 	/*
 	 //BMA280
 
@@ -960,7 +973,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				if (missedChannel1Tim2CaptureCount > 10000) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM2CH1 10000 Time stopping this sensor \n");
-					Sensor0.disableDataReadyInterrupt();
+					//Sensor0.disableDataReadyInterrupt();
 					missedChannel1Tim2CaptureCount = 0;
 				}
 			}
@@ -996,7 +1009,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				if (missedChannel3Tim2CaptureCount > 10000) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM2CH3 10000 Time stopping this sensor \n");
-					Sensor1.disableDataReadyInterrupt();
+					//Sensor1.disableDataReadyInterrupt();
 					missedChannel3Tim2CaptureCount = 0;
 				}
 			}
@@ -1023,7 +1036,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				if (missedChannel1Tim4CaptureCount > 10000) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM4CH1 10000 Time stopping this sensor \n");
-					Sensor2.disableDataReadyInterrupt();
+					//Sensor2.disableDataReadyInterrupt();
 					missedChannel1Tim4CaptureCount = 0;
 				}
 			}
@@ -1048,7 +1061,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				if (missedChannel2Tim4CaptureCount > 10000) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM4CH1 10000 Time stopping this sensor \n");
-					Sensor3.disableDataReadyInterrupt();
+					//Sensor3.disableDataReadyInterrupt();
 					missedChannel2Tim4CaptureCount = 0;
 				}
 			}
