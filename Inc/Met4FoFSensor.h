@@ -17,7 +17,6 @@ public:
   virtual uint32_t getSampleCount()= 0;// get sample count
   virtual float getNominalSamplingFreq()= 0;// get nominal sampling freq
   virtual int setBaseID(uint32_t BaseID)= 0;// set base id
-  virtual void increaseCaptureCountWORead()= 0;// increade capture count even if we dont capture the data use if MailAlloc fails
 protected:
 	bool _publish_time_ticks=false;
 };

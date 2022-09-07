@@ -476,7 +476,7 @@ int MPU9250::readSensor() {
   _useSPIHS = true; // use the high speed SPI for data readout
   // grab the data from the MPU9250
   if (readRegisters(ACCEL_OUT, 21, _buffer) < 0) {
-    return -1;
+    return 0;
   }
   // combine into 16 bit values
   _axcounts =  (((int16_t)_buffer[0]) << 8) | _buffer[1];
@@ -1181,9 +1181,12 @@ float MPU9250::getNominalSamplingFreq(){
 }
 
 int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
+	int result=0;
 	_SampleCount++;
-	if (Message!=NULL){
-		int readresult=-1;
+	if (Message==0){
+		return result;
+	}
+	int readresult=-1;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
@@ -1223,12 +1226,8 @@ int MPU9250::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->has_Data_10=true;
 	Message->Data_10=_t;
 	return readresult;
-	}
-	else
-	{
-		return -2;
-	}
 }
+
 int MPU9250::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;

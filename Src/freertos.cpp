@@ -960,7 +960,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			//DataMessage *mptrADC=NULL;
 			//mptrADC = (DataMessage *) osMailAlloc(DataMail, 0);
 			if (mptr != NULL) {
-				Sensor0.getData(mptr, timestamp);
+				Sensor1.getData(mptr, timestamp);
 				osMailPut(DataMail, mptr);
 			} else {
 				missedChannel1Tim2CaptureCount++;
@@ -1000,7 +1000,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				osMailPut(DataMail, mptr);
 			} else {
 				missedChannel3Tim2CaptureCount++;
-				Sensor1.increaseCaptureCountWORead();
+				Sensor1.getData(mptr, timestamp);
 				if ((missedChannel3Tim2CaptureCount % 100) == 0) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM2CH3 %u Times,\n",
@@ -1027,7 +1027,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				osMailPut(DataMail, mptr);
 			} else {
 				missedChannel1Tim4CaptureCount++;
-				Sensor2.increaseCaptureCountWORead();
+				Sensor2.getData(mptr, timestamp);
 				if ((missedChannel1Tim4CaptureCount % 100) == 0) {
 					SEGGER_RTT_printf(0,
 							" MEM ERROR Could't allocate Message for TIM4CH1 %u Times,\n",
@@ -1052,7 +1052,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 				osMailPut(DataMail, mptr);
 			} else {
 				missedChannel2Tim4CaptureCount++;
-				Sensor3.increaseCaptureCountWORead();
+				Sensor3.getData(mptr, timestamp);
 				if ((missedChannel2Tim4CaptureCount % 100) == 0) {
 					SEGGER_RTT_printf(0,
 							"MEM ERROR Could't allocate Message for TIM4CH1 %u Times,\n",

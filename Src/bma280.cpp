@@ -261,9 +261,12 @@ float BMA280::getNominalSamplingFreq(){
 	return _NominalSamplingFreq;
 }
 int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp){
-	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	int result=0;
 	_SampleCount++;
+	if (Message==0){
+		return result;
+	}
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
