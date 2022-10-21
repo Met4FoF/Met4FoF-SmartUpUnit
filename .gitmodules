@@ -1,3 +1,6 @@
 [submodule "nanopb"]
 	path = nanopb
 	url = https://github.com/nanopb/nanopb
+[submodule "Drivers/lsm6dsrx-pid"]
+	path = Drivers/lsm6dsrx-pid
+	url = https://github.com/STMicroelectronics/lsm6dsrx-pid.git

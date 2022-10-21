@@ -11,7 +11,7 @@
 
 class Met4FoFSensor {
 public:
-	//  =0 is needed to generate vtable for call with only virtual functions
+	//  =0 is needed to generate vtable for linking with only virtual functions
   virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
   virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
   virtual uint32_t getSampleCount()= 0;// get sample count
