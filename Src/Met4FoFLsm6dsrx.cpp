@@ -18,9 +18,11 @@ Met4FoFLsm6dsrx::Met4FoFLsm6dsrx(GPIO_TypeDef* SPICSPort, uint16_t SPICSPin,SPI_
 	_BaseID=BaseID;
 	_SetingsID=0;
 	_ID=_BaseID+(uint32_t)_SetingsID;
+	/*
 	_dev_ctx.write_reg =(stmdev_write_ptr) &Met4FoFLsm6dsrx::platform_write;
 	_dev_ctx.read_reg =(stmdev_read_ptr) &Met4FoFLsm6dsrx::platform_read;
-	_dev_ctx.handle = &_spi;
+	_dev_ctx.handle = this;
+	*/
 }
 
 int Met4FoFLsm6dsrx::setBaseID(uint32_t BaseID)
@@ -95,16 +97,16 @@ int Met4FoFLsm6dsrx::setAccFS(lsm6dsrx_fs_xl_t accFullScale){
 		  _accFullScaleSet=accFullScale;
 		  switch(accFullScale){
 		  case LSM6DSRX_2g:
-			  _ACCFSScaleFactor=0.061f;
+			  _ACCFSScaleFactor=0.061f/1000.0*9.81;
 			  break;
 		  case LSM6DSRX_4g:
-			  _ACCFSScaleFactor=0.122f;
+			  _ACCFSScaleFactor=0.122f/1000.0*9.81;
 			  break;
 		  case LSM6DSRX_8g:
-			  _ACCFSScaleFactor=0.244f;
+			  _ACCFSScaleFactor=0.244f/1000.0*9.81;
 			  break;
 		  case LSM6DSRX_16g:
-			  _ACCFSScaleFactor=0.488f;
+			  _ACCFSScaleFactor=0.488f/1000.0*9.81;
 			  break;
 		  default:
 			  _ACCFSScaleFactor=NAN;
@@ -121,22 +123,22 @@ int Met4FoFLsm6dsrx::setGyroFS(lsm6dsrx_fs_g_t gyroFullScale){
 			  _gyroFullScaleSet=gyroFullScale;
 			  switch(gyroFullScale){
 			  case LSM6DSRX_125dps:
-				  _GyroFSScaleFactor=4.375f;
+				  _GyroFSScaleFactor=4.375f/180000.0*M_PI;
 				  break;
 			  case LSM6DSRX_250dps:
-				  _GyroFSScaleFactor=8.75f;
+				  _GyroFSScaleFactor=8.75f/180000.0*M_PI;
 				  break;
 			  case LSM6DSRX_500dps:
-				  _GyroFSScaleFactor=17.50f;
+				  _GyroFSScaleFactor=17.50f/180000.0*M_PI;
 				  break;
 			  case LSM6DSRX_1000dps:
-				  _GyroFSScaleFactor=35.0f;
+				  _GyroFSScaleFactor=35.0f/180000.0*M_PI;
 				  break;
 			  case LSM6DSRX_2000dps:
-				  _GyroFSScaleFactor=70.0f;
+				  _GyroFSScaleFactor=70.0f/180000.0*M_PI;
 				  break;
 			  case LSM6DSRX_4000dps:
-				  _GyroFSScaleFactor=140.0f;
+				  _GyroFSScaleFactor=140.0f/180000.0*M_PI;
 				  break;
 			  default:
 				  _GyroFSScaleFactor=NAN;
@@ -152,8 +154,11 @@ int Met4FoFLsm6dsrx::setUp(){
 	unsigned int retrysSoFar=0;
 	while (connectionSuccsesfull==false and retrysSoFar<_connectionInitRetys){
 		lsm6dsrx_device_id_get(&_dev_ctx, &_whoamI);
-		if (_whoamI != LSM6DSRX_ID){
+		if (_whoamI == LSM6DSRX_ID){
 			connectionSuccsesfull=true;
+		}
+		else
+		{
 			osDelay(_connectionInitDelayMs);
 		}
 		retrysSoFar++;
@@ -185,7 +190,14 @@ int Met4FoFLsm6dsrx::setUp(){
 	  lsm6dsrx_pin_int1_route_get(&_dev_ctx, &_int1_route);
 	  //TODO Debug this registers with actual sensors
 	  _int1_route.int1_ctrl.den_drdy_flag = PROPERTY_ENABLE;
+	  _int1_route.int1_ctrl.int1_drdy_xl = PROPERTY_ENABLE;
+	  _int1_route.int1_ctrl.int1_drdy_g = PROPERTY_ENABLE;
 	  lsm6dsrx_pin_int1_route_set(&_dev_ctx, &_int1_route);
+	  lsm6dsrx_pin_int1_route_get(&_dev_ctx, &_int1_route);
+	  lsm6dsrx_data_ready_mode_set(&_dev_ctx, LSM6DSRX_DRDY_PULSED);
+	  DataMessage Message={0};
+	  getData(&Message,0);
+	  Message.Data_12=Message.Data_01+Message.Data_01;
 	  return 0;
 
 }
@@ -206,9 +218,9 @@ int Met4FoFLsm6dsrx::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
 
-	int16_t data_raw_acceleration[3];
-	int16_t data_raw_angular_rate[3];
-	int16_t data_raw_temp;
+	int16_t data_raw_acceleration[3]={0};
+	int16_t data_raw_angular_rate[3]={0};
+	int16_t data_raw_temp=0;
 
 	lsm6dsrx_acceleration_raw_get(&_dev_ctx, data_raw_acceleration);
 	lsm6dsrx_angular_rate_raw_get(&_dev_ctx, data_raw_angular_rate);
@@ -229,22 +241,22 @@ int Met4FoFLsm6dsrx::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	return readresult;
 }
 
-int32_t Met4FoFLsm6dsrx::platform_write(void* handle, uint8_t reg, const uint8_t *bufp,uint16_t len)
+int32_t Met4FoFLsm6dsrx::platform_write(uint8_t reg, const uint8_t *bufp,uint16_t len)
 {
 
   HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit((SPI_HandleTypeDef*)handle, &reg, 1, 1000);
-  HAL_SPI_Transmit((SPI_HandleTypeDef*)handle, (uint8_t*) bufp, len, 1000);
+  HAL_SPI_Transmit(_spi, &reg, 1, 1000);
+  HAL_SPI_Transmit(_spi, (uint8_t*) bufp, len, 1000);
   HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_SET);
   return 0;
 }
 
-int32_t Met4FoFLsm6dsrx::platform_read(void *handle, uint8_t reg, uint8_t *bufp,uint16_t len)
+int32_t Met4FoFLsm6dsrx::platform_read(uint8_t reg, uint8_t *bufp,uint16_t len)
 {
   reg |= 0x80;
   HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit((SPI_HandleTypeDef*)handle, &reg, 1, 1000);
-  HAL_SPI_Receive((SPI_HandleTypeDef*)handle, bufp, len, 1000);
+  HAL_SPI_Transmit(_spi, &reg, 1, 1000);
+  HAL_SPI_Receive(_spi,(uint8_t*) bufp, len, 1000);
   HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_SET);
   return 0;
 }

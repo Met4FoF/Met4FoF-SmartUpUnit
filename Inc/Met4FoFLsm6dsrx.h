@@ -48,8 +48,6 @@ public:
   float getNominalSamplingFreq(){return _NominalSamplingFreq;};
   int setUp();
   private:
-  int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp,uint16_t len);
-  int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,uint16_t len);
   int setODR(Met4FoFLsm6dsrx::outPutDatarate odr);
   int setAccFS(lsm6dsrx_fs_xl_t accFullScale);
   int setGyroFS(lsm6dsrx_fs_g_t gyroFullScale);
@@ -63,22 +61,37 @@ public:
   uint32_t _SampleCount=0;
   float _NominalSamplingFreq=-1;
 
-  stmdev_ctx_t _dev_ctx;
+  // PLATFORM functions and pointer for ST Libs
+  // this pointer as handle is needed since the meberfunctions Met4FoFLsm6dsrx::platform_write and Met4FoFLsm6dsrx::platform_read expect an pointer to their instances as first argument
+  // since the platform Functions are called this way :
+  // ctx->read_reg(ctx->handle, reg, data, len);
+  // we can directly use ctx->handle for the instance pointer (this)
+
+  int32_t platform_write(uint8_t reg, const uint8_t *bufp,uint16_t len);
+  int32_t platform_read(uint8_t reg, uint8_t *bufp,uint16_t len);
+
+  stmdev_ctx_t _dev_ctx={(stmdev_write_ptr) &Met4FoFLsm6dsrx::platform_write,
+		  	  	  	  	 (stmdev_read_ptr) &Met4FoFLsm6dsrx::platform_read,
+						 (stmdev_mdelay_ptr) NULL,
+						 this};
+
+  //_dev_ctx.write_reg =(stmdev_write_ptr) &Met4FoFLsm6dsrx::platform_write;
+  //_dev_ctx.read_reg =(stmdev_read_ptr) &Met4FoFLsm6dsrx::platform_read;
+  //_dev_ctx.handle = this;
+
   uint8_t _connectionInitRetys=10;
   static const uint8_t _connectionInitDelayMs=10;
   uint8_t _whoamI,_rst;
   // Internal register configurations
   lsm6dsrx_pin_int1_route_t _int1_route;
   lsm6dsrx_pin_int2_route_t _int2_route;
-  Met4FoFLsm6dsrx::outPutDatarate _odr=ODR_104Hz;
+  Met4FoFLsm6dsrx::outPutDatarate _odr=ODR_12Hz5;
   lsm6dsrx_fs_xl_t _accFullScaleSet=LSM6DSRX_16g;
   float _ACCFSScaleFactor=0.488f;
   lsm6dsrx_fs_g_t _gyroFullScaleSet=LSM6DSRX_4000dps;
   float _GyroFSScaleFactor=140.0f;
   float _TempFSScaleFactor=1.0/256.0f;
   float _TempScaleOffset=25.0f;
-
-
 
 };
 
