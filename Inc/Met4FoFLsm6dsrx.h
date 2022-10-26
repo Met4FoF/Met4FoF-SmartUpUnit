@@ -47,6 +47,7 @@ public:
   int setBaseID(uint32_t BaseID);
   float getNominalSamplingFreq(){return _NominalSamplingFreq;};
   int setUp();
+  void dummyRead();
   private:
   int setODR(Met4FoFLsm6dsrx::outPutDatarate odr);
   int setAccFS(lsm6dsrx_fs_xl_t accFullScale);

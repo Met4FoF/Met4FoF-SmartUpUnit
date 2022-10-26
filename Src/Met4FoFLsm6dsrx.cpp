@@ -194,10 +194,14 @@ int Met4FoFLsm6dsrx::setUp(){
 	  _int1_route.int1_ctrl.int1_drdy_g = PROPERTY_ENABLE;
 	  lsm6dsrx_pin_int1_route_set(&_dev_ctx, &_int1_route);
 	  lsm6dsrx_pin_int1_route_get(&_dev_ctx, &_int1_route);
-	  lsm6dsrx_data_ready_mode_set(&_dev_ctx, LSM6DSRX_DRDY_PULSED);
-	  DataMessage Message={0};
-	  getData(&Message,0);
-	  Message.Data_12=Message.Data_01+Message.Data_01;
+
+	  lsm6dsrx_pin_int2_route_get(&_dev_ctx, &_int2_route);
+	  //TODO Debug this registers with actual sensors
+	  _int2_route.int2_ctrl.int2_drdy_xl = PROPERTY_ENABLE;
+	  _int2_route.int2_ctrl.int2_drdy_g = PROPERTY_ENABLE;
+	  lsm6dsrx_pin_int2_route_set(&_dev_ctx, &_int2_route);
+	  lsm6dsrx_pin_int2_route_get(&_dev_ctx, &_int2_route);
+	  dummyRead();
 	  return 0;
 
 }
@@ -241,6 +245,15 @@ int Met4FoFLsm6dsrx::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	return readresult;
 }
 
+void Met4FoFLsm6dsrx::dummyRead(){
+	int16_t data_raw_acceleration[3]={0};
+	int16_t data_raw_angular_rate[3]={0};
+	int16_t data_raw_temp=0;
+
+	lsm6dsrx_acceleration_raw_get(&_dev_ctx, data_raw_acceleration);
+	lsm6dsrx_angular_rate_raw_get(&_dev_ctx, data_raw_angular_rate);
+	lsm6dsrx_temperature_raw_get(&_dev_ctx, &data_raw_temp);
+}
 int32_t Met4FoFLsm6dsrx::platform_write(uint8_t reg, const uint8_t *bufp,uint16_t len)
 {
 

@@ -541,6 +541,7 @@ void StartBlinkThread(void const *argument) {
 		}
 		*/
 		osDelay(1000);
+		Sensor0.dummyRead();
 	}
 	osThreadTerminate(NULL);
 }
