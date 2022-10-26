@@ -260,9 +260,9 @@ void StartDefaultTask(void const *argument) {
 	ip_addr_t NTPIP = configMan.getUDPTargetIP();
 	osDelay(5000);
 	//Set the method of obtaining SNTP -> Use the method of obtaining from the server
-	sntp_setoperatingmode(SNTP_OPMODE_POLL);
-	sntp_setserver(0, &NTPIP);
-	sntp_init();
+	//sntp_setoperatingmode(SNTP_OPMODE_POLL);
+	//sntp_setserver(0, &NTPIP);
+	//sntp_init();
 	/* Infinite loop */
 	for (;;) {
 		osDelay(1000);

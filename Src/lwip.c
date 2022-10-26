@@ -55,8 +55,8 @@ void MX_LWIP_Init(void)
   tcpip_init( NULL, NULL );
 
   /* IP addresses initialization with DHCP (IPv4) */
-  ipaddr.addr = 0;
-  netmask.addr = 0;
+  ipaddr.addr =  0x6E00A8C0;
+  netmask.addr = 0x00FFFFFF;
   gw.addr = 0;
 
   /* add the network interface (IPv4/IPv6) with RTOS */
