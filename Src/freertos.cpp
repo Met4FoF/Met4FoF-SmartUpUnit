@@ -274,7 +274,7 @@ void StartDefaultTask(void const *argument) {
 void StartNmeaParserThread(void const *argument) {
 	NMEAMail = osMailCreate(osMailQ(NMEAMail), NULL);
 	if (NMEAMail == NULL) {
-		SEGGER_RTT_printf(0, "Fatal Error Could Not Create NMEA Mail Que!!!\n");
+		SEGGER_RTT_printf(0, "Fatal Error could not create NMEA Mail Que!!!\n");
 	} else {
 		SEGGER_RTT_printf(0, " Created NMEA Mail Que\n");
 	}
@@ -541,7 +541,7 @@ void StartBlinkThread(void const *argument) {
 		}
 		*/
 		osDelay(1000);
-		Sensor0.dummyRead();
+		//Sensor0.dummyRead();
 	}
 	osThreadTerminate(NULL);
 }
@@ -661,6 +661,13 @@ void StartDataStreamerThread(void const *argument) {
 	}
 	ConfigManager &configMan = ConfigManager::instance();
 
+	DataMail = osMailCreate(osMailQ(DataMail), NULL);
+	if (DataMail == NULL) {
+		SEGGER_RTT_printf(0, "Fatal Error could not create Data Mail Que!!!\n");
+	} else {
+		SEGGER_RTT_printf(0, " Created Data Mail Que\n");
+	}
+
 	 Met4FoFEdgeTS *EdgeTSs[3] = {&Sensor1, &Sensor2, &Sensor3 };
 	 for (int i = 0; i < 3; i++) {
 			uint32_t EDgeTSID = configMan.getSensorBaseID(i)+1;
@@ -717,12 +724,6 @@ void StartDataStreamerThread(void const *argument) {
 
 	uint32_t SensorID20 = configMan.getSensorBaseID(20);
 	GPSPub.setBaseID(SensorID20);
-	/*
-	 uint32_t SensorID30=configMan.getSensorBaseID(30);
-	 EdgePub0.setBaseID(SensorID30);
-	 uint32_t SensorID31=configMan.getSensorBaseID(31);
-	 EdgePub1.setBaseID(SensorID31);
-	 */
 
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",

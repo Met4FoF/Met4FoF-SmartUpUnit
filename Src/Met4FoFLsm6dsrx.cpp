@@ -185,7 +185,7 @@ int Met4FoFLsm6dsrx::setUp(){
 	  /* Set full scale. */
 
 	  /* Enable drdy 75 μs pulse: uncomment if interrupt must be pulsed. */
-	  //lsm6dsrx_data_ready_mode_set(&dev_ctx, LSM6DSRX_DRDY_PULSED);
+	  lsm6dsrx_data_ready_mode_set(&_dev_ctx, LSM6DSRX_DRDY_PULSED);
 
 	  lsm6dsrx_pin_int1_route_get(&_dev_ctx, &_int1_route);
 	  //TODO Debug this registers with actual sensors
@@ -209,12 +209,12 @@ int Met4FoFLsm6dsrx::setUp(){
 
 
 int Met4FoFLsm6dsrx::getData(DataMessage * Message,uint64_t RawTimeStamp){
-	int result=0;
+	int result=-1;
 	_SampleCount++;
 	if (Message==0){
 		return result;
 	}
-	int readresult=-1;
+	int readresult=0;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;

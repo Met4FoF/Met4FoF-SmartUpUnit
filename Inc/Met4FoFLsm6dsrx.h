@@ -86,7 +86,7 @@ public:
   // Internal register configurations
   lsm6dsrx_pin_int1_route_t _int1_route;
   lsm6dsrx_pin_int2_route_t _int2_route;
-  Met4FoFLsm6dsrx::outPutDatarate _odr=ODR_12Hz5;
+  Met4FoFLsm6dsrx::outPutDatarate _odr=ODR_6667Hz;
   lsm6dsrx_fs_xl_t _accFullScaleSet=LSM6DSRX_16g;
   float _ACCFSScaleFactor=0.488f;
   lsm6dsrx_fs_g_t _gyroFullScaleSet=LSM6DSRX_4000dps;
