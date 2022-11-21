@@ -95,6 +95,8 @@
 #include "lwip_return_ckeck.h"
 
 #include "NMEAPraser.h"
+#include <vector>
+
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -117,6 +119,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 osThreadId IOTID;
 osThreadId blinkTID;
 osThreadId WebServerTID;
@@ -128,38 +131,43 @@ osThreadId NmeaParserTID;
 struct tref GPS_ref = { 0 };
 struct tref NTP_ref = { 0 };
 
-//MemPool For the data
+//MemPool For the NMEA data
 osMailQDef(NMEAMail, NMEABUFFERSIZE, NMEASTamped);
 osMailQId NMEAMail;
 static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
+
 /*
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 */
-
 Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+//vectSensors.push_back((Met4FoFSensor *)&Sensor0);
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
 //BMP280 AirPressSensor(hi2c1);
 //Met4FoF_adc Met4FoFADC(&hadc1,&hadc2,&hadc3,10);
 Met4FoFGPSPub GPSPub(&GPS_ref, 20);
+//vectSensors.push_back((Met4FoFSensor *)&GPS_ref);
 //Met4FoFEdgeTS EdgePub0(1.0,30);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
 
  //Met4FoFEdgeTS Sensor0(1.0,0);
  Met4FoFEdgeTS Sensor1(1.0,1);
+ //vectSensors.push_back((Met4FoFSensor *)&Sensor1);
  Met4FoFEdgeTS Sensor2(1.0,2);
+ //vectSensors.push_back((Met4FoFSensor *)&Sensor2);
  Met4FoFEdgeTS Sensor3(1.0,3);
+ //vectSensors.push_back((Met4FoFSensor *)&Sensor3);
 
 
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors = 5;
-Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3,
+Met4FoFSensors::Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3,
 		&GPSPub }; //,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
@@ -246,6 +254,9 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const *argument) {
 	ConfigManager &configMan = ConfigManager::instance();
+	//Met4FoFSensors::vectMet4FoFSensors.push_back((Met4FoFSensor::Met4FoFSensor *)&Sensor0);
+
+
 	uint32_t random32bit = 0;
 	HAL_RNG_GenerateRandomNumber(&hrng, &random32bit); // genrate some random data for dhcp inting will be read from rng register by LWIP
 	/* init code for LWIP */
@@ -865,7 +876,7 @@ void StartDataStreamerThread(void const *argument) {
 			for (int sensorcount = 0; sensorcount < numSensors; sensorcount++) {
 				// TODO Ad sanor manger to avid code doubling
 				// and automatic loop over all aktive sensors
-				Met4FoFSensor *Sensor = Sensors[sensorcount];
+				Met4FoFSensors::Met4FoFSensor *Sensor = Sensors[sensorcount];
 				for (int i = 0; i < NUMDESCRIPTIONSTOSEND; i++) {
 					DescriptionMessage Descriptionmsg;
 					Sensor->getDescription(&Descriptionmsg,

@@ -22,7 +22,7 @@
 #include "lsm6dsrx_reg.h"
 #include "cmsis_os.h"//for OsDelay in setUp Function
 
-class Met4FoFLsm6dsrx: public Met4FoFSensor
+class Met4FoFLsm6dsrx: public Met4FoFSensors::Met4FoFSensor
 {
 public:
 	enum outPutDatarate

@@ -28,12 +28,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 /* MPU9250 object, input the SPI bus and chip select pin */
 MPU9250::MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID){
-    _SPICSTypeDef=SPICSTypeDef;
+	_SPICSTypeDef=SPICSTypeDef;
     _SPICSPin=SPICSPin;
     _MPU9250spi=MPU9250spi;
 	_BaseID=BaseID;
 	_SetingsID=0;
 	_ID=_BaseID+(uint32_t)_SetingsID;
+	Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
+}
+
+MPU9250::~MPU9250()
+{
+	Met4FoFSensors::listMet4FoFSensors.remove((Met4FoFSensors::Met4FoFSensor *)this);
 }
 
 int MPU9250::setBaseID(uint32_t BaseID)

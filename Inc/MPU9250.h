@@ -47,7 +47,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 //extern DescriptionMessage empty_DescriptionMessage;
 //extern DataMessage empty_DataMessage;
 
-class MPU9250: public Met4FoFSensor {
+class MPU9250: public Met4FoFSensors::Met4FoFSensor {
   public:
     enum GyroRange
     {
@@ -89,6 +89,7 @@ class MPU9250: public Met4FoFSensor {
       LP_ACCEL_ODR_500HZ = 11
     };
     MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID);
+    ~MPU9250();
     int begin();
     int setBaseID(uint32_t BaseID);
     int setAccelRange(AccelRange range);

@@ -11,7 +11,7 @@
 
 #include "NMEAPraser.h"
 
-class Met4FoFGPSPub: public Met4FoFSensor{
+class Met4FoFGPSPub: public Met4FoFSensors::Met4FoFSensor{
   public:
   Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID);
   int getData(DataMessage * Message,uint64_t RawTimeStamp);

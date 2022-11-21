@@ -44,7 +44,7 @@ THE SOFTWARE.
 #include <math.h>
 #include "Met4FoFSensor.h"
 
-class MS5837: public Met4FoFSensor {
+class MS5837: public Met4FoFSensors::Met4FoFSensor {
 public:
 	static const float Pa;
 	static const float bar;

@@ -13,7 +13,7 @@
 #include "message.pb.h"
 #include "Met4FoFSensor.h"
 
-class Met4FoF_adc: public Met4FoFSensor
+class Met4FoF_adc: public Met4FoFSensors::Met4FoFSensor
 {
   public:
   Met4FoF_adc(ADC_HandleTypeDef * hadc1,ADC_HandleTypeDef * hadc2,ADC_HandleTypeDef* hadc3,uint32_t BaseID);

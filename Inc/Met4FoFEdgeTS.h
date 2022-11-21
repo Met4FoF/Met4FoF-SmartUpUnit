@@ -13,7 +13,7 @@
 #include "message.pb.h"
 #include "Met4FoFSensor.h"
 
-class Met4FoFEdgeTS: public Met4FoFSensor
+class Met4FoFEdgeTS: public Met4FoFSensors::Met4FoFSensor
 {
   public:
   Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID);

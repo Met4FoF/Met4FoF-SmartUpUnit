@@ -8,7 +8,9 @@
 #ifndef MET4FOFSENSOR_H_
 #define MET4FOFSENSOR_H_
 
+#include <list>
 
+namespace Met4FoFSensors{
 class Met4FoFSensor {
 public:
 	//  =0 is needed to generate vtable for linking with only virtual functions
@@ -21,5 +23,6 @@ protected:
 	bool _publish_time_ticks=false;
 };
 
-
+static std::list<Met4FoFSensor *> listMet4FoFSensors;
+}
 #endif /* MET4FOFSENSOR_H_ */
