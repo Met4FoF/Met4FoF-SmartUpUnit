@@ -10,7 +10,8 @@
 #include <Met4FoFGPSPub.h>
 
 
-Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID){
+Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID):
+		Met4FoFSensor::Met4FoFSensor(BaseID){
 	    _BaseID=BaseID;
 	    _SetingsID=0;
 		_ID=_BaseID+(uint32_t)_SetingsID;
@@ -19,17 +20,6 @@ Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID){
 }
 
 
-int Met4FoFGPSPub::setBaseID(uint32_t BaseID)
-{
-	_BaseID=BaseID;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	return 0;
-}
-
-
-uint32_t Met4FoFGPSPub::getSampleCount(){
-	return _SampleCount;
-}
 
 int Met4FoFGPSPub::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	int result=0;

@@ -19,16 +19,12 @@ class Met4FoFEdgeTS: public Met4FoFSensors::Met4FoFSensor
   Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID);
   int getData(DataMessage * Message,uint64_t RawTimeStamp);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
-  uint32_t getSampleCount();
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
-  int setBaseID(uint32_t BaseID);
   void setEdgeDirection(float EdgeDirection);
   float getNominalSamplingFreq(){return 0.0;};
   private:
   uint32_t _ID;
-  uint32_t _BaseID;
   uint16_t _SetingsID;
-  uint32_t _SampleCount=0;
   float  _EdgeDirection=1.0f;
 };
 

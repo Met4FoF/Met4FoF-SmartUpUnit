@@ -10,31 +10,12 @@
 
 #include "Met4FoFLsm6dsrx.h"
 
-/* MPU9250 object, input the SPI bus and chip select pin */
-Met4FoFLsm6dsrx::Met4FoFLsm6dsrx(GPIO_TypeDef* SPICSPort, uint16_t SPICSPin,SPI_HandleTypeDef* spiIfaceHandle,uint32_t BaseID){
+
+Met4FoFLsm6dsrx::Met4FoFLsm6dsrx(GPIO_TypeDef* SPICSPort, uint16_t SPICSPin,SPI_HandleTypeDef* spiIfaceHandle,uint32_t BaseID):
+	Met4FoFSensor::Met4FoFSensor(BaseID){
 	_SPICSPort=SPICSPort;
     _SPICSPin=SPICSPin;
     _spi=spiIfaceHandle;
-	_BaseID=BaseID;
-	_SetingsID=0;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	/*
-	_dev_ctx.write_reg =(stmdev_write_ptr) &Met4FoFLsm6dsrx::platform_write;
-	_dev_ctx.read_reg =(stmdev_read_ptr) &Met4FoFLsm6dsrx::platform_read;
-	_dev_ctx.handle = this;
-	*/
-}
-
-int Met4FoFLsm6dsrx::setBaseID(uint32_t BaseID)
-{
-	_BaseID=BaseID;
-	_SetingsID=0;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	return 0;
-}
-
-uint32_t Met4FoFLsm6dsrx::getSampleCount(){
-	return _SampleCount;
 }
 
 int Met4FoFLsm6dsrx::setODR(Met4FoFLsm6dsrx::outPutDatarate odr) {

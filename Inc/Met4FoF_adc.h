@@ -21,19 +21,13 @@ class Met4FoF_adc: public Met4FoFSensors::Met4FoFSensor
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
   void setSlopes(float Slope1, float Slope2,float Slope3){_Slopes[0]=Slope1;_Slopes[1]=Slope2;_Slopes[2]=Slope3;}
   void setOffsets(float Offset1, float Offset2,float Offset3){_Offsets[0]=Offset1;_Offsets[1]=Offset2;_Offsets[2]=Offset3;}
-  uint32_t getSampleCount();
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
-  int setBaseID(uint32_t BaseID);
   float getNominalSamplingFreq(){return 0.0;};
   private:
 
   ADC_HandleTypeDef * _hadc1;
   ADC_HandleTypeDef * _hadc2;
   ADC_HandleTypeDef * _hadc3;
-  uint32_t _ID;
-  uint32_t _BaseID;
-  uint16_t _SetingsID;
-  uint32_t _SampleCount=0;
   float _Slopes[3]={3.3/4096.0,3.3/4096.0,3.3/4096.0};
   float _Offsets[3]={0.0,0.0,0.0};
 };

@@ -13,16 +13,27 @@
 namespace Met4FoFSensors{
 class Met4FoFSensor {
 public:
+	Met4FoFSensor(uint8_t baseID){_baseID=baseID;};
 	//  =0 is needed to generate vtable for linking with only virtual functions
   virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
   virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
-  virtual uint32_t getSampleCount()= 0;// get sample count
-  virtual float getNominalSamplingFreq()= 0;// get nominal sampling freq
-  virtual int setBaseID(uint32_t BaseID)= 0;// set base id
+  float getNominalSamplingFreq(){return _NominalSamplingFreq;}
+  void setBaseID(uint32_t BaseID){_baseID=BaseID;_ID=_baseID+(uint32_t)_SetingsID;};
+  uint32_t getSampleCount(){return _SampleCount;};
+  float _NominalSamplingFreq=NAN;
+  uint8_t _baseID=0;
+  uint32_t _ID=0;
+  uint16_t _SetingsID=0;
+  uint32_t _SampleCount=0;
 protected:
-	bool _publish_time_ticks=false;
+
+  bool _publish_time_ticks=false;
 };
 
 static std::list<Met4FoFSensor *> listMet4FoFSensors;
 }
+
+
+
+
 #endif /* MET4FOFSENSOR_H_ */

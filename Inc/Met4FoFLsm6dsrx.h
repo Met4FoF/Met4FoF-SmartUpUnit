@@ -22,7 +22,7 @@
 #include "lsm6dsrx_reg.h"
 #include "cmsis_os.h"//for OsDelay in setUp Function
 
-class Met4FoFLsm6dsrx: public Met4FoFSensors::Met4FoFSensor
+class Met4FoFLsm6dsrx:public Met4FoFSensors::Met4FoFSensor
 {
 public:
 	enum outPutDatarate
@@ -42,12 +42,10 @@ public:
   Met4FoFLsm6dsrx(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* spiIfaceHandle,uint32_t BaseID);
   int getData(DataMessage * Message,uint64_t RawTimeStamp);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
-  uint32_t getSampleCount();
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
-  int setBaseID(uint32_t BaseID);
-  float getNominalSamplingFreq(){return _NominalSamplingFreq;};
   int setUp();
   void dummyRead();
+  float getNominalSamplingFreq();
   private:
   int setODR(Met4FoFLsm6dsrx::outPutDatarate odr);
   int setAccFS(lsm6dsrx_fs_xl_t accFullScale);
@@ -55,12 +53,6 @@ public:
   GPIO_TypeDef* _SPICSPort;
   uint16_t _SPICSPin;
   SPI_HandleTypeDef* _spi;
-
-  uint32_t _ID;
-  uint32_t _BaseID;
-  uint16_t _SetingsID;
-  uint32_t _SampleCount=0;
-  float _NominalSamplingFreq=-1;
 
   // PLATFORM functions and pointer for ST Libs
   // this pointer as handle is needed since the meberfunctions Met4FoFLsm6dsrx::platform_write and Met4FoFLsm6dsrx::platform_read expect an pointer to their instances as first argument

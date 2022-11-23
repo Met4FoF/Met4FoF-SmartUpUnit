@@ -14,7 +14,8 @@ const float MS5837::mbar = 1.0f;
 const uint8_t MS5837::MS5837_30BA = 0;
 const uint8_t MS5837::MS5837_02BA = 1;
 
-MS5837::MS5837(I2C_HandleTypeDef* I2C,uint8_t model) {
+MS5837::MS5837(I2C_HandleTypeDef* I2C,uint8_t model,uint32_t BaseID):
+		Met4FoFSensor::Met4FoFSensor(BaseID) { // TODO fix base ID
 	fluidDensity = 1029;
 	_model=model;
 	_I2C=I2C;
@@ -27,8 +28,8 @@ MS5837::MS5837(I2C_HandleTypeDef* I2C,uint8_t model) {
 }
 
 
-bool MS5837::init(uint32_t BaseID) {
-	_ID=BaseID;
+bool MS5837::init() {
+	_ID=_baseID;
 	// Reset the MS5837, per datasheet
 	uint8_t CMD=MS5837_RESET;
 	HAL_I2C_Master_Transmit(_I2C,MS5837_ADDR,&CMD,1,100);

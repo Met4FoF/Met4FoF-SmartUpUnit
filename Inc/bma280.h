@@ -142,14 +142,12 @@ class BMA280:public Met4FoFSensors::Met4FoFSensor
   void reset();
   int getData(DataMessage * Message,uint64_t RawTimeStamps);
   int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
-  int setBaseID(uint32_t BaseID);
   uint8_t getChipID();
   uint8_t getTapType();
   uint8_t getTapStatus();
   void fastCompensation();
   void selfTest();
   void activateDataRDYINT();
-  uint32_t getSampleCount();
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
   float getNominalSamplingFreq();
   private:

@@ -167,8 +167,7 @@ Met4FoFGPSPub GPSPub(&GPS_ref, 20);
 
 //std::vector<Met4FoFSensor *> Sensors;
 const int numSensors = 5;
-Met4FoFSensors::Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3,
-		&GPSPub }; //,
+Met4FoFSensors::Met4FoFSensor *Sensors[numSensors] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3,&GPSPub }; //,
 osMailQDef(DataMail, DATAMAILBUFFERSIZE, DataMessage);
 osMailQId DataMail;
 static bool Lwip_init_finished = false;

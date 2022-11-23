@@ -53,9 +53,9 @@ public:
 	static const uint8_t MS5837_30BA;
 	static const uint8_t MS5837_02BA;
 
-	MS5837(I2C_HandleTypeDef* I2C,uint8_t model);
+	MS5837(I2C_HandleTypeDef* I2C,uint8_t model,uint32_t BaseID);
 
-	bool init(uint32_t BaseID);
+	bool init();
 	/** Provide the density of the working fluid in kg/m^3. Default is for 
 	 * seawater. Should be 997 for freshwater.
 	 */

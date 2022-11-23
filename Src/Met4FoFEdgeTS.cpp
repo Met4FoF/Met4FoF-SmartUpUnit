@@ -1,5 +1,4 @@
 /*
-/*
  * Met4FoFEdgeTS.cpp
  *
  *  Created on: 08.10.2018
@@ -14,34 +13,20 @@
 #include "adc.h"
 #include "main.h"
 
-Met4FoFEdgeTS::Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID){
-		_BaseID=BaseID;
-		_ID=_BaseID+(uint32_t)_SetingsID;
+Met4FoFEdgeTS::Met4FoFEdgeTS(float EdgeDirection,uint32_t BaseID):
+		Met4FoFSensor::Met4FoFSensor(BaseID){
+		_ID=_baseID+(uint32_t)_SetingsID;
 		_SetingsID=0;
 		_EdgeDirection=EdgeDirection;
 		_publish_time_ticks=true;
 }
 
 
-
-
-
-int Met4FoFEdgeTS::setBaseID(uint32_t BaseID)
-{
-	_BaseID=BaseID;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	return 0;
-}
-
 void Met4FoFEdgeTS::setEdgeDirection(float EdgeDirection)
 {
 	_EdgeDirection=EdgeDirection;
 }
 
-
-uint32_t Met4FoFEdgeTS::getSampleCount(){
-	return _SampleCount;
-}
 
 int Met4FoFEdgeTS::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	int result=0;

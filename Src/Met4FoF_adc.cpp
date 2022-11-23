@@ -14,30 +14,17 @@
 #include "adc.h"
 #include "main.h"
 
-Met4FoF_adc::Met4FoF_adc(ADC_HandleTypeDef * hadc1,ADC_HandleTypeDef * hadc2,ADC_HandleTypeDef* hadc3,uint32_t BaseID){
-	  	  _hadc1=hadc1;
-	  	  _hadc2=hadc2;
-	  	  _hadc3=hadc3;
-		_ID=_BaseID+(uint32_t)_SetingsID;
-		_SetingsID=0;
+Met4FoF_adc::Met4FoF_adc(ADC_HandleTypeDef * hadc1,ADC_HandleTypeDef * hadc2,ADC_HandleTypeDef* hadc3,uint32_t BaseID):
+	Met4FoFSensor::Met4FoFSensor(BaseID){
+	_hadc1=hadc1;
+	_hadc2=hadc2;
+	_hadc3=hadc3;
+	_ID=_baseID+(uint32_t)_SetingsID;
+	_SetingsID=0;
 }
 
 
 
-
-
-int Met4FoF_adc::setBaseID(uint32_t BaseID)
-{
-	_BaseID=BaseID;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	return 0;
-}
-
-
-
-uint32_t Met4FoF_adc::getSampleCount(){
-	return _SampleCount;
-}
 
 int Met4FoF_adc::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	int result=0;

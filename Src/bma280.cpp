@@ -35,7 +35,8 @@
 #include "gpio.h"
 #include "main.h"
 
-BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID){
+BMA280::BMA280(GPIO_TypeDef* SPICSTypeDef,uint16_t SPICSPin,SPI_HandleTypeDef* bmaspi,uint32_t BaseID):
+		Met4FoFSensor::Met4FoFSensor(BaseID){
 		// INFORMATION remeber to set the PS pin on BMA 280 to SPi settings (LOW)
 		_SPICSTypeDef=SPICSTypeDef;
 		_SPICSPin=SPICSPin;
@@ -150,12 +151,6 @@ void BMA280::fastCompensation() {
 	//printf("z-axis offset = %f mg", (float) (offsetZ) * FCres / 256.0f);
 }
 
-int BMA280::setBaseID(uint32_t BaseID)
-{
-	_BaseID=BaseID;
-	_ID=_BaseID+(uint32_t)_SetingsID;
-	return 0;
-}
 
 void BMA280::reset() {
 	writeByte(BMA280_BGW_SOFTRESET, 0xB6); // software reset the BMA280
@@ -253,13 +248,6 @@ bool BMA280::readBytes(uint8_t subAddress,uint8_t count, uint8_t* dest) {
 	return retVal;
 }
 
-uint32_t BMA280::getSampleCount(){
-	return _SampleCount;
-}
-
-float BMA280::getNominalSamplingFreq(){
-	return _NominalSamplingFreq;
-}
 int BMA280::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	int result=0;
 	_SampleCount++;

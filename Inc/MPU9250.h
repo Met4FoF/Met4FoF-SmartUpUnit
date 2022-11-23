@@ -91,7 +91,6 @@ class MPU9250: public Met4FoFSensors::Met4FoFSensor {
     MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID);
     ~MPU9250();
     int begin();
-    int setBaseID(uint32_t BaseID);
     int setAccelRange(AccelRange range);
     int setGyroRange(GyroRange range);
     int setDlpfBandwidth(DlpfBandwidth bandwidth);
@@ -143,7 +142,6 @@ class MPU9250: public Met4FoFSensors::Met4FoFSensor {
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
-    uint32_t getSampleCount();
     void increaseCaptureCountWORead(){_SampleCount++;return ;};
     float getNominalSamplingFreq();
   protected:
@@ -153,11 +151,6 @@ class MPU9250: public Met4FoFSensors::Met4FoFSensor {
     GPIO_TypeDef* _SPICSTypeDef;
     uint16_t _SPICSPin;
     SPI_HandleTypeDef* _MPU9250spi;
-    uint32_t _ID;
-    uint32_t _BaseID;
-    uint8_t _SetingsID;
-    uint32_t _SampleCount=0;
-    float _NominalSamplingFreq=-1;
     // the sensor can not handle fullspeed spi communication for setup registers we have to read the prescaler register and change it acordingly
     bool _useSPI=true;
     bool _useSPIHS=false;
