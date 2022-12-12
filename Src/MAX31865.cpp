@@ -26,11 +26,14 @@
 */
 /**************************************************************************/
 //
-MAX31865::MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MAX31865spi) {
-	  _SPICSTypeDef=SPICSTypeDef;
+MAX31865::MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MAX31865spi,uint32_t BaseID):
+	Met4FoFSensor::Met4FoFSensor(BaseID)
+	{_SPICSTypeDef=SPICSTypeDef;
 	  _SPICSPin=SPICSPin;
 	  _MAX31865spi=MAX31865spi;
-}
+	  _baseID=BaseID;
+	  Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
+	}
 
 /**************************************************************************/
 /*!
@@ -43,6 +46,7 @@ MAX31865::MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeD
 bool MAX31865::begin(max31865_numwires_t wires) {
   setWires(wires);
   enableBias(false);
+  enable50Hz(true);
   autoConvert(true);
   clearFault();
 
@@ -153,45 +157,50 @@ void MAX31865::setWires(max31865_numwires_t wires) {
     @returns Temperature in C
 */
 /**************************************************************************/
-float MAX31865::temperature(float RTDnominal, float refResistor) {
-  float Z1, Z2, Z3, Z4, Rt, temp;
-
-  Rt = readRTD();
-  Rt /= 32768;
-  Rt *= refResistor;
-
-  // Serial.print("\nResistance: "); Serial.println(Rt, 8);
-
-  Z1 = -RTD_A;
-  Z2 = RTD_A * RTD_A - (4 * RTD_B);
-  Z3 = (4 * RTD_B) / RTDnominal;
-  Z4 = 2 * RTD_B;
-
-  temp = Z2 + (Z3 * Rt);
-  temp = (sqrt(temp) + Z1) / Z4;
-
-  if (temp >= 0)
-    return temp;
-
-  // ugh.
-  Rt /= RTDnominal;
-  Rt *= 100; // normalize to 100 ohm
-
-  float rpoly = Rt;
-
-  temp = -242.02;
-  temp += 2.2228 * rpoly;
-  rpoly *= Rt; // square
-  temp += 2.5859e-3 * rpoly;
-  rpoly *= Rt; // ^3
-  temp -= 4.8260e-6 * rpoly;
-  rpoly *= Rt; // ^4
-  temp -= 2.8183e-8 * rpoly;
-  rpoly *= Rt; // ^5
-  temp += 1.5243e-10 * rpoly;
-
-  return temp;
+float MAX31865::temperature() {
+  _ADCReading=readRTD();
+  _temp=convertADCReading(_ADCReading);
+  return _temp;
 }
+//TODO check this polynominal function
+float MAX31865::convertADCReading(uint16_t adcReading){
+	  float Z1, Z2, Z3, Z4, Rt, temp;
+	  Rt = adcReading;
+	  Rt /= 32768;
+	  Rt *= _rRef;
+
+	  // Serial.print("\nResistance: "); Serial.println(Rt, 8);
+
+	  Z1 = -RTD_A;
+	  Z2 = RTD_A * RTD_A - (4 * RTD_B);
+	  Z3 = (4 * RTD_B) / _rNominal;
+	  Z4 = 2 * RTD_B;
+
+	  temp = Z2 + (Z3 * Rt);
+	  temp = (sqrt(temp) + Z1) / Z4;
+
+	  if (temp >= 0)
+	    return temp;
+
+	  // ugh.
+	  Rt /= _rNominal;
+	  Rt *= 100; // normalize to 100 ohm
+
+	  float rpoly = Rt;
+
+	  temp = _polyCoeffs[0];
+	  temp += _polyCoeffs[1] * rpoly;
+	  rpoly *= Rt; // square
+	  temp += _polyCoeffs[2] * rpoly;
+	  rpoly *= Rt; // ^3
+	  temp -= _polyCoeffs[3] * rpoly;
+	  rpoly *= Rt; // ^4
+	  temp -= _polyCoeffs[4] * rpoly;
+	  rpoly *= Rt; // ^5
+	  temp += _polyCoeffs[5] * rpoly;
+	  return temp;
+}
+
 
 /**************************************************************************/
 /*!
@@ -267,5 +276,73 @@ bool MAX31865::writeRegister8(uint8_t addr, uint8_t data) {
 		retVal=true;
 	}
 	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
+	return retVal;
+}
+
+int MAX31865::getData(DataMessage * Message,uint64_t RawTimeStamp){
+	int result=0;
+	_SampleCount++;
+	if (Message==0){
+		return result;
+	}
+
+	float temp=temperature();
+	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
+	Message->id=_ID;
+	Message->unix_time=0XFFFFFFFF;
+	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
+	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
+	Message->sample_number=	_SampleCount;
+	Message->Data_01=_temp;
+	Message->has_Data_02=true;
+	Message->Data_02=_ADCReading;
+	return 0;
+}
+
+int MAX31865::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
+	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
+	int retVal=0;
+	strncpy(Message->Sensor_name,"MPU_9250\0",sizeof(Message->Sensor_name));
+	Message->id=_ID;
+	Message->Description_Type=DESCRIPTION_TYPE;
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
+	{
+		Message->has_str_Data_01=true;
+		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_10));
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
+	{
+		Message->has_str_Data_01=true;
+		strncpy(Message->str_Data_01,"\\degreecelsius\0",sizeof(Message->str_Data_01));
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
+	{
+		Message->has_f_Data_01=true;
+		Message->f_Data_01=32768;
+	}
+	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
+	{
+		float tempMIN= convertADCReading(0);
+		Message->has_f_Data_01=true;
+		Message->f_Data_01= tempMIN;
+		Message->has_f_Data_02=true;
+		Message->f_Data_02=0;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
+	{
+		float tempMAX= convertADCReading(32768);
+		Message->has_f_Data_01=true;
+		Message->f_Data_01=tempMAX;
+		Message->has_f_Data_02=true;
+		Message->f_Data_02=32768;
+	}
+	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
+	{
+		Message->has_f_Data_01=true;
+		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
+		Message->has_f_Data_02=true;
+		strncpy(Message->str_Data_02,"RAW_RTD/0\0",sizeof(Message->str_Data_02));
+	}
 	return retVal;
 }

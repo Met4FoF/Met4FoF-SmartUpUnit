@@ -49,7 +49,7 @@
 #include <spi.h>
 #include <string.h>
 #include <math.h>
-
+#include "Met4FoFsensor.h"
 typedef enum max31865_numwires {
   MAX31865_2WIRE = 0,
   MAX31865_3WIRE = 1,
@@ -57,9 +57,11 @@ typedef enum max31865_numwires {
 } max31865_numwires_t;
 
 /*! Interface class for the MAX31865 RTD Sensor reader */
-class MAX31865 {
+class MAX31865: public Met4FoFSensors::Met4FoFSensor{
 public:
-  MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MAX31865spi);
+  MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MAX31865spi,uint32_t BaseID);
+  int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
+  int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
   bool begin(max31865_numwires_t x = MAX31865_2WIRE);
   uint8_t readFault(void);
   void clearFault(void);
@@ -68,16 +70,24 @@ public:
   void autoConvert(bool b);
   void enable50Hz(bool b);
   void enableBias(bool b);
-  float temperature(float RTDnominal, float refResistor);
-
+  void setRRef(float rRef){_rRef=rRef;};
+  void setRNom(float rNominal){_rNominal=rNominal;};
+  float temperature();
 private:
   bool readRegisterN(uint8_t addr, uint8_t buffer[], uint8_t n);
   uint8_t readRegister8(uint8_t addr);
   uint16_t readRegister16(uint8_t addr);
   bool writeRegister8(uint8_t addr, uint8_t reg);
+  float convertADCReading(uint16_t adcReading);
   GPIO_TypeDef* _SPICSTypeDef;
   uint16_t _SPICSPin;
   SPI_HandleTypeDef* _MAX31865spi;
+  uint16_t _ADCReading=0;
+  max31865_numwires_t _numWires=MAX31865_2WIRE;
+  float _temp=0;
+  float _rRef=430.0;
+  float _rNominal=100.0;
+  float _polyCoeffs[6]={-242.02f , 2.2228f , 2.5859e-3f , 4.8260e-6f , 2.8183e-8f , 1.5243e-10f};
 };
 
 #endif

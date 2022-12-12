@@ -9,6 +9,8 @@
 #define MET4FOFSENSOR_H_
 
 #include <list>
+#include "pb.h"
+#include "message.pb.h"
 
 namespace Met4FoFSensors{
 class Met4FoFSensor {
