@@ -76,6 +76,7 @@
 #include "Met4FoFEdgeTS.h"
 #include "Met4FoFGPSPub.h"
 #include "Met4FoFLsm6dsrx.h"
+#include "MAX31865.h"
 
 
 #include <math.h>
@@ -146,6 +147,7 @@ MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 */
 Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+MAX31865 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //vectSensors.push_back((Met4FoFSensor *)&Sensor0);
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
@@ -157,7 +159,7 @@ Met4FoFGPSPub GPSPub(&GPS_ref, 20);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
 
  //Met4FoFEdgeTS Sensor0(1.0,0);
- Met4FoFEdgeTS Sensor1(1.0,1);
+ //Met4FoFEdgeTS Sensor1(1.0,1);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor1);
  Met4FoFEdgeTS Sensor2(1.0,2);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor2);
@@ -491,6 +493,7 @@ void StartBlinkThread(void const *argument) {
 	//MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		//float temperatur=Sensor1.temperature();
 		/*
 		for (int i = 0; i < 4; i++) {
 			MPU9250 *MPUSensor = MPUSSenors[i];
@@ -550,8 +553,7 @@ void StartBlinkThread(void const *argument) {
 
 		}
 		*/
-		osDelay(1000);
-		//Sensor0.dummyRead();
+		osDelay(100);
 	}
 	osThreadTerminate(NULL);
 }
@@ -678,13 +680,16 @@ void StartDataStreamerThread(void const *argument) {
 		SEGGER_RTT_printf(0, " Created Data Mail Que\n");
 	}
 
-	 Met4FoFEdgeTS *EdgeTSs[3] = {&Sensor1, &Sensor2, &Sensor3 };
-	 for (int i = 0; i < 3; i++) {
+	 Met4FoFEdgeTS *EdgeTSs[2] = {&Sensor2, &Sensor3 };
+	 for (int i = 0; i < 2; i++) {
 			uint32_t EDgeTSID = configMan.getSensorBaseID(i)+1;
 			EdgeTSs[i]->setBaseID(EDgeTSID);
 	 }
 		Sensor0.setUp();
 		Sensors_init_finished = true;
+		Sensor1.begin();
+		float temperatur=Sensor1.temperature();
+		temperatur=Sensor1.temperature();
 	/*
 	MPU9250 *MPUSSenors[5] =
 			{ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
@@ -799,6 +804,7 @@ void StartDataStreamerThread(void const *argument) {
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
+	Sensor1.temperature();
 	while (1) {
 		DataMessage *Datarptr;
 		//static uint32_t lastMessageId = 0;

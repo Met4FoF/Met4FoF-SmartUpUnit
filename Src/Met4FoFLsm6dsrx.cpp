@@ -16,6 +16,7 @@ Met4FoFLsm6dsrx::Met4FoFLsm6dsrx(GPIO_TypeDef* SPICSPort, uint16_t SPICSPin,SPI_
 	_SPICSPort=SPICSPort;
     _SPICSPin=SPICSPin;
     _spi=spiIfaceHandle;
+    Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
 }
 
 int Met4FoFLsm6dsrx::setODR(Met4FoFLsm6dsrx::outPutDatarate odr) {

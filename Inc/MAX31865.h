@@ -60,8 +60,9 @@ typedef enum max31865_numwires {
 class MAX31865: public Met4FoFSensors::Met4FoFSensor{
 public:
   MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MAX31865spi,uint32_t BaseID);
-  int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
-  int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
+  //~MAX31865();
+  int getData(DataMessage * Message,uint64_t RawTimeStamp); //data getter function handels sensor communication
+  int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);// get the protobuff description
   bool begin(max31865_numwires_t x = MAX31865_2WIRE);
   uint8_t readFault(void);
   void clearFault(void);

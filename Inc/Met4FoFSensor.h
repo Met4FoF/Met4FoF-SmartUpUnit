@@ -15,7 +15,7 @@
 namespace Met4FoFSensors{
 class Met4FoFSensor {
 public:
-	Met4FoFSensor(uint8_t baseID){_baseID=baseID;};
+	Met4FoFSensor(uint8_t baseID){_baseID=baseID;_ID=baseID;};
 	//  =0 is needed to generate vtable for linking with only virtual functions
   virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
   virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description

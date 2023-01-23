@@ -35,6 +35,12 @@ MAX31865::MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeD
 	  Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
 	}
 
+//MAX31865::~MAX31865
+//{
+//	Met4FoFSensors::listMet4FoFSensors.remove((Met4FoFSensors::Met4FoFSensor *)this);
+//}
+
+
 /**************************************************************************/
 /*!
     @brief Initialize the SPI interface and set the number of RTD wires used
@@ -45,14 +51,14 @@ MAX31865::MAX31865(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeD
 /**************************************************************************/
 bool MAX31865::begin(max31865_numwires_t wires) {
   setWires(wires);
-  enableBias(false);
+  enableBias(true);
   enable50Hz(true);
   autoConvert(true);
   clearFault();
-
+  uint8_t config=readRegister8(MAX31856_CONFIG_REG);
   // Serial.print("config: ");
   // Serial.println(readRegister8(MAX31856_CONFIG_REG), HEX);
-  return true;
+  return bool(config);
 }
 
 /**************************************************************************/
@@ -158,10 +164,12 @@ void MAX31865::setWires(max31865_numwires_t wires) {
 */
 /**************************************************************************/
 float MAX31865::temperature() {
+  clearFault();
   _ADCReading=readRTD();
   _temp=convertADCReading(_ADCReading);
   return _temp;
 }
+
 //TODO check this polynominal function
 float MAX31865::convertADCReading(uint16_t adcReading){
 	  float Z1, Z2, Z3, Z4, Rt, temp;
@@ -302,23 +310,29 @@ int MAX31865::getData(DataMessage * Message,uint64_t RawTimeStamp){
 int MAX31865::getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE){
 	memcpy(Message,&empty_DescriptionMessage,sizeof(DescriptionMessage));//Copy default values into array
 	int retVal=0;
-	strncpy(Message->Sensor_name,"MPU_9250\0",sizeof(Message->Sensor_name));
+	strncpy(Message->Sensor_name,"MAX31865\0",sizeof(Message->Sensor_name));
 	Message->id=_ID;
 	Message->Description_Type=DESCRIPTION_TYPE;
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_PHYSICAL_QUANTITY)
 	{
 		Message->has_str_Data_01=true;
-		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_10));
+		strncpy(Message->str_Data_01,"Temperature\0",sizeof(Message->str_Data_01));
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_02,"Temperature ADC Reading\0",sizeof(Message->str_Data_02));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_UNIT)
 	{
 		Message->has_str_Data_01=true;
 		strncpy(Message->str_Data_01,"\\degreecelsius\0",sizeof(Message->str_Data_01));
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_02,"\\LSB\0",sizeof(Message->str_Data_02));
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_RESOLUTION)
 	{
 		Message->has_f_Data_01=true;
 		Message->f_Data_01=32768;
+		Message->has_f_Data_02=true;
+		Message->f_Data_02=32768;
 	}
 	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
@@ -339,10 +353,10 @@ int MAX31865::getDescription(DescriptionMessage * Message,DescriptionMessage_DES
 	}
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY)
 	{
-		Message->has_f_Data_01=true;
+		Message->has_str_Data_01=true;
 		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
-		Message->has_f_Data_02=true;
-		strncpy(Message->str_Data_02,"RAW_RTD/0\0",sizeof(Message->str_Data_02));
+		Message->has_str_Data_02=true;
+		strncpy(Message->str_Data_02,"RAWRTD/0\0",sizeof(Message->str_Data_02));
 	}
 	return retVal;
 }
