@@ -44,8 +44,12 @@ ADXL355::~ADXL355()
 
 /* starts communication with the MPU-9250 */
 int ADXL355::begin(){
-
-	  return 1;
+	setOpMode(ADXL355_STDBY_TEMP_OFF_DRDY_OFF);
+	setRange(accRange);
+	setLPFCorner(lpfSeting);
+	setHPFCorner(hpfSeting);
+	setOpMode(ADXL355_MEAS_TEMP_ON_DRDY_ON);
+	  return 0;
 	}
 
 
@@ -58,9 +62,9 @@ int ADXL355::readSensor() {
   }
   // combine into 16 bit values
   tempRaw =  ((uint32_t)buffer[0] << 8 ) |  buffer[1];
-  accRawX =  ((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[3] << 8) | (uint32_t)buffer[4];
-  accRawY =  ((uint32_t)buffer[5] << 16) | ((uint32_t)buffer[6] << 8) | (uint32_t)buffer[7];
-  accRawZ =  ((uint32_t)buffer[8] << 16) | ((uint32_t)buffer[9] << 8) | (uint32_t)buffer[10];
+  accRawX =  (((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[3] << 8) | (uint32_t)buffer[4])>>4;
+  accRawY =  (((uint32_t)buffer[5] << 16) | ((uint32_t)buffer[6] << 8) | (uint32_t)buffer[7])>>4;
+  accRawZ =  (((uint32_t)buffer[8] << 16) | ((uint32_t)buffer[9] << 8) | (uint32_t)buffer[10])>>4;
   // transform and convert to float values
   accX=convertACCReading(accRawX);
   accY=convertACCReading(accRawY);
@@ -69,6 +73,21 @@ int ADXL355::readSensor() {
   return 1;
 }
 
+float ADXL355::convertACCReading(uint32_t reading){
+	int32_t accelData=0;
+	if ((reading & 0x00080000) == 0x00080000)
+		accelData = reading | ADXL355_NEG_ACC_MSK;
+	else
+		accelData = reading;
+
+	return float(accelData)*accScaleFactor;
+}
+
+float convertTempReading(uint16_t reading){
+	int16_t tempData=0;
+	tempData=reading-1825;
+	return (float)tempData/9.05+25.0;
+}
 
 /* writes a byte to ADXL355 register given a register address and data */
 int ADXL355::writeRegister(uint8_t address, uint8_t data){
@@ -82,7 +101,7 @@ int ADXL355::writeRegister(uint8_t address, uint8_t data){
   readRegisters(address,1,buffer);
   /* check the read back register against the written register */
   if(buffer[0] == data) {
-    return 1;
+    return 0;
   }
   else{
     return -1;
@@ -92,20 +111,100 @@ int ADXL355::writeRegister(uint8_t address, uint8_t data){
 /* reads registers from ADXL355 given a starting register address, number of bytes, and a pointer to store data */
 int ADXL355::readRegisters(uint8_t Address, uint8_t count, uint8_t* dest){
     // begin the transaction
-  	int retVal=0;
+  	int retVal=-1;
   	uint8_t tx[count+1]={0};
   	uint8_t rx[count+1]={0};
   	tx[0] = Address;
   	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
   	if(HAL_SPI_TransmitReceive(_ADXL355spi,tx, rx, count+1, SPI_TIMEOUT)==HAL_OK)
   	{
-  		retVal=1;
+  		retVal=0;
   	}
   	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
   	memcpy(dest, &rx[1], count);
   return retVal;
 }
 
+int ADXL355::setOpMode(adxl355_op_mode opMode){
+	int ret;
+	uint8_t powerCTLReg;
+	ret = writeRegister(POWER_CTL, opMode);
+	return ret;
+}
+
+int ADXL355::setRange(adxl355_range range){
+	accScaleFactor=0.00003824593*range;
+	accRange=range;
+	int ret;
+	uint8_t rangeReg;
+	uint8_t rangeRegOld;
+	ret = readRegisters(RANGE,1, &rangeReg);
+	rangeRegOld=rangeReg;
+	rangeReg &= ~ADXL355_RANGE_FIELD_MSK;
+	rangeReg |= rangeRegOld &ADXL355_RANGE_FIELD_MSK;
+	ret=writeRegister(RANGE,rangeReg);
+	return ret;
+}
+
+
+int ADXL355::setHPFCorner(adxl355_hpf_corner hpfCorner){
+int ret;
+uint8_t regValue;
+enum adxl355_op_mode oldMode=opMode;
+switch(oldMode) {
+case ADXL355_MEAS_TEMP_ON_DRDY_ON:
+case ADXL355_MEAS_TEMP_OFF_DRDY_ON:
+case ADXL355_MEAS_TEMP_ON_DRDY_OFF:
+case ADXL355_MEAS_TEMP_OFF_DRDY_OFF:
+	ret = setOpMode(ADXL355_STDBY_TEMP_ON_DRDY_ON);
+	if (ret)
+		return ret;
+	break;
+default:
+	break;
+}
+ret = readRegisters(FILTER,1,&regValue);
+if (ret){
+	return ret;
+}
+regValue &= ~(ADXL355_HPF_FIELD_MSK);
+regValue |= (hpfCorner<<4) & ADXL355_HPF_FIELD_MSK;
+writeRegister(FILTER,regValue);
+if (ret)
+	return ret;
+hpfSeting=hpfCorner;
+return setOpMode(oldMode);
+}
+
+
+int ADXL355::setLPFCorner(adxl355_odr_lpf lpfFreq){
+	int ret;
+	uint8_t regValue;
+	enum adxl355_op_mode oldMode=opMode;
+	switch(oldMode) {
+	case ADXL355_MEAS_TEMP_ON_DRDY_ON:
+	case ADXL355_MEAS_TEMP_OFF_DRDY_ON:
+	case ADXL355_MEAS_TEMP_ON_DRDY_OFF:
+	case ADXL355_MEAS_TEMP_OFF_DRDY_OFF:
+		ret = setOpMode(ADXL355_STDBY_TEMP_ON_DRDY_ON);
+		if (ret)
+			return ret;
+		break;
+	default:
+		break;
+	}
+	ret = readRegisters(FILTER,1,&regValue);
+	if (ret){
+		return ret;
+	}
+	regValue &= ~(ADXL355_ODR_LPF_FIELD_MSK);
+	regValue |= lpfFreq & ADXL355_ODR_LPF_FIELD_MSK;
+	writeRegister(FILTER,regValue);
+	if (ret)
+		return ret;
+	lpfSeting=lpfFreq;
+	return setOpMode(oldMode);
+}
 
 
 int ADXL355::getData(DataMessage * Message,uint64_t RawTimeStamp){

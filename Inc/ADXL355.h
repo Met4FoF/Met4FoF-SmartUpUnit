@@ -46,9 +46,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "Met4FoFSensor.h"
 
 
+/*
+ * From https://github.com/analogdevicesinc/no-OS/blob/master/include/no_os_util.h
+ *
+ */
+
 #define SPI_TIMEOUT 100U
 //extern DescriptionMessage empty_DescriptionMessage;
 //extern DataMessage empty_DataMessage;
+/* SPI commands */
 
 class ADXL355: public Met4FoFSensors::Met4FoFSensor {
   public:
@@ -79,7 +85,7 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
 	enum adxl355_range {
 		ADXL355_RANGE_2G = 1,
 		ADXL355_RANGE_4G = 2,
-		ADXL355_RANGE_8G = 3,
+		ADXL355_RANGE_8G = 4,
 	};
 
 	enum adxl355_int_pol {
@@ -133,14 +139,26 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
 		int32_t fractional;
 	} ;
 
+	enum adxl355_op_mode {
+		ADXL355_MEAS_TEMP_ON_DRDY_ON = 0,
+		ADXL355_STDBY_TEMP_ON_DRDY_ON = 1,
+		ADXL355_MEAS_TEMP_OFF_DRDY_ON = 2,
+		ADXL355_STDBY_TEMP_OFF_DRDY_ON = 3,
+		ADXL355_MEAS_TEMP_ON_DRDY_OFF = 4,
+		ADXL355_STDBY_TEMP_ON_DRDY_OFF = 5,
+		ADXL355_MEAS_TEMP_OFF_DRDY_OFF = 6,
+		ADXL355_STDBY_TEMP_OFF_DRDY_OFF = 7
+	};
+
     ADXL355(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* ADXL355spi,uint32_t BaseID);
     ~ADXL355();
     int begin();
     void setAccSelfTest(uint8_t SelftestStatus);
     void setGyroSelfTest(uint8_t SelftestStatus);
-    void setScaleFactor(adxl355_range scaleFactor);
-    void setHPFCorner(adxl355_hpf_corner hpfCorner);
-    void setLPFCorner(adxl355_odr_lpf lpfFreq);
+    int setRange(adxl355_range scaleFactor);
+    int setHPFCorner(adxl355_hpf_corner hpfCorner);
+    int setLPFCorner(adxl355_odr_lpf lpfFreq);
+    int setOpMode(adxl355_op_mode opMode);
     int readSensor();
     int getData(DataMessage * Message,uint64_t RawTimeStamp);
     int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE);
@@ -168,7 +186,10 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     int readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest);
     float convertTempReading(uint16_t);
     float convertACCReading(uint32_t);
-    float accScalefacotr=0.00003824593;
+    uint32_t accbytesTounit(uint8_t *raw_array);
+    adxl355_range accRange=ADXL355_RANGE_2G;
+    adxl355_op_mode opMode=ADXL355_STDBY_TEMP_OFF_DRDY_OFF;
+    float accScaleFactor=0.00003824593;
     uint8_t buffer[512];
     /* ADXL355 registers addresses */
     const uint8_t DEVID_AD =                0x00;
@@ -207,6 +228,10 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     const uint8_t POWER_CTL =               0x2D;
     const uint8_t SELF_TEST =               0x2E;
     const uint8_t RESET =                   0x2F;
+    const uint8_t ADXL355_RANGE_FIELD_MSK = 0x03;
+    const uint8_t ADXL355_ODR_LPF_FIELD_MSK = 0x0f;
+    const uint8_t ADXL355_HPF_FIELD_MSK =  0x80;
+    const uint32_t ADXL355_NEG_ACC_MSK = 0xFFF00000;
 };
 
 
