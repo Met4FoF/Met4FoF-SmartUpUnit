@@ -61,7 +61,7 @@ int ADXL355::readSensor() {
     return 0;
   }
   // combine into 16 bit values
-  tempRaw =  ((uint32_t)buffer[0] << 8 ) |  buffer[1];
+  tempRaw =  (((uint16_t)buffer[0]&0x0F) << 8 ) |  (uint16_t)buffer[1];
   accRawX =  (((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[3] << 8) | (uint32_t)buffer[4])>>4;
   accRawY =  (((uint32_t)buffer[5] << 16) | ((uint32_t)buffer[6] << 8) | (uint32_t)buffer[7])>>4;
   accRawZ =  (((uint32_t)buffer[8] << 16) | ((uint32_t)buffer[9] << 8) | (uint32_t)buffer[10])>>4;
@@ -83,7 +83,7 @@ float ADXL355::convertACCReading(uint32_t reading){
 	return float(accelData)*accScaleFactor;
 }
 
-float convertTempReading(uint16_t reading){
+float ADXL355::convertTempReading(uint16_t reading){
 	int16_t tempData=0;
 	tempData=reading-1825;
 	return (float)tempData/9.05+25.0;
@@ -275,7 +275,7 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	{
 
 		float accMIN=convertACCReading(-524288);
-		float tempMIN= convertTempReading(-32768);
+		float tempMIN = convertTempReading(32768);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -288,7 +288,7 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
 		float accMAX=convertACCReading(524287);
-		float tempMAX=convertTempReading(32767);
+		float tempMAX=convertTempReading(32768);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;

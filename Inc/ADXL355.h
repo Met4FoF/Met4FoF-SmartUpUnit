@@ -171,7 +171,7 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     uint32_t accRawX=0;
     uint32_t accRawY=0;
     uint32_t accRawZ=0;
-    uint32_t tempRaw=0;
+    uint16_t tempRaw=0;
     uint32_t _SampleCount=0;
 
   protected:
