@@ -153,6 +153,7 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     ADXL355(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* ADXL355spi,uint32_t BaseID);
     ~ADXL355();
     int begin();
+    int getIDs();
     void setAccSelfTest(uint8_t SelftestStatus);
     void setGyroSelfTest(uint8_t SelftestStatus);
     int setRange(adxl355_range scaleFactor);
@@ -173,7 +174,10 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     uint32_t accRawZ=0;
     uint32_t tempRaw=0;
     uint32_t _SampleCount=0;
-
+    uint8_t vendorID=0;
+    uint8_t memsID=0;
+    uint8_t deviceID=0;
+    uint8_t revisionID=0;
   protected:
     adxl355_odr_lpf lpfSeting=ADXL355_ODR_4000HZ;
     adxl355_hpf_corner hpfSeting=ADXL355_HPF_OFF;

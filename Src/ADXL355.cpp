@@ -44,6 +44,7 @@ ADXL355::~ADXL355()
 
 /* starts communication with the MPU-9250 */
 int ADXL355::begin(){
+	getIDs();
 	setOpMode(ADXL355_STDBY_TEMP_OFF_DRDY_OFF);
 	setRange(accRange);
 	setLPFCorner(lpfSeting);
@@ -51,6 +52,7 @@ int ADXL355::begin(){
 	setOpMode(ADXL355_MEAS_TEMP_ON_DRDY_ON);
 	  return 0;
 	}
+
 
 
 
@@ -73,6 +75,15 @@ int ADXL355::readSensor() {
   return 1;
 }
 
+int ADXL355::getIDs(){
+	uint8_t buffer[4]={0};
+	int ret=readRegisters(DEVID_AD,4,buffer);
+    vendorID=buffer[0];
+    memsID=buffer[1];
+     deviceID=buffer[2];
+    revisionID=buffer[3];
+	return ret;
+}
 float ADXL355::convertACCReading(uint32_t reading){
 	int32_t accelData=0;
 	if ((reading & 0x00080000) == 0x00080000)
