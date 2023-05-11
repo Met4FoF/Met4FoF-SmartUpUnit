@@ -58,6 +58,8 @@ int ADXL355::begin(){
 
 /* reads the most current data from ADXL355 and stores in buffer */
 int ADXL355::readSensor() {
+
+  //readStatus();
   // grab the data from the ADXL355
   if (readRegisters(TEMP2, 11, buffer) < 0) {
     return 0;
@@ -80,10 +82,17 @@ int ADXL355::getIDs(){
 	int ret=readRegisters(DEVID_AD,4,buffer);
     vendorID=buffer[0];
     memsID=buffer[1];
-     deviceID=buffer[2];
+    deviceID=buffer[2];
     revisionID=buffer[3];
 	return ret;
 }
+
+int ADXL355::readStatus(){
+	int ret=readRegisters(STATUS,1,&status.value);
+	return ret;
+}
+
+
 float ADXL355::convertACCReading(uint32_t reading){
 	int32_t accelData=0;
 	if ((reading & 0x00080000) == 0x00080000)
@@ -97,14 +106,13 @@ float ADXL355::convertACCReading(uint32_t reading){
 float ADXL355::convertTempReading(uint16_t reading){
 	int16_t tempData=0;
 	tempData=reading-1825;
-	return (float)tempData/9.05+25.0;
+	return (float)tempData/-9.05+25.0;
 }
 
 /* writes a byte to ADXL355 register given a register address and data */
 int ADXL355::writeRegister(uint8_t address, uint8_t data){
   /* write data to device */
-
-  uint8_t buffer[2] = {address, data };
+  uint8_t buffer[2] = {(address<<1), data };
   HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
   HAL_SPI_Transmit(_ADXL355spi, buffer, 2, SPI_TIMEOUT);
   HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_SET);
@@ -125,7 +133,7 @@ int ADXL355::readRegisters(uint8_t Address, uint8_t count, uint8_t* dest){
   	int retVal=-1;
   	uint8_t tx[count+1]={0};
   	uint8_t rx[count+1]={0};
-  	tx[0] = Address;
+  	tx[0] = (Address<<1)|0x01;
   	HAL_GPIO_WritePin(_SPICSTypeDef, _SPICSPin, GPIO_PIN_RESET);
   	if(HAL_SPI_TransmitReceive(_ADXL355spi,tx, rx, count+1, SPI_TIMEOUT)==HAL_OK)
   	{
@@ -137,9 +145,13 @@ int ADXL355::readRegisters(uint8_t Address, uint8_t count, uint8_t* dest){
 }
 
 int ADXL355::setOpMode(adxl355_op_mode opMode){
-	int ret;
+	uint8_t mode=0;
+	readRegisters(POWER_CTL,1,&mode);
+	int ret=-1;
 	uint8_t powerCTLReg;
+	while (ret==-1){
 	ret = writeRegister(POWER_CTL, opMode);
+	}
 	return ret;
 }
 

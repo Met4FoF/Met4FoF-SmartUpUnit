@@ -182,19 +182,21 @@ class ADXL355: public Met4FoFSensors::Met4FoFSensor {
     adxl355_odr_lpf lpfSeting=ADXL355_ODR_4000HZ;
     adxl355_hpf_corner hpfSeting=ADXL355_HPF_OFF;
     adxl355_range scalfactoSetting=ADXL355_RANGE_2G;
+    adxl355_sts_reg_flags status;
     GPIO_TypeDef* _SPICSTypeDef;
     uint16_t _SPICSPin;
     SPI_HandleTypeDef* _ADXL355spi;
     // private functions
     int writeRegister(uint8_t subAddress, uint8_t data);
     int readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest);
+    int readStatus();
     float convertTempReading(uint16_t);
     float convertACCReading(uint32_t);
     uint32_t accbytesTounit(uint8_t *raw_array);
     adxl355_range accRange=ADXL355_RANGE_2G;
     adxl355_op_mode opMode=ADXL355_STDBY_TEMP_OFF_DRDY_OFF;
     float accScaleFactor=0.00003824593;
-    uint8_t buffer[512];
+    uint8_t buffer[32];
     /* ADXL355 registers addresses */
     const uint8_t DEVID_AD =                0x00;
     const uint8_t DEVID_MST =               0x01;
