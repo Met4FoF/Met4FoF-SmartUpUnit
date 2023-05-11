@@ -288,17 +288,17 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
 		Message->has_f_Data_04=true;
-		Message->f_Data_01=65536;
-		Message->f_Data_02=65536;
-		Message->f_Data_03=65536;
-		Message->f_Data_04=65536;
+		Message->f_Data_01=1048576;
+		Message->f_Data_02=1048576;
+		Message->f_Data_03=1048576;
+		Message->f_Data_04=4096;
 	}
 	//TODO add min and max scale values as calls member vars so they have not to be calculated all the time
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MIN_SCALE)
 	{
 
 		float accMIN=convertACCReading(-524288);
-		float tempMIN = convertTempReading(32768);
+		float tempMIN = convertTempReading(0);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -311,7 +311,7 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
 		float accMAX=convertACCReading(524287);
-		float tempMAX=convertTempReading(32768);
+		float tempMAX=convertTempReading(4096);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;

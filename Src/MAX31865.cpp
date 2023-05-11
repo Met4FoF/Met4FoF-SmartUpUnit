@@ -356,7 +356,7 @@ int MAX31865::getDescription(DescriptionMessage * Message,DescriptionMessage_DES
 		Message->has_str_Data_01=true;
 		strncpy(Message->str_Data_01,"Temperature/0\0",sizeof(Message->str_Data_01));
 		Message->has_str_Data_02=true;
-		strncpy(Message->str_Data_02,"RAWRTD/0\0",sizeof(Message->str_Data_02));
+		strncpy(Message->str_Data_02,"RawRTD/0\0",sizeof(Message->str_Data_02));
 	}
 	return retVal;
 }

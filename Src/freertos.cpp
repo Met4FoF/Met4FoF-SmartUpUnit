@@ -557,7 +557,7 @@ void StartBlinkThread(void const *argument) {
 		DataMessage IMUMsg;
 		uint64_t dummyTimeStamp=0;
 		Sensor0.getData(&IMUMsg,dummyTimeStamp);
-		osDelay(1);
+		osDelay(1000);
 	}
 	osThreadTerminate(NULL);
 }
@@ -812,7 +812,7 @@ void StartDataStreamerThread(void const *argument) {
 	while (1) {
 		DataMessage *Datarptr;
 		//static uint32_t lastMessageId = 0;
-		osEvent DataEvent = osMailGet(DataMail, 200);
+		osEvent DataEvent = osMailGet(DataMail, 100);
 		struct timespec SampelPointUtc;
 		if (DataEvent.status == osEventMail) {
 			Datarptr = (DataMessage*) DataEvent.value.p;
@@ -870,6 +870,11 @@ void StartDataStreamerThread(void const *argument) {
 				//}
 				osMailFree(DataMail, Datarptr);
 				HAL_GPIO_TogglePin(LED_BT1_GPIO_Port, LED_BT1_Pin);
+
+			}
+			else
+			{
+				osMailFree(DataMail, Datarptr);// we havent sended the data but we must remove it frome the quue
 			}
 		}
 		//TODO improve this code
