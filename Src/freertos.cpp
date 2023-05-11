@@ -77,7 +77,7 @@
 #include "Met4FoFGPSPub.h"
 #include "Met4FoFLsm6dsrx.h"
 #include "MAX31865.h"
-
+#include "ADXL355.h"
 
 #include <math.h>
 #include <vector>
@@ -146,7 +146,8 @@ MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
 */
-Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+//Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+ADXL355 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MAX31865 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //vectSensors.push_back((Met4FoFSensor *)&Sensor0);
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
@@ -553,6 +554,9 @@ void StartBlinkThread(void const *argument) {
 
 		}
 		*/
+		DataMessage IMUMsg;
+		uint64_t dummyTimeStamp=0;
+		Sensor0.getData(&IMUMsg,dummyTimeStamp);
 		osDelay(100);
 	}
 	osThreadTerminate(NULL);
@@ -685,7 +689,7 @@ void StartDataStreamerThread(void const *argument) {
 			uint32_t EDgeTSID = configMan.getSensorBaseID(i)+1;
 			EdgeTSs[i]->setBaseID(EDgeTSID);
 	 }
-		Sensor0.setUp();
+		Sensor0.begin();
 		Sensors_init_finished = true;
 		Sensor1.begin();
 		float temperatur=Sensor1.temperature();
