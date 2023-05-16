@@ -298,7 +298,7 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	{
 
 		float accMIN=convertACCReading(-524288);
-		float tempMIN = convertTempReading(0);
+		float tempMIN = convertTempReading(4096);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
@@ -311,7 +311,7 @@ int ADXL355::getDescription(DescriptionMessage * Message,DescriptionMessage_DESC
 	if(DESCRIPTION_TYPE==DescriptionMessage_DESCRIPTION_TYPE_MAX_SCALE)
 	{
 		float accMAX=convertACCReading(524287);
-		float tempMAX=convertTempReading(4096);
+		float tempMAX=convertTempReading(0);
 		Message->has_f_Data_01=true;
 		Message->has_f_Data_02=true;
 		Message->has_f_Data_03=true;
