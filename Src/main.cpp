@@ -118,7 +118,7 @@ int main(void){
 
   /* USER CODE END 1 */
   /* Enable I-Cache---------------------------------------------------------*/
-  SCB_EnableICache();
+
 
   /* Enable D-Cache---------------------------------------------------------*/
   SCB_EnableDCache();

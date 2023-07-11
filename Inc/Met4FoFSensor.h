@@ -15,17 +15,21 @@
 namespace Met4FoFSensors{
 class Met4FoFSensor {
 public:
-	Met4FoFSensor(uint8_t baseID){_baseID=baseID;_ID=baseID;};
+	Met4FoFSensor(uint8_t sensorID){_sensorID=sensorID;};
 	//  =0 is needed to generate vtable for linking with only virtual functions
   virtual int getData(DataMessage * Message,uint64_t RawTimeStamp)= 0; //data getter function handels sensor communication
   virtual int getDescription(DescriptionMessage * Message,DescriptionMessage_DESCRIPTION_TYPE DESCRIPTION_TYPE)= 0;// get the protobuff description
   float getNominalSamplingFreq(){return _NominalSamplingFreq;}
-  void setBaseID(uint32_t BaseID){_baseID=BaseID;_ID=_baseID+(uint32_t)_SetingsID;};
+  void setBaseID(uint16_t baseID){
+	  _baseID=baseID;
+	  _ID=(uint32_t)baseID<<16;_ID+(uint32_t)_baseID+(uint32_t)_sensorID<<8+_setingsID;};
   uint32_t getSampleCount(){return _SampleCount;};
   float _NominalSamplingFreq=NAN;
-  uint8_t _baseID=0;
+  uint16_t _baseID=0;
+  uint8_t _sensorID=0;
+  uint8_t _setingsID=0;
   uint32_t _ID=0;
-  uint16_t _SetingsID=0;
+
   uint32_t _SampleCount=0;
 protected:
 

@@ -32,8 +32,6 @@ ADXL355::ADXL355(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef
 	_SPICSTypeDef=SPICSTypeDef;
     _SPICSPin=SPICSPin;
     _ADXL355spi=ADXL355spi;
-	_SetingsID=0;
-	_ID=_baseID+(uint32_t)_SetingsID;
 	Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
 }
 

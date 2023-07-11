@@ -19,8 +19,8 @@ Met4FoF_adc::Met4FoF_adc(ADC_HandleTypeDef * hadc1,ADC_HandleTypeDef * hadc2,ADC
 	_hadc1=hadc1;
 	_hadc2=hadc2;
 	_hadc3=hadc3;
-	_ID=_baseID+(uint32_t)_SetingsID;
-	_SetingsID=0;
+	_ID=_baseID+(uint32_t)_setingsID;
+	_setingsID=0;
 }
 
 

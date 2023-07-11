@@ -88,7 +88,7 @@ class MPU9250: public Met4FoFSensors::Met4FoFSensor {
       LP_ACCEL_ODR_250HZ = 10,
       LP_ACCEL_ODR_500HZ = 11
     };
-    MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint32_t BaseID);
+    MPU9250(GPIO_TypeDef* SPICSTypeDef, uint16_t SPICSPin,SPI_HandleTypeDef* MPU9250spi,uint8_t sensorID);
     ~MPU9250();
     int begin();
     int setAccelRange(AccelRange range);
@@ -143,7 +143,7 @@ class MPU9250: public Met4FoFSensors::Met4FoFSensor {
     uint32_t _SPIHSBOUDRATEPRESCALERFAST=SPI_BAUDRATEPRESCALER_8;
     uint32_t _SPIHSBOUDRATEPRESCALERSLOW=SPI_BAUDRATEPRESCALER_128;
     void increaseCaptureCountWORead(){_SampleCount++;return ;};
-    float getNominalSamplingFreq();
+    float getNominalSamplingFreq(){return _NominalSamplingFreq;};
   protected:
     const uint8_t SPI_READ = 0x80;
 	#define SPI_TIMEOUT 100U

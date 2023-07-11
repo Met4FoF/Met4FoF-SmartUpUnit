@@ -50,7 +50,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 //TODO clean up includes
-#include <configmanager.h>
+#include "configmanager.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -66,12 +66,11 @@
 #include "message.pb.h"
 #include "pb_encode.h"
 
-
+#include "Met4FoFSensor.h"
 #include "MPU9250.h"
 #include "bma280.h"
 #include "MS5837.h"
 #include "Met4FoF_adc.h"
-#include "dummy_sensor.h"
 #include "bmp280.h"
 #include "Met4FoFEdgeTS.h"
 #include "Met4FoFGPSPub.h"
@@ -79,7 +78,7 @@
 #include "MAX31865.h"
 #include "ADXL355.h"
 
-#include <math.h>
+#include "math.h"
 #include <vector>
 
 
@@ -140,15 +139,14 @@ static uint8_t DMA_NMEABUFFER[NMEBUFFERLEN] = { 0 };
 SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
-/*
+
 MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
 MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
-*/
 //Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-ADXL355 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-MAX31865 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//ADXL355 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+//MAX31865 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //vectSensors.push_back((Met4FoFSensor *)&Sensor0);
 //BMA280 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
 //MS5837 TempSensor0(&hi2c1,MS5837::MS5837_02BA);
@@ -162,9 +160,9 @@ Met4FoFGPSPub GPSPub(&GPS_ref, 20);
  //Met4FoFEdgeTS Sensor0(1.0,0);
  //Met4FoFEdgeTS Sensor1(1.0,1);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor1);
- Met4FoFEdgeTS Sensor2(1.0,2);
+ //Met4FoFEdgeTS Sensor2(1.0,2);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor2);
- Met4FoFEdgeTS Sensor3(1.0,3);
+ //Met4FoFEdgeTS Sensor3(1.0,3);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor3);
 
 
@@ -257,7 +255,9 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const *argument) {
 	ConfigManager &configMan = ConfigManager::instance();
 	//Met4FoFSensors::vectMet4FoFSensors.push_back((Met4FoFSensor::Met4FoFSensor *)&Sensor0);
-
+	//ip_addr_t defaultUDPAdrr;
+	//defaultUDPAdrr.addr=0xC800A8C0;//0xC0A800C8;
+	//configMan.setUDPTargetIP(defaultUDPAdrr);
 
 	uint32_t random32bit = 0;
 	HAL_RNG_GenerateRandomNumber(&hrng, &random32bit); // genrate some random data for dhcp inting will be read from rng register by LWIP
@@ -484,18 +484,17 @@ void StartWebserverThread(void const *argument) {
 void StartBlinkThread(void const *argument) {
 	uint32_t loops = 0;
 	ConfigManager &configMan = ConfigManager::instance();
-	uint32_t lastSampleCount[4] = { 0 };
 	while (not Sensors_init_finished) {
 		osDelay(100);
 	}
-
+	uint32_t lastSampleCount[4] = { 0 };
 	bool justRestarted = true;
 	bool justRestartedDelay[4] = { false };
-	//MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
+	MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
 		//float temperatur=Sensor1.temperature();
-		/*
+
 		for (int i = 0; i < 4; i++) {
 			MPU9250 *MPUSensor = MPUSSenors[i];
 			float nominalFreq = MPUSensor->getNominalSamplingFreq();
@@ -553,7 +552,7 @@ void StartBlinkThread(void const *argument) {
 			}
 
 		}
-		*/
+
 		//DataMessage IMUMsg;
 		//uint64_t dummyTimeStamp=0;
 		//Sensor0.getData(&IMUMsg,dummyTimeStamp);
@@ -683,25 +682,18 @@ void StartDataStreamerThread(void const *argument) {
 	} else {
 		SEGGER_RTT_printf(0, " Created Data Mail Que\n");
 	}
-
-	 Met4FoFEdgeTS *EdgeTSs[2] = {&Sensor2, &Sensor3 };
-	 for (int i = 0; i < 2; i++) {
-			uint32_t EDgeTSID = configMan.getSensorBaseID(i)+1;
-			EdgeTSs[i]->setBaseID(EDgeTSID);
-	 }
-		Sensor0.begin();
-		Sensors_init_finished = true;
-		Sensor1.begin();
-		float temperatur=Sensor1.temperature();
-		temperatur=Sensor1.temperature();
-	/*
-	MPU9250 *MPUSSenors[5] =
-			{ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
+	//Set Base Id for all Sensors
+	uint16_t baseID=configMan.getBaseID();
+	for (int sensorcount = 0; sensorcount < numSensors; sensorcount++) {
+		// TODO Ad sanor manger to avid code doubling
+		// and automatic loop over all aktive sensors
+		Met4FoFSensors::Met4FoFSensor *sensor = Sensors[sensorcount];
+		sensor->setBaseID(baseID);
+	}
+	Sensor0.setBaseID(baseID);
+	MPU9250 *MPUSSenors[5] ={ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
 	for (int i = 0; i < 5; i++) {
 		MPU9250 *MPUSensor = MPUSSenors[i];
-		//MPU9250
-		uint32_t MPUId = configMan.getSensorBaseID(i);
-		MPUSensor->setBaseID(MPUId);
 		int retyCount = 0;
 		while (retyCount < 10) {
 			SEGGER_RTT_printf(0, "Initing Sensor %d\n", i);
@@ -712,11 +704,9 @@ void StartDataStreamerThread(void const *argument) {
 				break;
 			}
 		}
-
 		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
 		//MPUSensor->setSrd(1);
-
 		//MPU9250
 	}
 	for (int i = 0; i < 4; i++) {
@@ -725,24 +715,7 @@ void StartDataStreamerThread(void const *argument) {
 	}
 
 	SEGGER_RTT_printf(0, "Sensors Init Done\n");
- 	 */
-	/*
-	 //BMA280
-
-	 uint32_t SensorID1=configMan.getSensorBaseID(1);
-	 Sensor1.setBaseID(SensorID1);
-	 Sensor1.init(AFS_16G, BW_1000Hz, normal_Mode, sleep_0_5ms);
-	 */
-	//TODO put id configuration in al loop
-	//Internal ADC
-	//uint32_t SensorID10=configMan.getSensorBaseID(10);
-	//Met4FoFADC.setBaseID(SensorID10);
-
-	uint32_t SensorID0 = configMan.getSensorBaseID(0);
-	Sensor0.setBaseID(SensorID0);
-
-	uint32_t SensorID20 = configMan.getSensorBaseID(20);
-	GPSPub.setBaseID(SensorID20);
+	Sensors_init_finished=true;
 
 	SEGGER_RTT_printf(0,
 			"UDID=%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX\n",
@@ -808,7 +781,6 @@ void StartDataStreamerThread(void const *argument) {
 	HAL_TIM_IC_Start_IT(&htim1, TIM_CHANNEL_3);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_3);
-	Sensor1.temperature();
 	while (1) {
 		DataMessage *Datarptr;
 		//static uint32_t lastMessageId = 0;
