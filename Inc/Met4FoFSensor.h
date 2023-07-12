@@ -22,7 +22,9 @@ public:
   float getNominalSamplingFreq(){return _NominalSamplingFreq;}
   void setBaseID(uint16_t baseID){
 	  _baseID=baseID;
-	  _ID=(uint32_t)baseID<<16;_ID+(uint32_t)_baseID+(uint32_t)_sensorID<<8+_setingsID;};
+	  _ID=(uint32_t)baseID<<16;
+	  _ID+=(uint32_t)_sensorID<<8;
+	  _ID+=(uint32_t)_setingsID;};
   uint32_t getSampleCount(){return _SampleCount;};
   float _NominalSamplingFreq=NAN;
   uint16_t _baseID=0;

@@ -19,9 +19,6 @@ class Met4FoFGPSPub: public Met4FoFSensors::Met4FoFSensor{
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
   float getNominalSamplingFreq(){return 0.0;};
   private:
-  uint32_t _ID;
-  uint32_t _BaseID;
-  uint16_t _SetingsID;
   uint32_t _SampleCount=0;
   struct tref * _GPSTimeRef;
   struct timespec _utc_time;

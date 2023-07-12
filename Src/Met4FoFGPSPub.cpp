@@ -12,9 +12,7 @@
 
 Met4FoFGPSPub::Met4FoFGPSPub(struct tref * GPS_ref,uint32_t BaseID):
 		Met4FoFSensor::Met4FoFSensor(BaseID){
-	    _BaseID=BaseID;
-	    _SetingsID=0;
-		_ID=_BaseID+(uint32_t)_SetingsID;
+	    _baseID=BaseID;
 		_GPSTimeRef=GPS_ref;
 		_publish_time_ticks=true;
 }

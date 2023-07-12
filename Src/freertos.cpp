@@ -394,8 +394,10 @@ void StartNmeaParserThread(void const *argument) {
 					}
 					DataMessage *mptr;
 					mptr = (DataMessage*) osMailAlloc(DataMail, 0);
-					GPSPub.getData(mptr, rptr->RawTimerCount);
-					osStatus result = osMailPut(DataMail, mptr);
+					if (mptr!=NULL){
+						GPSPub.getData(mptr, rptr->RawTimerCount);
+						osStatus result = osMailPut(DataMail, mptr);
+					}
 					xSemaphoreGive(xSemaphoreGPS_REF);
 				} else {
 					/* We could not obtain the semaphore and can therefore not access
@@ -420,7 +422,6 @@ void StartTempSensorThread(void const *argument) {
 	ConfigManager &configMan = ConfigManager::instance();
 
 	static uint32_t TempsensoreCaptureCount = 0;
-	uint32_t SensorID3 = configMan.getSensorBaseID(5);
 	//TempSensor0.init(SensorID3);
 	for (;;) {
 		osDelay(2000);
@@ -490,9 +491,11 @@ void StartBlinkThread(void const *argument) {
 	uint32_t lastSampleCount[4] = { 0 };
 	bool justRestarted = true;
 	bool justRestartedDelay[4] = { false };
-	MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
+
+	//MPU9250 *MPUSSenors[4] = { &Sensor0, &Sensor1, &Sensor2, &Sensor3 };
 	while (1) {
 		HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+		/*
 		//float temperatur=Sensor1.temperature();
 
 		for (int i = 0; i < 4; i++) {
@@ -552,7 +555,7 @@ void StartBlinkThread(void const *argument) {
 			}
 
 		}
-
+	 	 */
 		//DataMessage IMUMsg;
 		//uint64_t dummyTimeStamp=0;
 		//Sensor0.getData(&IMUMsg,dummyTimeStamp);
@@ -684,13 +687,13 @@ void StartDataStreamerThread(void const *argument) {
 	}
 	//Set Base Id for all Sensors
 	uint16_t baseID=configMan.getBaseID();
-	for (int sensorcount = 0; sensorcount < numSensors; sensorcount++) {
+	for (int sensorcount = 0; sensorcount <= numSensors; sensorcount++) {
 		// TODO Ad sanor manger to avid code doubling
 		// and automatic loop over all aktive sensors
 		Met4FoFSensors::Met4FoFSensor *sensor = Sensors[sensorcount];
 		sensor->setBaseID(baseID);
 	}
-	Sensor0.setBaseID(baseID);
+
 	MPU9250 *MPUSSenors[5] ={ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
 	for (int i = 0; i < 5; i++) {
 		MPU9250 *MPUSensor = MPUSSenors[i];
@@ -706,7 +709,7 @@ void StartDataStreamerThread(void const *argument) {
 		}
 		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
 		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
-		//MPUSensor->setSrd(1);
+		MPUSensor->setSrd(1);
 		//MPU9250
 	}
 	for (int i = 0; i < 4; i++) {
