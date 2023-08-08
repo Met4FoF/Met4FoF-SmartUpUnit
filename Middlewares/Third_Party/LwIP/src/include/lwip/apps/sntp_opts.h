@@ -130,7 +130,7 @@
  * Default is 3 seconds.
  */
 #if !defined SNTP_RECV_TIMEOUT || defined __DOXYGEN__
-#define SNTP_RECV_TIMEOUT           3000
+#define SNTP_RECV_TIMEOUT           10
 #endif
 
 /** SNTP update delay - in milliseconds

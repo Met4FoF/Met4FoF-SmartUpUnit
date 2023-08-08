@@ -95,7 +95,7 @@
 #include "lwip_return_ckeck.h"
 
 #include "NMEAPraser.h"
-#include <vector>
+#include "lwip/apps/sntp.h"
 
 //#include "fatfs.h"//fat file System
 /* Private includes ----------------------------------------------------------*/
@@ -255,9 +255,9 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const *argument) {
 	ConfigManager &configMan = ConfigManager::instance();
 	//Met4FoFSensors::vectMet4FoFSensors.push_back((Met4FoFSensor::Met4FoFSensor *)&Sensor0);
-	//ip_addr_t defaultUDPAdrr;
-	//defaultUDPAdrr.addr=0xC800A8C0;//0xC0A800C8;
-	//configMan.setUDPTargetIP(defaultUDPAdrr);
+	ip_addr_t defaultUDPAdrr;
+	defaultUDPAdrr.addr=0xC800A8C0;//0xC0A800C8;
+	configMan.setUDPTargetIP(defaultUDPAdrr);
 
 	uint32_t random32bit = 0;
 	HAL_RNG_GenerateRandomNumber(&hrng, &random32bit); // genrate some random data for dhcp inting will be read from rng register by LWIP
@@ -273,9 +273,9 @@ void StartDefaultTask(void const *argument) {
 	ip_addr_t NTPIP = configMan.getUDPTargetIP();
 	osDelay(5000);
 	//Set the method of obtaining SNTP -> Use the method of obtaining from the server
-	//sntp_setoperatingmode(SNTP_OPMODE_POLL);
-	//sntp_setserver(0, &NTPIP);
-	//sntp_init();
+	sntp_setoperatingmode(SNTP_OPMODE_POLL);
+	sntp_setserver(0, &NTPIP);
+	sntp_init();
 	/* Infinite loop */
 	for (;;) {
 		osDelay(1000);
@@ -694,8 +694,8 @@ void StartDataStreamerThread(void const *argument) {
 		sensor->setBaseID(baseID);
 	}
 
-	MPU9250 *MPUSSenors[5] ={ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
-	for (int i = 0; i < 5; i++) {
+	MPU9250 *MPUSSenors[6] ={ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2, &Sensor3 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
+	for (int i = 0; i < 6; i++) {
 		MPU9250 *MPUSensor = MPUSSenors[i];
 		int retyCount = 0;
 		while (retyCount < 10) {
@@ -712,7 +712,7 @@ void StartDataStreamerThread(void const *argument) {
 		MPUSensor->setSrd(1);
 		//MPU9250
 	}
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 6; i++) {
 		MPU9250 *MPUSensor = MPUSSenors[i];
 		MPUSensor->enableDataReadyInterrupt();
 	}
@@ -860,7 +860,6 @@ void StartDataStreamerThread(void const *argument) {
 		if (actualticks - lastInfoticks > InfoUpdateTimems) {
 			lastInfoticks = xTaskGetTickCount();
 			HAL_GPIO_TogglePin(LED_BT2_GPIO_Port, LED_BT2_Pin);
-
 			//TODO improve this code with adding list of active sensors to configMan
 			for (int sensorcount = 0; sensorcount < numSensors; sensorcount++) {
 				// TODO Ad sanor manger to avid code doubling
