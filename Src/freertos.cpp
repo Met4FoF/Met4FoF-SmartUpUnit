@@ -697,7 +697,6 @@ void StartDataStreamerThread(void const *argument) {
 	}
 
 	Sensor0.setUp();
-
 	SEGGER_RTT_printf(0, "Sensors Init Done\n");
 	Sensors_init_finished=true;
 

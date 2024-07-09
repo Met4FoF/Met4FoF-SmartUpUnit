@@ -135,9 +135,28 @@ int Met4FoFICM42866P::setUp(){
 	setAccFS(_ACCFullScaleCOnfig);
 	setGyroFS(_GyroFullScaleCOnfig);
 	setODR(_ODRCOnfig);
+	//activateDRIINT1();
+	inv_icm426xx_get_data_from_registers(&(this->_Instance));
 	return ret;
 }
 
+int Met4FoFICM42866P::activateDRIINT1() {
+    inv_icm426xx_interrupt_parameter_t intParms; // Initialize the structure to zero
+    inv_icm426xx_get_config_int1(&_Instance, &intParms);
+    intParms.INV_ICM426XX_UI_DRDY = INV_ICM426XX_ENABLE; // Enable the Data Ready Interrupt (DRI)
+
+    inv_icm426xx_set_config_int1(&_Instance, &intParms); // Pass the instance and the interrupt parameter
+    inv_icm426xx_set_config_ibi(&_Instance, &intParms);
+    inv_icm426xx_get_config_int1(&_Instance, &intParms);
+    return 0;
+}
+
+void Met4FoFICM42866P::evntCB(inv_icm426xx_sensor_event_t *event){
+    // Use memcpy to copy the content of event to _lastEvent
+	int tmp=0;
+    memcpy(&_lastEvent, event, sizeof(inv_icm426xx_sensor_event_t));
+    tmp+=_lastEvent.accel[0];
+};
 
 
 int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
@@ -148,6 +167,7 @@ int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	}
 	int readresult=0;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
+	inv_icm426xx_get_data_from_registers(&(this->_Instance));
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
@@ -160,21 +180,22 @@ int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
 
 int Met4FoFICM42866P::write_reg(struct inv_icm426xx_serif *serif, uint8_t reg, const uint8_t *buf,uint32_t len)
 {
-
-  HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(_spi, &reg, 1, 1000);
-  HAL_SPI_Transmit(_spi, (uint8_t*) buf, len, 1000);
-  HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_SET);
+  Met4FoFICM42866P* instance = static_cast<Met4FoFICM42866P*>(serif->context);
+  HAL_GPIO_WritePin(instance->_SPICSPort, instance->_SPICSPin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(instance->_spi, &reg, 1, 1000);
+  HAL_SPI_Transmit(instance->_spi, (uint8_t*) buf, len, 1000);
+  HAL_GPIO_WritePin(instance->_SPICSPort,  instance->_SPICSPin, GPIO_PIN_SET);
   return 0;
 }
 
 int Met4FoFICM42866P::read_reg(struct inv_icm426xx_serif *serif, uint8_t reg, uint8_t *buf, uint32_t len)
 {
   reg |= 0x80;
-  HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_RESET);
-  HAL_SPI_Transmit(_spi, &reg, 1, 1000);
-  HAL_SPI_Receive(_spi,(uint8_t*) buf, len, 1000);
-  HAL_GPIO_WritePin(_SPICSPort,  _SPICSPin, GPIO_PIN_SET);
+  Met4FoFICM42866P* instance = static_cast<Met4FoFICM42866P*>(serif->context);
+  HAL_GPIO_WritePin(instance->_SPICSPort,  instance->_SPICSPin, GPIO_PIN_RESET);
+  HAL_SPI_Transmit(instance->_spi, &reg, 1, 1000);
+  HAL_SPI_Receive(instance->_spi,(uint8_t*) buf, len, 1000);
+  HAL_GPIO_WritePin(instance->_SPICSPort,  instance->_SPICSPin, GPIO_PIN_SET);
   return 0;
 }
 
@@ -299,3 +320,4 @@ int Met4FoFICM42866P::getDescription(DescriptionMessage * Message,DescriptionMes
 	}
 	return retVal;
 }
+

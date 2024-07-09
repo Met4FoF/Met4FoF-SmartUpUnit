@@ -31,6 +31,10 @@ public:
   void increaseCaptureCountWORead(){_SampleCount++;return ;};
   int setUp();
   float getNominalSamplingFreq();
+  int setODR(ICM426XX_GYRO_CONFIG0_ODR_t odr);// gyro and accel will set to the same ODR
+  int setAccFS(ICM426XX_ACCEL_CONFIG0_FS_SEL_t accFullScale);
+  int setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale);
+  int activateDRIINT1();
   private:
   ICM426XX_ACCEL_CONFIG0_FS_SEL_t _ACCFullScaleCOnfig=ICM426XX_ACCEL_CONFIG0_FS_SEL_2g;
   ICM426XX_GYRO_CONFIG0_FS_SEL_t _GyroFullScaleCOnfig=ICM426XX_GYRO_CONFIG0_FS_SEL_31dps;
@@ -38,16 +42,14 @@ public:
   float _ACCFSScaleFactor=NAN;
   float _GyroFSScaleFactor=NAN;
   float _nominalODR=NAN;
-  int setODR(ICM426XX_GYRO_CONFIG0_ODR_t odr);// gyro and accel will set to the same ODR
-  int setAccFS(ICM426XX_ACCEL_CONFIG0_FS_SEL_t accFullScale);
-  int setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale);
+
   GPIO_TypeDef* _SPICSPort;
   uint16_t _SPICSPin;
   SPI_HandleTypeDef* _spi;
 
 
-  int read_reg(struct inv_icm426xx_serif *serif, uint8_t reg, uint8_t *buf, uint32_t len);
-  int write_reg(struct inv_icm426xx_serif *serif, uint8_t reg, const uint8_t *buf,uint32_t len);
+  static int read_reg(struct inv_icm426xx_serif *serif, uint8_t reg, uint8_t *buf, uint32_t len);
+  static int write_reg(struct inv_icm426xx_serif *serif, uint8_t reg, const uint8_t *buf,uint32_t len);
   /*
    * typedef struct {
 	int      sensor_mask;
@@ -60,7 +62,7 @@ public:
    } inv_icm426xx_sensor_event_t;
    */
   inv_icm426xx_sensor_event_t _lastEvent;
-  void evntCB(inv_icm426xx_sensor_event_t *event){_lastEvent=*event;};
+  void evntCB(inv_icm426xx_sensor_event_t *event);
   inv_icm426xx _Instance;
   /*
   struct inv_icm426xx_serif {
@@ -74,9 +76,9 @@ public:
   	uint32_t serif_type;
   };
   */
-  inv_icm426xx_serif _serif={NULL,
-  (int (*)(inv_icm426xx_serif*, uint8_t, uint8_t*, uint32_t))&Met4FoFICM42866P::read_reg,
-  (int (*)(inv_icm426xx_serif*, uint8_t, const uint8_t*, uint32_t))&Met4FoFICM42866P::write_reg,
+  inv_icm426xx_serif _serif={this,
+  read_reg,
+  write_reg,
   NULL,// configuration function is only need if i3C is used
   1024*32,
   1024*32,

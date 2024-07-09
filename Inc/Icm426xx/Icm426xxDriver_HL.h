@@ -334,7 +334,6 @@ int inv_icm426xx_force_clock_source(struct inv_icm426xx *                s,
                                     ICM426XX_INTF_CONFIG1_ACCEL_LP_CLK_t clk_src);
 
 /** @brief Enable accel in low power mode.
- *  @param[in] s  Pointer to device.
  *  @return       0 on success, negative value on error.
  */
 int inv_icm426xx_enable_accel_low_power_mode(struct inv_icm426xx *s);
