@@ -75,6 +75,7 @@
 #include "Met4FoFEdgeTS.h"
 #include "Met4FoFGPSPub.h"
 #include "Met4FoFLsm6dsrx.h"
+#include "Met4FoFICM42866P.h"
 #include "MAX31865.h"
 #include "ADXL355.h"
 
@@ -140,10 +141,11 @@ SemaphoreHandle_t xSemaphoreGPS_REF = NULL;
 SemaphoreHandle_t xSemaphoreNTP_REF = NULL;
 
 
-MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
-MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
-MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
-MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+//MPU9250 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
+//MPU9250 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
+//MPU9250 Sensor2(SENSOR_CS3_GPIO_Port, SENSOR_CS3_Pin, &hspi2, 2);
+//MPU9250 Sensor3(SENSOR_CS4_GPIO_Port, SENSOR_CS4_Pin, &hspi2, 3);
+Met4FoFICM42866P Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 //Met4FoFLsm6dsrx Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 //ADXL355 Sensor0(SENSOR_CS1_GPIO_Port, SENSOR_CS1_Pin, &hspi1, 0);
 //MAX31865 Sensor1(SENSOR_CS2_GPIO_Port, SENSOR_CS2_Pin, &hspi1, 1);
@@ -158,11 +160,11 @@ Met4FoFGPSPub GPSPub(&GPS_ref, 20);
 //Met4FoFEdgeTS EdgePub1(1.0,31);
 
  //Met4FoFEdgeTS Sensor0(1.0,0);
- //Met4FoFEdgeTS Sensor1(1.0,1);
+ Met4FoFEdgeTS Sensor1(1.0,1);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor1);
- //Met4FoFEdgeTS Sensor2(1.0,2);
+ Met4FoFEdgeTS Sensor2(1.0,2);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor2);
- //Met4FoFEdgeTS Sensor3(1.0,3);
+ Met4FoFEdgeTS Sensor3(1.0,3);
  //vectSensors.push_back((Met4FoFSensor *)&Sensor3);
 
 
@@ -694,28 +696,7 @@ void StartDataStreamerThread(void const *argument) {
 		sensor->setBaseID(baseID);
 	}
 
-	MPU9250 *MPUSSenors[6] ={ &Sensor0, &Sensor1, &Sensor2, &Sensor3, &Sensor2, &Sensor3 };//TODO Fix bug in SPI2 and MPU intialsation witch leeds to failiure in first loop but succes if an other sensor gets inited before this makes absolutly no sense at all nasty workaround: init sernsor 2 fail --> init senor 3 -->init sensor 2 again succes
-	for (int i = 0; i < 6; i++) {
-		MPU9250 *MPUSensor = MPUSSenors[i];
-		int retyCount = 0;
-		while (retyCount < 10) {
-			SEGGER_RTT_printf(0, "Initing Sensor %d\n", i);
-			retyCount++;
-			int initresult = MPUSensor->begin();
-			SEGGER_RTT_printf(0, "Sensor init result  %d\n", initresult);
-			if (initresult == 1) {
-				break;
-			}
-		}
-		MPUSensor->setGyroRange(MPU9250::GYRO_RANGE_250DPS);
-		MPUSensor->setAccelRange(MPU9250::ACCEL_RANGE_4G);
-		MPUSensor->setSrd(1);
-		//MPU9250
-	}
-	for (int i = 0; i < 6; i++) {
-		MPU9250 *MPUSensor = MPUSSenors[i];
-		MPUSensor->enableDataReadyInterrupt();
-	}
+	Sensor0.setUp();
 
 	SEGGER_RTT_printf(0, "Sensors Init Done\n");
 	Sensors_init_finished=true;
