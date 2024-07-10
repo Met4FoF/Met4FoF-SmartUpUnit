@@ -958,9 +958,9 @@ int inv_icm426xx_get_data_from_registers(struct inv_icm426xx *s)
 
 	/* Ensure data ready status bit is set */
 	status |= inv_icm426xx_read_reg(s, MPUREG_INT_STATUS, 1, &int_status);
-	if (status)
-		return status;
-
+	//if (status)
+	//	return status;
+	int_status=int_status|BIT_INT_STATUS_DRDY;
 	if (int_status & BIT_INT_STATUS_DRDY) {
 		status = inv_icm426xx_read_reg(s, MPUREG_TEMP_DATA0_UI, TEMP_DATA_SIZE, temperature);
 		inv_icm426xx_format_data(s->endianess_data, temperature, (uint16_t *)&event.temperature);

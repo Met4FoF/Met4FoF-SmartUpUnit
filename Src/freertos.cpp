@@ -212,7 +212,7 @@ void MX_FREERTOS_Init(void) {
 	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 256);
 	IOTID = osThreadCreate(osThread(defaultTask), NULL);
 
-	osThreadDef(blinkThread, StartBlinkThread, osPriorityHigh, 0, 256);
+	osThreadDef(blinkThread, StartBlinkThread, osPriorityHigh, 0, 512);
 	blinkTID = osThreadCreate(osThread(blinkThread), NULL);
 
 	osThreadDef(WebserverTherad, StartWebserverThread, osPriorityNormal, 0,
@@ -558,10 +558,10 @@ void StartBlinkThread(void const *argument) {
 
 		}
 	 	 */
-		//DataMessage IMUMsg;
-		//uint64_t dummyTimeStamp=0;
-		//Sensor0.getData(&IMUMsg,dummyTimeStamp);
-		osDelay(1000);
+		DataMessage IMUMsg;
+		uint64_t dummyTimeStamp=0;
+		Sensor0.getData(&IMUMsg,dummyTimeStamp);
+		osDelay(100);
 	}
 	osThreadTerminate(NULL);
 }

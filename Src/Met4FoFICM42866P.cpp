@@ -10,15 +10,17 @@
 
 #include "Met4FoFICM42866P.h"
 
+std::unordered_map<Met4FoFICM42866P*, Met4FoFICM42866P::CallbackType> Met4FoFICM42866P::callbackMap;
 
 Met4FoFICM42866P::Met4FoFICM42866P(GPIO_TypeDef* SPICSPort, uint16_t SPICSPin,SPI_HandleTypeDef* spiIfaceHandle,uint32_t BaseID):
 	Met4FoFSensor::Met4FoFSensor(BaseID){
 	_SPICSPort=SPICSPort;
     _SPICSPin=SPICSPin;
     _spi=spiIfaceHandle;
+    memset(&_lastEvent, 0xAA, sizeof(_lastEvent)); // Ensure _lastEvent is initialized
     Met4FoFSensors::listMet4FoFSensors.push_back((Met4FoFSensors::Met4FoFSensor *)this);
+    _serif.context = this; // Set the context to this instance
 }
-
 
 
 int Met4FoFICM42866P::setODR(ICM426XX_GYRO_CONFIG0_ODR_t odr) {
@@ -129,34 +131,34 @@ int Met4FoFICM42866P::setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale){
 	}
 
 
-int Met4FoFICM42866P::setUp(){
-	int ret=0;
-	ret=inv_icm426xx_init(&_Instance,&_serif,(void (*)(inv_icm426xx_sensor_event_t*))&Met4FoFICM42866P::evntCB);
-	setAccFS(_ACCFullScaleCOnfig);
-	setGyroFS(_GyroFullScaleCOnfig);
-	setODR(_ODRCOnfig);
-	//activateDRIINT1();
-	inv_icm426xx_get_data_from_registers(&(this->_Instance));
-	return ret;
+
+int Met4FoFICM42866P::setUp() {
+    int ret = 0;
+    setAccFS(_ACCFullScaleCOnfig);
+    setGyroFS(_GyroFullScaleCOnfig);
+    setODR(_ODRCOnfig);
+
+    // Bind the member function to this instance and store in the callback map
+    callbackMap[this] = std::bind(&Met4FoFICM42866P::evntCB, this, std::placeholders::_1);
+
+    // Use the static function as the callback
+    ret = inv_icm426xx_init(&_Instance, &_serif, evntCBStatic);
+    inv_icm426xx_get_data_from_registers(&_Instance);
+    return ret;
 }
 
-int Met4FoFICM42866P::activateDRIINT1() {
-    inv_icm426xx_interrupt_parameter_t intParms; // Initialize the structure to zero
-    inv_icm426xx_get_config_int1(&_Instance, &intParms);
-    intParms.INV_ICM426XX_UI_DRDY = INV_ICM426XX_ENABLE; // Enable the Data Ready Interrupt (DRI)
-
-    inv_icm426xx_set_config_int1(&_Instance, &intParms); // Pass the instance and the interrupt parameter
-    inv_icm426xx_set_config_ibi(&_Instance, &intParms);
-    inv_icm426xx_get_config_int1(&_Instance, &intParms);
-    return 0;
+void Met4FoFICM42866P::evntCBStatic(inv_icm426xx_sensor_event_t* event) {
+    // Iterate through the map to find the instance and call its callback
+    for (auto& entry : callbackMap) {
+        entry.second(event);
+    }
 }
 
-void Met4FoFICM42866P::evntCB(inv_icm426xx_sensor_event_t *event){
+void Met4FoFICM42866P::evntCB(inv_icm426xx_sensor_event_t* event) {
     // Use memcpy to copy the content of event to _lastEvent
-	int tmp=0;
     memcpy(&_lastEvent, event, sizeof(inv_icm426xx_sensor_event_t));
-    tmp+=_lastEvent.accel[0];
-};
+    int tmp = _lastEvent.accel[0]; // Example operation on _lastEvent
+}
 
 
 int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
@@ -173,6 +175,12 @@ int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
 	Message->unix_time_nsecs=(uint32_t)(RawTimeStamp & 0x00000000FFFFFFFF);// low word
 	Message->sample_number=	_SampleCount;
+	Message->Data_01=_lastEvent.accel[0]/_ACCFSScaleFactor;
+	Message->Data_02=_lastEvent.accel[1]/_ACCFSScaleFactor;
+	Message->Data_03=_lastEvent.accel[2]/_ACCFSScaleFactor;
+	Message->Data_04=_lastEvent.gyro[0]/_GyroFSScaleFactor;
+	Message->Data_05=_lastEvent.gyro[1]/_GyroFSScaleFactor;
+	Message->Data_06=_lastEvent.gyro[2]/_GyroFSScaleFactor;
 
 	return readresult;
 }

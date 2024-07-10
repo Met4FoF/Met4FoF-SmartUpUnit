@@ -15,12 +15,17 @@
 #include <cstring>
 #include <math.h>
 
+#include <functional>
+#include <unordered_map>
+
 #include "pb.h"
 #include "message.pb.h"
 #include "Met4FoFSensor.h"
 
 #include "Icm426xx/Icm426xxDriver_HL.h"
 #include "cmsis_os.h"//for OsDelay in setUp Function
+
+
 
 class Met4FoFICM42866P:public Met4FoFSensors::Met4FoFSensor
 {
@@ -46,43 +51,26 @@ public:
   GPIO_TypeDef* _SPICSPort;
   uint16_t _SPICSPin;
   SPI_HandleTypeDef* _spi;
+  static int read_reg(struct inv_icm426xx_serif* serif, uint8_t reg, uint8_t* buf, uint32_t len);
+  static int write_reg(struct inv_icm426xx_serif* serif, uint8_t reg, const uint8_t* buf, uint32_t len);
 
+  using CallbackType = std::function<void(inv_icm426xx_sensor_event_t*)>;
+  static std::unordered_map<Met4FoFICM42866P*, CallbackType> callbackMap;
 
-  static int read_reg(struct inv_icm426xx_serif *serif, uint8_t reg, uint8_t *buf, uint32_t len);
-  static int write_reg(struct inv_icm426xx_serif *serif, uint8_t reg, const uint8_t *buf,uint32_t len);
-  /*
-   * typedef struct {
-	int      sensor_mask;
-	uint16_t timestamp_fsync;
-	int16_t  accel[3];
-	int16_t  gyro[3];
-	int16_t  temperature;
-	int8_t   accel_high_res[3];
-	int8_t   gyro_high_res[3];
-   } inv_icm426xx_sensor_event_t;
-   */
+  static void evntCBStatic(inv_icm426xx_sensor_event_t* event);
+
   inv_icm426xx_sensor_event_t _lastEvent;
-  void evntCB(inv_icm426xx_sensor_event_t *event);
+  void evntCB(inv_icm426xx_sensor_event_t* event);
   inv_icm426xx _Instance;
-  /*
-  struct inv_icm426xx_serif {
-  	void *context;
-  	int (*read_reg)(struct inv_icm426xx_serif *serif, uint8_t reg, uint8_t *buf, uint32_t len);
-  	int (*write_reg)(struct inv_icm426xx_serif *serif, uint8_t reg, const uint8_t *buf,
-  	                 uint32_t len);
-  	int (*configure)(struct inv_icm426xx_serif *serif);
-  	uint32_t max_read;
-  	uint32_t max_write;
-  	uint32_t serif_type;
-  };
-  */
-  inv_icm426xx_serif _serif={this,
-  read_reg,
-  write_reg,
-  NULL,// configuration function is only need if i3C is used
-  1024*32,
-  1024*32,
-  ICM426XX_UI_SPI4
+
+  inv_icm426xx_serif _serif = {
+      this,
+      read_reg,
+      write_reg,
+      nullptr, // configuration function is only needed if I3C is used
+      1024 * 32,
+      1024 * 32,
+      ICM426XX_UI_SPI4
   };
 
   };
