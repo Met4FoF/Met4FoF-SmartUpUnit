@@ -601,10 +601,6 @@ static int reg_to_accel_fsr(ICM426XX_ACCEL_CONFIG0_FS_SEL_t reg)
 		return 8;
 	case ICM426XX_ACCEL_CONFIG0_FS_SEL_16g:
 		return 16;
-#if defined(ICM42686P) || defined(ICM42686V)
-	case ICM426XX_ACCEL_CONFIG0_FS_SEL_32g:
-		return 32;
-#endif
 	default:
 		return -1;
 	}
@@ -630,10 +626,6 @@ static int reg_to_gyro_fsr(ICM426XX_GYRO_CONFIG0_FS_SEL_t reg)
 		return 1000;
 	case ICM426XX_GYRO_CONFIG0_FS_SEL_2000dps:
 		return 2000;
-#if defined(ICM42686P) || defined(ICM42686V)
-	case ICM426XX_GYRO_CONFIG0_FS_SEL_4000dps:
-		return 4000;
-#endif
 	default:
 		return -1;
 	}

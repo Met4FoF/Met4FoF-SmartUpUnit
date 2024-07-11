@@ -1316,7 +1316,7 @@ int inv_icm426xx_set_gyro_frequency(struct inv_icm426xx *             s,
 int inv_icm426xx_set_accel_fsr(struct inv_icm426xx *s, ICM426XX_ACCEL_CONFIG0_FS_SEL_t accel_fsr_g)
 {
 	int     status = 0;
-	uint8_t accel_cfg_0_reg;
+	uint8_t accel_cfg_0_reg=0;
 	status |= inv_icm426xx_read_reg(s, MPUREG_ACCEL_CONFIG0, 1, &accel_cfg_0_reg);
 	accel_cfg_0_reg &= (uint8_t)~BIT_ACCEL_CONFIG0_FS_SEL_MASK;
 	accel_cfg_0_reg |= (uint8_t)accel_fsr_g;

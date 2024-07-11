@@ -558,9 +558,6 @@ void StartBlinkThread(void const *argument) {
 
 		}
 	 	 */
-		DataMessage IMUMsg;
-		uint64_t dummyTimeStamp=0;
-		Sensor0.getData(&IMUMsg,dummyTimeStamp);
 		osDelay(100);
 	}
 	osThreadTerminate(NULL);

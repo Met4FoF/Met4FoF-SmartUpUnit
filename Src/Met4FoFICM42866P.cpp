@@ -85,9 +85,6 @@ int Met4FoFICM42866P::setAccFS(ICM426XX_ACCEL_CONFIG0_FS_SEL_t accFullScale){
 	case ICM426XX_ACCEL_CONFIG0_FS_SEL_16g:
 		_ACCFSScaleFactor=2048.0/9.81;
 		break;
-	case ICM426XX_ACCEL_CONFIG0_FS_SEL_32g:
-		_ACCFSScaleFactor=4096.0/9.81;
-		break;
 	}
 	int ret= inv_icm426xx_set_accel_fsr(&this->_Instance,accFullScale);
 	if (ret==0){
@@ -98,9 +95,6 @@ int Met4FoFICM42866P::setAccFS(ICM426XX_ACCEL_CONFIG0_FS_SEL_t accFullScale){
 
 int Met4FoFICM42866P::setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale){
 	switch(gyroFullScale){
-	case ICM426XX_GYRO_CONFIG0_FS_SEL_4000dps:
-		_GyroFSScaleFactor=16.4;
-		break;
 	case ICM426XX_GYRO_CONFIG0_FS_SEL_2000dps:
 		_GyroFSScaleFactor=32.8;
 		break;
@@ -122,6 +116,9 @@ int Met4FoFICM42866P::setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale){
 	case ICM426XX_GYRO_CONFIG0_FS_SEL_31dps:
 		_GyroFSScaleFactor=2097.2;
 		break;
+	case ICM426XX_GYRO_CONFIG0_FS_SEL_16dps:
+		_GyroFSScaleFactor=4194.4;
+		break;
 	}
 	int ret= inv_icm426xx_set_gyro_fsr(&this->_Instance,gyroFullScale);
 	if (ret==0){
@@ -134,15 +131,18 @@ int Met4FoFICM42866P::setGyroFS(ICM426XX_GYRO_CONFIG0_FS_SEL_t gyroFullScale){
 
 int Met4FoFICM42866P::setUp() {
     int ret = 0;
-    setAccFS(_ACCFullScaleCOnfig);
-    setGyroFS(_GyroFullScaleCOnfig);
-    setODR(_ODRCOnfig);
+
 
     // Bind the member function to this instance and store in the callback map
     callbackMap[this] = std::bind(&Met4FoFICM42866P::evntCB, this, std::placeholders::_1);
 
     // Use the static function as the callback
     ret = inv_icm426xx_init(&_Instance, &_serif, evntCBStatic);
+    setAccFS(_ACCFullScaleCOnfig);
+    setGyroFS(_GyroFullScaleCOnfig);
+    setODR(_ODRCOnfig);
+    inv_icm426xx_enable_accel_low_noise_mode(&_Instance);
+	inv_icm426xx_enable_gyro_low_noise_mode(&_Instance);
     inv_icm426xx_get_data_from_registers(&_Instance);
     return ret;
 }
@@ -181,6 +181,7 @@ int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	Message->Data_04=_lastEvent.gyro[0]/_GyroFSScaleFactor;
 	Message->Data_05=_lastEvent.gyro[1]/_GyroFSScaleFactor;
 	Message->Data_06=_lastEvent.gyro[2]/_GyroFSScaleFactor;
+	Message->Data_07=_lastEvent.temperature/132.48+25.0;
 
 	return readresult;
 }
