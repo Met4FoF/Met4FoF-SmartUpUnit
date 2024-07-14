@@ -85,11 +85,11 @@ int Met4FoFICM42866P::setAccFS(ICM426XX_ACCEL_CONFIG0_FS_SEL_t accFullScale){
 	case ICM426XX_ACCEL_CONFIG0_FS_SEL_16g:
 		_ACCFSScaleFactor=2048.0/9.81;
 		break;
+	case ICM426XX_ACCEL_CONFIG0_FS_SEL_RESERVED:
+		_ACCFSScaleFactor=2048.0/9.81;
+		break;
 	}
 	int ret= inv_icm426xx_set_accel_fsr(&this->_Instance,accFullScale);
-	if (ret==0){
-		_ACCFullScaleCOnfig=accFullScale;
-	}
 	return ret;
 }
 
@@ -141,6 +141,9 @@ int Met4FoFICM42866P::setUp() {
     setAccFS(_ACCFullScaleCOnfig);
     setGyroFS(_GyroFullScaleCOnfig);
     setODR(_ODRCOnfig);
+    inv_icm426xx_enable_high_resolution_fifo(&_Instance);
+    inv_icm426xx_configure_fifo(&_Instance,INV_ICM426XX_FIFO_ENABLED);
+    inv_icm426xx_configure_fifo_wm(&_Instance, 64);
     inv_icm426xx_enable_accel_low_noise_mode(&_Instance);
 	inv_icm426xx_enable_gyro_low_noise_mode(&_Instance);
     inv_icm426xx_get_data_from_registers(&_Instance);
@@ -169,7 +172,11 @@ int Met4FoFICM42866P::getData(DataMessage * Message,uint64_t RawTimeStamp){
 	}
 	int readresult=0;
 	memcpy(Message,&empty_DataMessage,sizeof(DataMessage));//Copy default values into array
-	inv_icm426xx_get_data_from_registers(&(this->_Instance));
+	//inv_icm426xx_get_data_from_registers(&(this->_Instance));
+	inv_icm426xx_get_data_from_fifo(&(this->_Instance));
+	inv_icm426xx_interrupt_parameter_t config_int = { (inv_icm426xx_interrupt_value)0 };
+	/* Disable Data Ready Interrupt */
+	//inv_icm426xx_get_config_int1(&(this->_Instance), &config_int);
 	Message->id=_ID;
 	Message->unix_time=0XFFFFFFFF;
 	Message->time_uncertainty=(uint32_t)((RawTimeStamp & 0xFFFFFFFF00000000) >> 32);//high word
