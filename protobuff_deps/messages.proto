@@ -26,6 +26,36 @@ message DataMessage {
   optional uint64 time_ticks=22;		 //Raw timestamp of the input capture counter
 }
 
+message DataArrayMessage {
+  required uint32 id = 1; // Unique identifier for the batch of sensor data
+
+  // Arrays of sensor data, each with a maximum count of 32
+  repeated uint32 sample_number = 2 [(nanopb).max_count = 32]; // Sample numbers of the data
+  repeated uint32 unix_time = 3 [(nanopb).max_count = 32];      // UNIX timestamps in seconds for each sample
+  repeated uint32 unix_time_nsecs = 4 [(nanopb).max_count = 32]; // Nanoseconds part of UNIX timestamps for each sample
+  repeated uint32 time_uncertainty = 5 [(nanopb).max_count = 32]; // Time uncertainties in nanoseconds for each sample
+
+  // Repeated floats for each data channel, max_count set to 32
+  repeated float Data_01 = 6 [(nanopb).max_count = 32];
+  repeated float Data_02 = 7 [(nanopb).max_count = 32];
+  repeated float Data_03 = 8 [(nanopb).max_count = 32];
+  repeated float Data_04 = 9 [(nanopb).max_count = 32];
+  repeated float Data_05 = 10 [(nanopb).max_count = 32];
+  repeated float Data_06 = 11 [(nanopb).max_count = 32];
+  repeated float Data_07 = 12 [(nanopb).max_count = 32];
+  repeated float Data_08 = 13 [(nanopb).max_count = 32];
+  repeated float Data_09 = 14 [(nanopb).max_count = 32];
+  repeated float Data_10 = 15 [(nanopb).max_count = 32];
+  repeated float Data_11 = 16 [(nanopb).max_count = 32];
+  repeated float Data_12 = 17 [(nanopb).max_count = 32];
+  repeated float Data_13 = 18 [(nanopb).max_count = 32];
+  repeated float Data_14 = 19 [(nanopb).max_count = 32];
+  repeated float Data_15 = 20 [(nanopb).max_count = 32];
+  repeated float Data_16 = 21 [(nanopb).max_count = 32];
+
+  repeated uint64 time_ticks = 22 [(nanopb).max_count = 32]; // Raw time ticks for each sample
+}
+
 message DescriptionMessage {
   required uint32 id = 1;                                   //32 Bit ID of the sensor     [0x1FE40100]
   required string Sensor_name = 2 [(nanopb).max_size = 40]; //Name of the Sensor          [MPU 9250]
