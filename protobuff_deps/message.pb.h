@@ -29,6 +29,54 @@ typedef enum _DescriptionMessage_DESCRIPTION_TYPE {
 #define _DescriptionMessage_DESCRIPTION_TYPE_ARRAYSIZE ((DescriptionMessage_DESCRIPTION_TYPE)(DescriptionMessage_DESCRIPTION_TYPE_HIERARCHY+1))
 
 /* Struct definitions */
+typedef struct _DataArrayMessage {
+    uint32_t id;
+    pb_size_t sample_number_count;
+    uint32_t sample_number[32];
+    pb_size_t unix_time_count;
+    uint32_t unix_time[32];
+    pb_size_t unix_time_nsecs_count;
+    uint32_t unix_time_nsecs[32];
+    pb_size_t time_uncertainty_count;
+    uint32_t time_uncertainty[32];
+    pb_size_t Data_01_count;
+    float Data_01[32];
+    pb_size_t Data_02_count;
+    float Data_02[32];
+    pb_size_t Data_03_count;
+    float Data_03[32];
+    pb_size_t Data_04_count;
+    float Data_04[32];
+    pb_size_t Data_05_count;
+    float Data_05[32];
+    pb_size_t Data_06_count;
+    float Data_06[32];
+    pb_size_t Data_07_count;
+    float Data_07[32];
+    pb_size_t Data_08_count;
+    float Data_08[32];
+    pb_size_t Data_09_count;
+    float Data_09[32];
+    pb_size_t Data_10_count;
+    float Data_10[32];
+    pb_size_t Data_11_count;
+    float Data_11[32];
+    pb_size_t Data_12_count;
+    float Data_12[32];
+    pb_size_t Data_13_count;
+    float Data_13[32];
+    pb_size_t Data_14_count;
+    float Data_14[32];
+    pb_size_t Data_15_count;
+    float Data_15[32];
+    pb_size_t Data_16_count;
+    float Data_16[32];
+    pb_size_t time_ticks_count;
+    uint64_t time_ticks[32];
+/* @@protoc_insertion_point(struct:DataArrayMessage) */
+} DataArrayMessage;
+
+
 typedef struct _DataMessage {
     uint32_t id;
     uint32_t sample_number;
@@ -147,14 +195,35 @@ typedef struct _DescriptionMessage {
 
 /* Initializer values for message structs */
 #define DataMessage_init_default                 {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DataArrayMessage_init_default            {0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 #define DescriptionMessage_init_default          {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, 0}
 #define DataMessage_init_zero                    {0, 0, 0, 0, 0, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0}
+#define DataArrayMessage_init_zero               {0, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
 #define DescriptionMessage_init_zero             {0, "", _DescriptionMessage_DESCRIPTION_TYPE_MIN, false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, "", false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, false, 0, 0}
 
-static const DescriptionMessage empty_DescriptionMessage=DescriptionMessage_init_default ;
-static const DataMessage empty_DataMessage=DataMessage_init_default ;
-
 /* Field tags (for use in manual encoding/decoding) */
+#define DataArrayMessage_id_tag                  1
+#define DataArrayMessage_sample_number_tag       2
+#define DataArrayMessage_unix_time_tag           3
+#define DataArrayMessage_unix_time_nsecs_tag     4
+#define DataArrayMessage_time_uncertainty_tag    5
+#define DataArrayMessage_Data_01_tag             6
+#define DataArrayMessage_Data_02_tag             7
+#define DataArrayMessage_Data_03_tag             8
+#define DataArrayMessage_Data_04_tag             9
+#define DataArrayMessage_Data_05_tag             10
+#define DataArrayMessage_Data_06_tag             11
+#define DataArrayMessage_Data_07_tag             12
+#define DataArrayMessage_Data_08_tag             13
+#define DataArrayMessage_Data_09_tag             14
+#define DataArrayMessage_Data_10_tag             15
+#define DataArrayMessage_Data_11_tag             16
+#define DataArrayMessage_Data_12_tag             17
+#define DataArrayMessage_Data_13_tag             18
+#define DataArrayMessage_Data_14_tag             19
+#define DataArrayMessage_Data_15_tag             20
+#define DataArrayMessage_Data_16_tag             21
+#define DataArrayMessage_time_ticks_tag          22
 #define DataMessage_id_tag                       1
 #define DataMessage_sample_number_tag            2
 #define DataMessage_unix_time_tag                3
@@ -241,6 +310,32 @@ X(a, STATIC, OPTIONAL, UINT64, time_ticks, 22)
 #define DataMessage_CALLBACK NULL
 #define DataMessage_DEFAULT NULL
 
+#define DataArrayMessage_FIELDLIST(X, a) \
+X(a, STATIC, REQUIRED, UINT32, id, 1) \
+X(a, STATIC, REPEATED, UINT32, sample_number, 2) \
+X(a, STATIC, REPEATED, UINT32, unix_time, 3) \
+X(a, STATIC, REPEATED, UINT32, unix_time_nsecs, 4) \
+X(a, STATIC, REPEATED, UINT32, time_uncertainty, 5) \
+X(a, STATIC, REPEATED, FLOAT, Data_01, 6) \
+X(a, STATIC, REPEATED, FLOAT, Data_02, 7) \
+X(a, STATIC, REPEATED, FLOAT, Data_03, 8) \
+X(a, STATIC, REPEATED, FLOAT, Data_04, 9) \
+X(a, STATIC, REPEATED, FLOAT, Data_05, 10) \
+X(a, STATIC, REPEATED, FLOAT, Data_06, 11) \
+X(a, STATIC, REPEATED, FLOAT, Data_07, 12) \
+X(a, STATIC, REPEATED, FLOAT, Data_08, 13) \
+X(a, STATIC, REPEATED, FLOAT, Data_09, 14) \
+X(a, STATIC, REPEATED, FLOAT, Data_10, 15) \
+X(a, STATIC, REPEATED, FLOAT, Data_11, 16) \
+X(a, STATIC, REPEATED, FLOAT, Data_12, 17) \
+X(a, STATIC, REPEATED, FLOAT, Data_13, 18) \
+X(a, STATIC, REPEATED, FLOAT, Data_14, 19) \
+X(a, STATIC, REPEATED, FLOAT, Data_15, 20) \
+X(a, STATIC, REPEATED, FLOAT, Data_16, 21) \
+X(a, STATIC, REPEATED, UINT64, time_ticks, 22)
+#define DataArrayMessage_CALLBACK NULL
+#define DataArrayMessage_DEFAULT NULL
+
 #define DescriptionMessage_FIELDLIST(X, a) \
 X(a, STATIC, REQUIRED, UINT32, id, 1) \
 X(a, STATIC, REQUIRED, STRING, Sensor_name, 2) \
@@ -282,14 +377,17 @@ X(a, STATIC, REQUIRED, BOOL, has_time_ticks, 36)
 #define DescriptionMessage_DEFAULT NULL
 
 extern const pb_msgdesc_t DataMessage_msg;
+extern const pb_msgdesc_t DataArrayMessage_msg;
 extern const pb_msgdesc_t DescriptionMessage_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define DataMessage_fields &DataMessage_msg
+#define DataArrayMessage_fields &DataArrayMessage_msg
 #define DescriptionMessage_fields &DescriptionMessage_msg
 
 /* Maximum encoded size of messages (where known) */
 #define DataMessage_size                         128
+#define DataArrayMessage_size                    3910
 #define DescriptionMessage_size                  808
 
 #ifdef __cplusplus

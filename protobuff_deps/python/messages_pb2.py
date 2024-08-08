@@ -15,11 +15,12 @@ _sym_db = _symbol_database.Default()
 import nanopb_pb2 as nanopb__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0emessages.proto\x1a\x0cnanopb.proto\"\x9a\x03\n\x0b\x44\x61taMessage\x12\n\n\x02id\x18\x01 \x02(\r\x12\x15\n\rsample_number\x18\x02 \x02(\r\x12\x11\n\tunix_time\x18\x03 \x02(\r\x12\x17\n\x0funix_time_nsecs\x18\x04 \x02(\r\x12\x18\n\x10time_uncertainty\x18\x05 \x02(\r\x12\x0f\n\x07\x44\x61ta_01\x18\x06 \x02(\x02\x12\x0f\n\x07\x44\x61ta_02\x18\x07 \x01(\x02\x12\x0f\n\x07\x44\x61ta_03\x18\x08 \x01(\x02\x12\x0f\n\x07\x44\x61ta_04\x18\t \x01(\x02\x12\x0f\n\x07\x44\x61ta_05\x18\n \x01(\x02\x12\x0f\n\x07\x44\x61ta_06\x18\x0b \x01(\x02\x12\x0f\n\x07\x44\x61ta_07\x18\x0c \x01(\x02\x12\x0f\n\x07\x44\x61ta_08\x18\r \x01(\x02\x12\x0f\n\x07\x44\x61ta_09\x18\x0e \x01(\x02\x12\x0f\n\x07\x44\x61ta_10\x18\x0f \x01(\x02\x12\x0f\n\x07\x44\x61ta_11\x18\x10 \x01(\x02\x12\x0f\n\x07\x44\x61ta_12\x18\x11 \x01(\x02\x12\x0f\n\x07\x44\x61ta_13\x18\x12 \x01(\x02\x12\x0f\n\x07\x44\x61ta_14\x18\x13 \x01(\x02\x12\x0f\n\x07\x44\x61ta_15\x18\x14 \x01(\x02\x12\x0f\n\x07\x44\x61ta_16\x18\x15 \x01(\x02\x12\x12\n\ntime_ticks\x18\x16 \x01(\x04\"\x8d\x08\n\x12\x44\x65scriptionMessage\x12\n\n\x02id\x18\x01 \x02(\r\x12\x1a\n\x0bSensor_name\x18\x02 \x02(\tB\x05\x92?\x02\x08(\x12>\n\x10\x44\x65scription_Type\x18\x03 \x02(\x0e\x32$.DescriptionMessage.DESCRIPTION_TYPE\x12\x1a\n\x0bstr_Data_01\x18\x04 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_02\x18\x05 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_03\x18\x06 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_04\x18\x07 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_05\x18\x08 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_06\x18\t \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_07\x18\n \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_08\x18\x0b \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_09\x18\x0c \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_10\x18\r \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_11\x18\x0e \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_12\x18\x0f \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_13\x18\x10 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_14\x18\x11 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_15\x18\x12 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_16\x18\x13 \x01(\tB\x05\x92?\x02\x08(\x12\x11\n\tf_Data_01\x18\x14 \x01(\x02\x12\x11\n\tf_Data_02\x18\x15 \x01(\x02\x12\x11\n\tf_Data_03\x18\x16 \x01(\x02\x12\x11\n\tf_Data_04\x18\x17 \x01(\x02\x12\x11\n\tf_Data_05\x18\x18 \x01(\x02\x12\x11\n\tf_Data_06\x18\x19 \x01(\x02\x12\x11\n\tf_Data_07\x18\x1a \x01(\x02\x12\x11\n\tf_Data_08\x18\x1b \x01(\x02\x12\x11\n\tf_Data_09\x18\x1c \x01(\x02\x12\x11\n\tf_Data_10\x18\x1d \x01(\x02\x12\x11\n\tf_Data_11\x18\x1e \x01(\x02\x12\x11\n\tf_Data_12\x18\x1f \x01(\x02\x12\x11\n\tf_Data_13\x18  \x01(\x02\x12\x11\n\tf_Data_14\x18! \x01(\x02\x12\x11\n\tf_Data_15\x18\" \x01(\x02\x12\x11\n\tf_Data_16\x18# \x01(\x02\x12\x16\n\x0ehas_time_ticks\x18$ \x02(\x08\"\x86\x01\n\x10\x44\x45SCRIPTION_TYPE\x12\x15\n\x11PHYSICAL_QUANTITY\x10\x00\x12\x08\n\x04UNIT\x10\x01\x12\x14\n\x10UNCERTAINTY_TYPE\x10\x02\x12\x0e\n\nRESOLUTION\x10\x03\x12\r\n\tMIN_SCALE\x10\x04\x12\r\n\tMAX_SCALE\x10\x05\x12\r\n\tHIERARCHY\x10\x06')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0emessages.proto\x1a\x0cnanopb.proto\"\x9a\x03\n\x0b\x44\x61taMessage\x12\n\n\x02id\x18\x01 \x02(\r\x12\x15\n\rsample_number\x18\x02 \x02(\r\x12\x11\n\tunix_time\x18\x03 \x02(\r\x12\x17\n\x0funix_time_nsecs\x18\x04 \x02(\r\x12\x18\n\x10time_uncertainty\x18\x05 \x02(\r\x12\x0f\n\x07\x44\x61ta_01\x18\x06 \x02(\x02\x12\x0f\n\x07\x44\x61ta_02\x18\x07 \x01(\x02\x12\x0f\n\x07\x44\x61ta_03\x18\x08 \x01(\x02\x12\x0f\n\x07\x44\x61ta_04\x18\t \x01(\x02\x12\x0f\n\x07\x44\x61ta_05\x18\n \x01(\x02\x12\x0f\n\x07\x44\x61ta_06\x18\x0b \x01(\x02\x12\x0f\n\x07\x44\x61ta_07\x18\x0c \x01(\x02\x12\x0f\n\x07\x44\x61ta_08\x18\r \x01(\x02\x12\x0f\n\x07\x44\x61ta_09\x18\x0e \x01(\x02\x12\x0f\n\x07\x44\x61ta_10\x18\x0f \x01(\x02\x12\x0f\n\x07\x44\x61ta_11\x18\x10 \x01(\x02\x12\x0f\n\x07\x44\x61ta_12\x18\x11 \x01(\x02\x12\x0f\n\x07\x44\x61ta_13\x18\x12 \x01(\x02\x12\x0f\n\x07\x44\x61ta_14\x18\x13 \x01(\x02\x12\x0f\n\x07\x44\x61ta_15\x18\x14 \x01(\x02\x12\x0f\n\x07\x44\x61ta_16\x18\x15 \x01(\x02\x12\x12\n\ntime_ticks\x18\x16 \x01(\x04\"\xb2\x04\n\x10\x44\x61taArrayMessage\x12\n\n\x02id\x18\x01 \x02(\r\x12\x1c\n\rsample_number\x18\x02 \x03(\rB\x05\x92?\x02\x10 \x12\x18\n\tunix_time\x18\x03 \x03(\rB\x05\x92?\x02\x10 \x12\x1e\n\x0funix_time_nsecs\x18\x04 \x03(\rB\x05\x92?\x02\x10 \x12\x1f\n\x10time_uncertainty\x18\x05 \x03(\rB\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_01\x18\x06 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_02\x18\x07 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_03\x18\x08 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_04\x18\t \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_05\x18\n \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_06\x18\x0b \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_07\x18\x0c \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_08\x18\r \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_09\x18\x0e \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_10\x18\x0f \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_11\x18\x10 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_12\x18\x11 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_13\x18\x12 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_14\x18\x13 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_15\x18\x14 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x16\n\x07\x44\x61ta_16\x18\x15 \x03(\x02\x42\x05\x92?\x02\x10 \x12\x19\n\ntime_ticks\x18\x16 \x03(\x04\x42\x05\x92?\x02\x10 \"\x8d\x08\n\x12\x44\x65scriptionMessage\x12\n\n\x02id\x18\x01 \x02(\r\x12\x1a\n\x0bSensor_name\x18\x02 \x02(\tB\x05\x92?\x02\x08(\x12>\n\x10\x44\x65scription_Type\x18\x03 \x02(\x0e\x32$.DescriptionMessage.DESCRIPTION_TYPE\x12\x1a\n\x0bstr_Data_01\x18\x04 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_02\x18\x05 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_03\x18\x06 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_04\x18\x07 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_05\x18\x08 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_06\x18\t \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_07\x18\n \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_08\x18\x0b \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_09\x18\x0c \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_10\x18\r \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_11\x18\x0e \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_12\x18\x0f \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_13\x18\x10 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_14\x18\x11 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_15\x18\x12 \x01(\tB\x05\x92?\x02\x08(\x12\x1a\n\x0bstr_Data_16\x18\x13 \x01(\tB\x05\x92?\x02\x08(\x12\x11\n\tf_Data_01\x18\x14 \x01(\x02\x12\x11\n\tf_Data_02\x18\x15 \x01(\x02\x12\x11\n\tf_Data_03\x18\x16 \x01(\x02\x12\x11\n\tf_Data_04\x18\x17 \x01(\x02\x12\x11\n\tf_Data_05\x18\x18 \x01(\x02\x12\x11\n\tf_Data_06\x18\x19 \x01(\x02\x12\x11\n\tf_Data_07\x18\x1a \x01(\x02\x12\x11\n\tf_Data_08\x18\x1b \x01(\x02\x12\x11\n\tf_Data_09\x18\x1c \x01(\x02\x12\x11\n\tf_Data_10\x18\x1d \x01(\x02\x12\x11\n\tf_Data_11\x18\x1e \x01(\x02\x12\x11\n\tf_Data_12\x18\x1f \x01(\x02\x12\x11\n\tf_Data_13\x18  \x01(\x02\x12\x11\n\tf_Data_14\x18! \x01(\x02\x12\x11\n\tf_Data_15\x18\" \x01(\x02\x12\x11\n\tf_Data_16\x18# \x01(\x02\x12\x16\n\x0ehas_time_ticks\x18$ \x02(\x08\"\x86\x01\n\x10\x44\x45SCRIPTION_TYPE\x12\x15\n\x11PHYSICAL_QUANTITY\x10\x00\x12\x08\n\x04UNIT\x10\x01\x12\x14\n\x10UNCERTAINTY_TYPE\x10\x02\x12\x0e\n\nRESOLUTION\x10\x03\x12\r\n\tMIN_SCALE\x10\x04\x12\r\n\tMAX_SCALE\x10\x05\x12\r\n\tHIERARCHY\x10\x06')
 
 
 
 _DATAMESSAGE = DESCRIPTOR.message_types_by_name['DataMessage']
+_DATAARRAYMESSAGE = DESCRIPTOR.message_types_by_name['DataArrayMessage']
 _DESCRIPTIONMESSAGE = DESCRIPTOR.message_types_by_name['DescriptionMessage']
 _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE = _DESCRIPTIONMESSAGE.enum_types_by_name['DESCRIPTION_TYPE']
 DataMessage = _reflection.GeneratedProtocolMessageType('DataMessage', (_message.Message,), {
@@ -28,6 +29,13 @@ DataMessage = _reflection.GeneratedProtocolMessageType('DataMessage', (_message.
   # @@protoc_insertion_point(class_scope:DataMessage)
   })
 _sym_db.RegisterMessage(DataMessage)
+
+DataArrayMessage = _reflection.GeneratedProtocolMessageType('DataArrayMessage', (_message.Message,), {
+  'DESCRIPTOR' : _DATAARRAYMESSAGE,
+  '__module__' : 'messages_pb2'
+  # @@protoc_insertion_point(class_scope:DataArrayMessage)
+  })
+_sym_db.RegisterMessage(DataArrayMessage)
 
 DescriptionMessage = _reflection.GeneratedProtocolMessageType('DescriptionMessage', (_message.Message,), {
   'DESCRIPTOR' : _DESCRIPTIONMESSAGE,
@@ -39,6 +47,48 @@ _sym_db.RegisterMessage(DescriptionMessage)
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
+  _DATAARRAYMESSAGE.fields_by_name['sample_number']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['sample_number']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['unix_time']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['unix_time']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['unix_time_nsecs']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['unix_time_nsecs']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['time_uncertainty']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['time_uncertainty']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_01']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_01']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_02']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_02']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_03']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_03']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_04']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_04']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_05']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_05']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_06']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_06']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_07']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_07']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_08']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_08']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_09']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_09']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_10']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_10']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_11']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_11']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_12']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_12']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_13']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_13']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_14']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_14']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_15']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_15']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['Data_16']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['Data_16']._serialized_options = b'\222?\002\020 '
+  _DATAARRAYMESSAGE.fields_by_name['time_ticks']._options = None
+  _DATAARRAYMESSAGE.fields_by_name['time_ticks']._serialized_options = b'\222?\002\020 '
   _DESCRIPTIONMESSAGE.fields_by_name['Sensor_name']._options = None
   _DESCRIPTIONMESSAGE.fields_by_name['Sensor_name']._serialized_options = b'\222?\002\010('
   _DESCRIPTIONMESSAGE.fields_by_name['str_Data_01']._options = None
@@ -75,8 +125,10 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _DESCRIPTIONMESSAGE.fields_by_name['str_Data_16']._serialized_options = b'\222?\002\010('
   _DATAMESSAGE._serialized_start=33
   _DATAMESSAGE._serialized_end=443
-  _DESCRIPTIONMESSAGE._serialized_start=446
-  _DESCRIPTIONMESSAGE._serialized_end=1483
-  _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE._serialized_start=1349
-  _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE._serialized_end=1483
+  _DATAARRAYMESSAGE._serialized_start=446
+  _DATAARRAYMESSAGE._serialized_end=1008
+  _DESCRIPTIONMESSAGE._serialized_start=1011
+  _DESCRIPTIONMESSAGE._serialized_end=2048
+  _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE._serialized_start=1914
+  _DESCRIPTIONMESSAGE_DESCRIPTION_TYPE._serialized_end=2048
 # @@protoc_insertion_point(module_scope)

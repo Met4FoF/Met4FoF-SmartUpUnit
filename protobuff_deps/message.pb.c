@@ -11,6 +11,9 @@
 PB_BIND(DataMessage, DataMessage, AUTO)
 
 
+PB_BIND(DataArrayMessage, DataArrayMessage, 2)
+
+
 PB_BIND(DescriptionMessage, DescriptionMessage, 2)
 
 
